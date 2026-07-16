@@ -4,12 +4,12 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/motorista_provider.dart';
 import '../../adesao/screens/adesao_screen.dart';
 import '../../vinculo/screens/vinculo_screen.dart';
-import 'home_placeholder_screen.dart';
+import '../../dashboard/screens/dashboard_screen.dart';
 
 // Rota "/" — decide o que mostrar assim que existe sessão (pós-OTP):
 // 1. Ainda não vinculado a um cadastro de motorista -> VinculoScreen (pede CPF).
 // 2. Vinculado mas sem adesão ativa -> AdesaoScreen.
-// 3. Vinculado e aderido -> Home (placeholder até a Fase 12 - Dashboard).
+// 3. Vinculado e aderido -> DashboardScreen (saldo, nível, atalhos).
 class PortaoEntradaScreen extends ConsumerWidget {
   const PortaoEntradaScreen({super.key});
 
@@ -53,7 +53,7 @@ class _PosVinculo extends ConsumerWidget {
       error: (e, _) => _Erro(onTentarNovamente: () => ref.invalidate(adesaoAtivaProvider)),
       data: (aderido) {
         if (!aderido) return AdesaoScreen(motoristaId: motoristaId, nome: nome);
-        return HomePlaceholderScreen(nome: nome);
+        return DashboardScreen(nome: nome);
       },
     );
   }
