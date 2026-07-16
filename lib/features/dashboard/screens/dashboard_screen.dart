@@ -60,6 +60,12 @@ class DashboardScreen extends ConsumerWidget {
               icon: const Icon(Icons.local_gas_station),
               label: const Text('Confirmar abastecimentos'),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/extrato'),
+              icon: const Icon(Icons.receipt_long),
+              label: const Text('Extrato de pontos'),
+            ),
           ],
         ),
       ),
