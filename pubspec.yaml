@@ -51,6 +51,15 @@ dependencies:
   # necessidade de chave de API (tiles públicos do OSM).
   flutter_map: ^7.0.2
   latlong2: ^0.9.1
+  # Fase MFA-opcional (TOTP) — gera o QR code localmente a partir do
+  # `uri` (otpauth://) devolvido pelo Supabase Auth no enroll, sem
+  # precisar renderizar o SVG que o servidor manda.
+  qr_flutter: ^4.1.0
+  # Fase foto-evidência-checkpoints — captura direto da câmera do celular
+  # nos checkpoints do frete (diferente do file_picker usado no PWA
+  # cliente, que é pra upload de arquivo já existente por quem trabalha
+  # de escritório).
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:

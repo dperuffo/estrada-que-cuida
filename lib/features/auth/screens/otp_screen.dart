@@ -5,10 +5,16 @@ import '../../../core/providers/auth_provider.dart';
 // Tela 2 do login — motorista digita o código de 6 dígitos recebido por
 // SMS. Ao confirmar, o Supabase cria a sessão (auth.uid()); dali em
 // diante a RLS e a RPC de vínculo já enxergam esse usuário.
+//
+// Fase login-por-senha: quando `forcarNovaSenha` é true (veio do fluxo
+// "esqueci minha senha" na SenhaLoginScreen), o SMS funciona como o
+// "código temporário" — ao confirmar, vamos direto pra '/definir-senha'
+// em vez de '/' , obrigando a criar uma senha nova antes de continuar.
 class OtpScreen extends StatefulWidget {
   final String telefoneE164;
+  final bool forcarNovaSenha;
 
-  const OtpScreen({super.key, required this.telefoneE164});
+  const OtpScreen({super.key, required this.telefoneE164, this.forcarNovaSenha = false});
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -33,8 +39,14 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       await AuthService.confirmarCodigo(telefoneE164: widget.telefoneE164, codigo: codigo);
       if (!mounted) return;
+      if (widget.forcarNovaSenha) {
+        // Fluxo "esqueci minha senha": SMS confirmado só prova que o
+        // celular é dele — ainda falta cadastrar a senha nova.
+        context.go('/definir-senha');
+        return;
+      }
       // A sessão nova dispara o redirect do router pra '/' (Gate), que
-      // decide se falta vínculo, adesão, ou já vai pro início.
+      // decide se falta vínculo, senha, adesão, ou já vai pro início.
       context.go('/');
     } catch (e) {
       setState(() => _erro = 'Código incorreto ou expirado. Confira e tente de novo.');

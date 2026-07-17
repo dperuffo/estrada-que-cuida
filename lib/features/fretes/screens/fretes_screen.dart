@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/fretes_provider.dart';
@@ -28,6 +29,7 @@ class FretesScreen extends StatefulWidget {
 
 class _FretesScreenState extends State<FretesScreen> {
   bool _carregando = true;
+  String? _erro;
   List<Frete> _mercado = [];
   List<(Negociacao, Frete)> _negociando = [];
   List<Frete> _atribuidos = [];
@@ -39,18 +41,29 @@ class _FretesScreenState extends State<FretesScreen> {
   }
 
   Future<void> _carregar() async {
-    setState(() => _carregando = true);
-    final mercado = await buscarFretesMercado();
-    final negociando = await buscarMinhasNegociacoes();
-    final atribuidos = await buscarMeusFretesAtribuidos();
-    if (!mounted) return;
-    final idsNegociando = negociando.map((n) => n.$2.id).toSet();
     setState(() {
-      _mercado = mercado.where((f) => !idsNegociando.contains(f.id)).toList();
-      _negociando = negociando;
-      _atribuidos = atribuidos;
-      _carregando = false;
+      _carregando = true;
+      _erro = null;
     });
+    try {
+      final mercado = await buscarFretesMercado();
+      final negociando = await buscarMinhasNegociacoes();
+      final atribuidos = await buscarMeusFretesAtribuidos();
+      if (!mounted) return;
+      final idsNegociando = negociando.map((n) => n.$2.id).toSet();
+      setState(() {
+        _mercado = mercado.where((f) => !idsNegociando.contains(f.id)).toList();
+        _negociando = negociando;
+        _atribuidos = atribuidos;
+        _carregando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _erro = e is PostgrestException ? e.message : 'Não consegui carregar os fretes agora.';
+        _carregando = false;
+      });
+    }
   }
 
   @override
@@ -60,7 +73,21 @@ class _FretesScreenState extends State<FretesScreen> {
       drawer: const AppDrawer(),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : _erro != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
+                      ],
+                    ),
+                  ),
+                )
+              : RefreshIndicator(
               onRefresh: _carregar,
               child: ListView(
                 padding: const EdgeInsets.all(16),

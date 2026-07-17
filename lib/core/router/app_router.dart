@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
 import '../../features/auth/screens/login_screen.dart';
 import '../../features/auth/screens/otp_screen.dart';
+import '../../features/auth/screens/senha_login_screen.dart';
+import '../../features/auth/screens/criar_senha_screen.dart';
 import '../../features/home/screens/portao_entrada_screen.dart';
 import '../../features/abastecimentos/screens/abastecimentos_pendentes_screen.dart';
 import '../../features/extrato/screens/extrato_screen.dart';
@@ -15,6 +18,12 @@ import '../../features/dependentes/screens/dependentes_screen.dart';
 import '../../features/roteirizacao/screens/roteirizacao_screen.dart';
 import '../../features/fretes/screens/fretes_screen.dart';
 import '../../features/fretes/screens/frete_detalhe_screen.dart';
+import '../../features/chamados/screens/chamados_screen.dart';
+import '../../features/chamados/screens/chamado_novo_screen.dart';
+import '../../features/chamados/screens/chamado_detalhe_screen.dart';
+import '../../features/avaliacao/screens/avaliar_screen.dart';
+import '../../features/seguranca/screens/seguranca_screen.dart';
+import '../../features/seguranca/screens/mfa_verificar_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -39,9 +48,31 @@ final appRouter = GoRouter(
   refreshListenable: _GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
   redirect: (context, state) {
     final sessao = SupabaseService.client.auth.currentSession;
-    final indoParaLoginOuOtp = state.matchedLocation == '/login' || state.matchedLocation == '/otp';
+    // Fase login-por-senha: '/senha' e '/otp-redefinir' também são
+    // alcançados SEM sessão ainda (é ali que ela é criada), então entram
+    // no mesmo grupo de '/login' e '/otp' pro redirect não expulsar o
+    // motorista de volta pro login no meio do fluxo.
+    final indoParaLoginOuOtp = state.matchedLocation == '/login' ||
+        state.matchedLocation == '/otp' ||
+        state.matchedLocation == '/senha' ||
+        state.matchedLocation == '/otp-redefinir';
     if (sessao == null && !indoParaLoginOuOtp) return '/login';
     if (sessao != null && indoParaLoginOuOtp) return '/';
+
+    // Fase MFA-opcional — "Camada 2": se o motorista tem um fator TOTP
+    // verificado mas essa sessão ainda está em aal1 (acabou de logar com
+    // telefone/senha e não confirmou o app autenticador ainda), força a
+    // tela de código antes de liberar qualquer outra rota. Síncrono e
+    // barato (getAuthenticatorAssuranceLevel não bate na rede).
+    if (sessao != null) {
+      final aal = SupabaseService.client.auth.mfa.getAuthenticatorAssuranceLevel();
+      final precisaVerificarMfa =
+          aal.nextLevel == AuthenticatorAssuranceLevels.aal2 && aal.currentLevel != AuthenticatorAssuranceLevels.aal2;
+      final indoParaMfa = state.matchedLocation == '/mfa-verificar';
+      if (precisaVerificarMfa && !indoParaMfa) return '/mfa-verificar';
+      if (!precisaVerificarMfa && indoParaMfa) return '/';
+    }
+
     return null;
   },
   routes: [
@@ -49,6 +80,18 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/otp',
       builder: (context, state) => OtpScreen(telefoneE164: state.extra as String),
+    ),
+    GoRoute(
+      path: '/senha',
+      builder: (context, state) => SenhaLoginScreen(telefoneE164: state.extra as String),
+    ),
+    GoRoute(
+      path: '/otp-redefinir',
+      builder: (context, state) => OtpScreen(telefoneE164: state.extra as String, forcarNovaSenha: true),
+    ),
+    GoRoute(
+      path: '/definir-senha',
+      builder: (context, state) => CriarSenhaScreen(onSalvo: () => context.go('/'), redefinicao: true),
     ),
     GoRoute(path: '/', builder: (context, state) => const PortaoEntradaScreen()),
     GoRoute(path: '/pendentes', builder: (context, state) => const AbastecimentosPendentesScreen()),
@@ -64,5 +107,14 @@ final appRouter = GoRouter(
       path: '/fretes/:id',
       builder: (context, state) => FreteDetalheScreen(freteId: state.pathParameters['id']!),
     ),
+    GoRoute(path: '/chamados', builder: (context, state) => const ChamadosScreen()),
+    GoRoute(path: '/chamados/novo', builder: (context, state) => const ChamadoNovoScreen()),
+    GoRoute(
+      path: '/chamados/:id',
+      builder: (context, state) => ChamadoDetalheScreen(ticketId: state.pathParameters['id']!),
+    ),
+    GoRoute(path: '/avaliar', builder: (context, state) => const AvaliarScreen()),
+    GoRoute(path: '/seguranca', builder: (context, state) => const SegurancaScreen()),
+    GoRoute(path: '/mfa-verificar', builder: (context, state) => const MfaVerificarScreen()),
   ],
 );

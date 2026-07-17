@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/fretes_provider.dart';
 
@@ -16,8 +19,12 @@ class FreteDetalheScreen extends StatefulWidget {
 
 class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   bool _carregando = true;
+  String? _erro;
   Frete? _frete;
   Negociacao? _negociacao;
+  List<PostoRecomendado> _postos = [];
+  List<EventoFrete> _eventos = [];
+  List<AvaliacaoFrete> _avaliacoes = [];
   bool _processando = false;
 
   @override
@@ -27,15 +34,32 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   }
 
   Future<void> _carregar() async {
-    setState(() => _carregando = true);
-    final frete = await buscarFrete(widget.freteId);
-    final negociacao = frete != null && frete.status == 'disponivel' ? await buscarMinhaNegociacao(widget.freteId) : null;
-    if (!mounted) return;
     setState(() {
-      _frete = frete;
-      _negociacao = negociacao;
-      _carregando = false;
+      _carregando = true;
+      _erro = null;
     });
+    try {
+      final frete = await buscarFrete(widget.freteId);
+      final negociacao = frete != null && frete.status == 'disponivel' ? await buscarMinhaNegociacao(widget.freteId) : null;
+      final postos = frete != null ? await buscarPostosRecomendados(widget.freteId) : <PostoRecomendado>[];
+      final eventos = frete != null ? await buscarEventosFrete(widget.freteId) : <EventoFrete>[];
+      final avaliacoes = frete != null && frete.status == 'concluido' ? await buscarAvaliacoesFrete(widget.freteId) : <AvaliacaoFrete>[];
+      if (!mounted) return;
+      setState(() {
+        _frete = frete;
+        _negociacao = negociacao;
+        _postos = postos;
+        _eventos = eventos;
+        _avaliacoes = avaliacoes;
+        _carregando = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _erro = e is PostgrestException ? e.message : 'Não consegui carregar o frete agora.';
+        _carregando = false;
+      });
+    }
   }
 
   String _mensagemErro(Object e) => e is PostgrestException ? e.message : 'Não foi possível completar a ação agora.';
@@ -59,7 +83,21 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       appBar: AppBar(title: const Text('Detalhes do frete')),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
-          : _frete == null
+          : _erro != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                        const SizedBox(height: 12),
+                        ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
+                      ],
+                    ),
+                  ),
+                )
+              : _frete == null
               ? const Center(child: Text('Frete não encontrado.'))
               : ListView(
                   padding: const EdgeInsets.all(16),
@@ -68,9 +106,8 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                     const SizedBox(height: 20),
                     if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
                     if (_frete!.status == 'disponivel') _blocoNegociacao(),
-                    if (_frete!.status == 'aceito' || _frete!.status == 'em_andamento')
-                      const _Aviso('Frete aceito — combine os detalhes finais com o cliente e boa viagem!', cor: AppTheme.frota700),
-                    if (_frete!.status == 'concluido') const _Aviso('Frete concluído.', cor: Colors.black54),
+                    if (_frete!.status == 'aceito' || _frete!.status == 'em_andamento') ..._blocoExecucao(),
+                    if (_frete!.status == 'concluido') ..._blocoConcluido(),
                     if (_frete!.status == 'cancelado') const _Aviso('Esse frete foi cancelado pelo cliente.', cor: Colors.red),
                     if (_frete!.status == 'recusado') const _Aviso('Você recusou esse frete.', cor: Colors.black54),
                   ],
@@ -159,6 +196,306 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       ],
     );
   }
+
+  bool _jaTemEvento(String tipo) => _eventos.any((e) => e.tipoEvento == tipo);
+
+  // Fase foto-evidência-checkpoints — pedido do Daniel: motorista anexa
+  // foto nos checkpoints (posto pra abastecimento, chegada no destino, no
+  // cliente pra entrega, ocorrências), pra o cliente ver na web. Obrigatória
+  // em abasteceu/chegou_destino/concluido/ocorrencia (a RPC também valida
+  // isso do lado do banco — ver migração foto_evidencia_checkpoints_frete),
+  // opcional em saiu_origem/chegou_posto/parada.
+  Future<Uint8List?> _tirarFoto() async {
+    try {
+      final foto = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70, maxWidth: 1600);
+      if (foto == null) return null;
+      return await foto.readAsBytes();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _perguntarQuerFoto() async {
+    final resposta = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Anexar uma foto?'),
+        content: const Text('Opcional, mas ajuda o cliente a acompanhar a viagem.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Pular')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Tirar foto')),
+        ],
+      ),
+    );
+    return resposta ?? false;
+  }
+
+  Future<void> _registrarEvento(
+    String tipoEvento, {
+    String? postoId,
+    String? observacao,
+    required bool fotoObrigatoria,
+  }) async {
+    Uint8List? fotoBytes;
+    if (fotoObrigatoria) {
+      fotoBytes = await _tirarFoto();
+      if (fotoBytes == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text('Esse checkpoint exige uma foto.')));
+        }
+        return;
+      }
+    } else if (await _perguntarQuerFoto()) {
+      fotoBytes = await _tirarFoto();
+    }
+    if (!mounted) return;
+
+    await _executar(() async {
+      String? fotoPath;
+      if (fotoBytes != null) {
+        fotoPath = await enviarFotoEvidenciaFrete(freteId: widget.freteId, tipoEvento: tipoEvento, bytes: fotoBytes);
+      }
+      await registrarEventoFrete(
+        widget.freteId,
+        tipoEvento,
+        postoRecomendadoId: postoId,
+        observacao: observacao,
+        fotoPath: fotoPath,
+      );
+    });
+  }
+
+  Future<void> _registrarComPosto(String tipoEvento, {required bool fotoObrigatoria}) async {
+    String? postoId;
+    if (_postos.isNotEmpty) {
+      postoId = await showModalBottomSheet<String>(
+        context: context,
+        builder: (ctx) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(12),
+                child: Text('Em qual posto?', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+              ..._postos.map(
+                (p) => ListTile(
+                  leading: const Icon(Icons.local_gas_station, color: AppTheme.frota600),
+                  title: Text(p.nomePosto),
+                  onTap: () => Navigator.pop(ctx, p.id),
+                ),
+              ),
+              ListTile(title: const Text('Outro posto (não listado)'), onTap: () => Navigator.pop(ctx, null)),
+            ],
+          ),
+        ),
+      );
+    }
+    if (!mounted) return;
+    await _registrarEvento(tipoEvento, postoId: postoId, fotoObrigatoria: fotoObrigatoria);
+  }
+
+  Future<void> _registrarOcorrencia() async {
+    final observacao = await showDialog<String>(
+      context: context,
+      builder: (ctx) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Descreva a ocorrência'),
+          content: TextField(
+            controller: controller,
+            maxLines: 3,
+            decoration: const InputDecoration(hintText: 'O que aconteceu?'),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Continuar')),
+          ],
+        );
+      },
+    );
+    if (observacao == null || observacao.isEmpty) return;
+    if (!mounted) return;
+    await _registrarEvento('ocorrencia', observacao: observacao, fotoObrigatoria: true);
+  }
+
+  Future<void> _verFoto(String path) async {
+    try {
+      final url = await SupabaseService.client.storage.from('fretes-evidencias').createSignedUrl(path, 3600);
+      if (!mounted) return;
+      await showDialog(
+        context: context,
+        builder: (_) => Dialog(child: InteractiveViewer(child: Image.network(url))),
+      );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não consegui abrir a foto.')));
+      }
+    }
+  }
+
+  List<Widget> _blocoExecucao() {
+    return [
+      if (_postos.isNotEmpty) ...[
+        const Text('Postos recomendados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        ..._postos.map(
+          (p) => Card(
+            margin: const EdgeInsets.only(bottom: 6),
+            child: ListTile(
+              dense: true,
+              leading: const Icon(Icons.local_gas_station_outlined, color: AppTheme.frota600),
+              title: Text(p.nomePosto, style: const TextStyle(fontSize: 13)),
+              subtitle: p.itemCatalogoId != null
+                  ? const Text('🎟️ tem benefício disponível — confira no Catálogo', style: TextStyle(fontSize: 11.5))
+                  : (p.observacao != null ? Text(p.observacao!, style: const TextStyle(fontSize: 11.5)) : null),
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+      const Text('Acompanhamento da viagem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      const SizedBox(height: 8),
+      const Text(
+        '📷 Foto obrigatória em: abasteceu, chegou no destino, concluir e ocorrência.',
+        style: TextStyle(fontSize: 11, color: Colors.black54),
+      ),
+      const SizedBox(height: 8),
+      Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          if (!_jaTemEvento('saiu_origem'))
+            ElevatedButton.icon(
+              onPressed: _processando ? null : () => _registrarEvento('saiu_origem', fotoObrigatoria: false),
+              icon: const Icon(Icons.play_arrow, size: 18),
+              label: const Text('Saí da origem'),
+            ),
+          OutlinedButton.icon(
+            onPressed: _processando ? null : () => _registrarComPosto('chegou_posto', fotoObrigatoria: false),
+            icon: const Icon(Icons.local_gas_station_outlined, size: 18),
+            label: const Text('Cheguei num posto'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _processando ? null : () => _registrarComPosto('abasteceu', fotoObrigatoria: true),
+            icon: const Icon(Icons.local_gas_station, size: 18),
+            label: const Text('Abasteci 📷'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _processando ? null : () => _registrarEvento('parada', fotoObrigatoria: false),
+            icon: const Icon(Icons.pause_circle_outline, size: 18),
+            label: const Text('Parada'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _processando ? null : () => _registrarEvento('chegou_destino', fotoObrigatoria: true),
+            icon: const Icon(Icons.flag_outlined, size: 18),
+            label: const Text('Cheguei no destino 📷'),
+          ),
+          OutlinedButton.icon(
+            onPressed: _processando ? null : _registrarOcorrencia,
+            icon: const Icon(Icons.report_problem_outlined, size: 18),
+            label: const Text('Ocorrência 📷'),
+          ),
+        ],
+      ),
+      const SizedBox(height: 12),
+      ElevatedButton.icon(
+        onPressed: _processando ? null : () => _confirmarConcluir(),
+        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusAtivo, foregroundColor: Colors.white),
+        icon: const Icon(Icons.check_circle_outline, size: 18),
+        label: const Text('Concluir frete 📷'),
+      ),
+      const SizedBox(height: 20),
+      if (_eventos.isNotEmpty) _timeline(),
+    ];
+  }
+
+  Future<void> _confirmarConcluir() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Concluir frete?'),
+        content: const Text('Confirma que chegou no destino e finalizou a entrega?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Concluir')),
+        ],
+      ),
+    );
+    if (confirmar == true) {
+      await _registrarEvento('concluido', fotoObrigatoria: true);
+    }
+  }
+
+  Widget _timeline() {
+    const labelEvento = {
+      'saiu_origem': 'Saiu da origem',
+      'chegou_posto': 'Chegou no posto',
+      'abasteceu': 'Abasteceu',
+      'parada': 'Parada',
+      'chegou_destino': 'Chegou no destino',
+      'ocorrencia': 'Ocorrência',
+      'concluido': 'Concluiu o frete',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text('Linha do tempo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const SizedBox(height: 8),
+        ..._eventos.map(
+          (e) => Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(child: Text(labelEvento[e.tipoEvento] ?? e.tipoEvento, style: const TextStyle(fontSize: 12.5))),
+                if (e.fotoPath != null)
+                  IconButton(
+                    onPressed: () => _verFoto(e.fotoPath!),
+                    icon: const Icon(Icons.photo_camera, size: 16, color: AppTheme.frota600),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                const SizedBox(width: 8),
+                Text(
+                  '${e.criadoEm.hour.toString().padLeft(2, '0')}:${e.criadoEm.minute.toString().padLeft(2, '0')}',
+                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _blocoConcluido() {
+    final avaliacaoMinha = _avaliacoes.where((a) => a.avaliador == 'motorista').isEmpty
+        ? null
+        : _avaliacoes.firstWhere((a) => a.avaliador == 'motorista');
+    final avaliacaoCliente = _avaliacoes.where((a) => a.avaliador == 'cliente').isEmpty
+        ? null
+        : _avaliacoes.firstWhere((a) => a.avaliador == 'cliente');
+
+    return [
+      if (_eventos.isNotEmpty) ...[_timeline(), const SizedBox(height: 20)],
+      const Text('Avaliação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      const SizedBox(height: 8),
+      if (avaliacaoCliente != null)
+        Text('O cliente te avaliou: ${'★' * avaliacaoCliente.estrelas}', style: const TextStyle(fontSize: 13)),
+      const SizedBox(height: 8),
+      if (avaliacaoMinha == null)
+        _FormularioAvaliacao(
+          processando: _processando,
+          onEnviar: (estrelas, comentario) =>
+              _executar(() => avaliarFrete(widget.freteId, estrelas, comentario: comentario)),
+        )
+      else
+        Text('Você avaliou o cliente: ${'★' * avaliacaoMinha.estrelas}', style: const TextStyle(fontSize: 13)),
+    ];
+  }
 }
 
 class _CartaoInfo extends StatelessWidget {
@@ -218,6 +555,59 @@ class _Aviso extends StatelessWidget {
   }
 }
 
+class _FormularioAvaliacao extends StatefulWidget {
+  final bool processando;
+  final void Function(int estrelas, String? comentario) onEnviar;
+
+  const _FormularioAvaliacao({required this.processando, required this.onEnviar});
+
+  @override
+  State<_FormularioAvaliacao> createState() => _FormularioAvaliacaoState();
+}
+
+class _FormularioAvaliacaoState extends State<_FormularioAvaliacao> {
+  int _estrelas = 5;
+  final _comentarioCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _comentarioCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: List.generate(5, (i) {
+            final n = i + 1;
+            return IconButton(
+              onPressed: () => setState(() => _estrelas = n),
+              icon: Icon(
+                n <= _estrelas ? Icons.star : Icons.star_border,
+                color: Colors.amber,
+              ),
+            );
+          }),
+        ),
+        TextField(
+          controller: _comentarioCtrl,
+          decoration: const InputDecoration(labelText: 'Comentário (opcional)', isDense: true),
+        ),
+        const SizedBox(height: 8),
+        ElevatedButton(
+          onPressed: widget.processando
+              ? null
+              : () => widget.onEnviar(_estrelas, _comentarioCtrl.text.trim().isEmpty ? null : _comentarioCtrl.text.trim()),
+          child: const Text('Avaliar cliente'),
+        ),
+      ],
+    );
+  }
+}
+
 class _FormularioProposta extends StatefulWidget {
   final bool processando;
   final String label;
@@ -251,6 +641,7 @@ class _FormularioPropostaState extends State<_FormularioProposta> {
         ),
         const SizedBox(width: 8),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(minimumSize: const Size(88, 48)),
           onPressed: widget.processando
               ? null
               : () {

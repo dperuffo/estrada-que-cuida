@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 
 // Fretes (Fase Fretes) — contratação de frete entre cliente e motorista.
@@ -138,27 +140,41 @@ Future<List<Frete>> buscarMeusFretesAtribuidos() async {
   return (linhas as List).map((l) => Frete.fromMap(l as Map<String, dynamic>)).toList();
 }
 
-/// Minhas negociações em aberto (mercado aberto), com o frete embutido —
-/// pra mostrar "estou negociando o frete X por R$ Y".
+/// Minhas negociações em aberto (mercado aberto), com o frete carregado à
+/// parte — pra mostrar "estou negociando o frete X por R$ Y". Evita o
+/// embed `fretes(*)` do PostgREST (select('*, fretes(*)')) de propósito:
+/// logo depois de criar uma FK nova, o cache de relacionamentos do
+/// PostgREST às vezes demora a atualizar e o embed falha com "Could not
+/// find a relationship" — duas consultas simples são mais previsíveis.
 Future<List<(Negociacao, Frete)>> buscarMinhasNegociacoes() async {
   final linhas = await SupabaseService.client
       .from('fretes_negociacoes')
-      .select('*, fretes(*)')
+      .select()
       .order('atualizado_em', ascending: false);
 
-  final resultado = <(Negociacao, Frete)>[];
-  for (final l in (linhas as List)) {
+  final negociacoes = (linhas as List).map((l) {
     final mapa = l as Map<String, dynamic>;
-    final freteMapa = mapa['fretes'] as Map<String, dynamic>?;
-    if (freteMapa == null) continue;
-    final negociacao = Negociacao(
+    return Negociacao(
       id: mapa['id'] as String,
       freteId: mapa['frete_id'] as String,
       status: mapa['status'] as String,
       rodadaAtual: mapa['rodada_atual'] as int,
       rodadas: const [],
     );
-    resultado.add((negociacao, Frete.fromMap(freteMapa)));
+  }).toList();
+
+  if (negociacoes.isEmpty) return [];
+
+  final freteIds = negociacoes.map((n) => n.freteId).toSet().toList();
+  final fretesLinhas = await SupabaseService.client.from('fretes').select().inFilter('id', freteIds);
+  final fretesPorId = {
+    for (final f in (fretesLinhas as List)) (f as Map<String, dynamic>)['id'] as String: Frete.fromMap(f),
+  };
+
+  final resultado = <(Negociacao, Frete)>[];
+  for (final n in negociacoes) {
+    final frete = fretesPorId[n.freteId];
+    if (frete != null) resultado.add((n, frete));
   }
   return resultado;
 }
@@ -221,4 +237,128 @@ Future<void> recusarNegociacaoFrete(String negociacaoId) async {
 
 Future<void> responderFreteDireto(String freteId, bool aceitar) async {
   await SupabaseService.client.rpc('responder_frete_direto', params: {'p_frete_id': freteId, 'p_aceitar': aceitar});
+}
+
+// Fase Fretes B — postos recomendados, checkpoints de execução e avaliação.
+
+class PostoRecomendado {
+  final String id;
+  final String nomePosto;
+  final String? observacao;
+  final String? itemCatalogoId;
+
+  const PostoRecomendado({required this.id, required this.nomePosto, this.observacao, this.itemCatalogoId});
+
+  factory PostoRecomendado.fromMap(Map<String, dynamic> m) => PostoRecomendado(
+        id: m['id'] as String,
+        nomePosto: m['nome_posto'] as String,
+        observacao: m['observacao'] as String?,
+        itemCatalogoId: m['item_catalogo_id'] as String?,
+      );
+}
+
+class EventoFrete {
+  final String id;
+  final String tipoEvento;
+  final String? observacao;
+  final DateTime criadoEm;
+  // Fase foto-evidência-checkpoints — caminho no bucket privado
+  // `fretes-evidencias` (não a URL: assinada sob demanda, só quando o
+  // cliente/motorista realmente abre a foto).
+  final String? fotoPath;
+
+  const EventoFrete({
+    required this.id,
+    required this.tipoEvento,
+    this.observacao,
+    required this.criadoEm,
+    this.fotoPath,
+  });
+
+  factory EventoFrete.fromMap(Map<String, dynamic> m) => EventoFrete(
+        id: m['id'] as String,
+        tipoEvento: m['tipo_evento'] as String,
+        observacao: m['observacao'] as String?,
+        criadoEm: DateTime.parse(m['criado_em'] as String),
+        fotoPath: m['foto_path'] as String?,
+      );
+}
+
+class AvaliacaoFrete {
+  final String avaliador;
+  final int estrelas;
+  final String? comentario;
+
+  const AvaliacaoFrete({required this.avaliador, required this.estrelas, this.comentario});
+
+  factory AvaliacaoFrete.fromMap(Map<String, dynamic> m) => AvaliacaoFrete(
+        avaliador: m['avaliador'] as String,
+        estrelas: m['estrelas'] as int,
+        comentario: m['comentario'] as String?,
+      );
+}
+
+Future<List<PostoRecomendado>> buscarPostosRecomendados(String freteId) async {
+  final linhas = await SupabaseService.client
+      .from('fretes_postos_recomendados')
+      .select()
+      .eq('frete_id', freteId)
+      .order('ordem');
+  return (linhas as List).map((l) => PostoRecomendado.fromMap(l as Map<String, dynamic>)).toList();
+}
+
+Future<List<EventoFrete>> buscarEventosFrete(String freteId) async {
+  final linhas = await SupabaseService.client
+      .from('fretes_eventos')
+      .select()
+      .eq('frete_id', freteId)
+      .order('criado_em');
+  return (linhas as List).map((l) => EventoFrete.fromMap(l as Map<String, dynamic>)).toList();
+}
+
+Future<List<AvaliacaoFrete>> buscarAvaliacoesFrete(String freteId) async {
+  final linhas = await SupabaseService.client.from('fretes_avaliacoes').select().eq('frete_id', freteId);
+  return (linhas as List).map((l) => AvaliacaoFrete.fromMap(l as Map<String, dynamic>)).toList();
+}
+
+Future<void> registrarEventoFrete(
+  String freteId,
+  String tipoEvento, {
+  String? postoRecomendadoId,
+  String? observacao,
+  String? fotoPath,
+}) async {
+  await SupabaseService.client.rpc('registrar_evento_frete', params: {
+    'p_frete_id': freteId,
+    'p_tipo_evento': tipoEvento,
+    'p_posto_recomendado_id': postoRecomendadoId,
+    'p_observacao': observacao,
+    'p_foto_path': fotoPath,
+  });
+}
+
+// Fase foto-evidência-checkpoints — sobe a foto ANTES de chamar a RPC
+// (que exige p_foto_path pra abasteceu/chegou_destino/concluido/
+// ocorrencia — ver migração foto_evidencia_checkpoints_frete). Bucket
+// privado: quem vê depois é via signed URL (ver _verFoto na tela).
+Future<String> enviarFotoEvidenciaFrete({
+  required String freteId,
+  required String tipoEvento,
+  required Uint8List bytes,
+}) async {
+  final caminho = '$freteId/${DateTime.now().millisecondsSinceEpoch}_$tipoEvento.jpg';
+  await SupabaseService.client.storage.from('fretes-evidencias').uploadBinary(
+        caminho,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/jpeg'),
+      );
+  return caminho;
+}
+
+Future<void> avaliarFrete(String freteId, int estrelas, {String? comentario}) async {
+  await SupabaseService.client.rpc('avaliar_frete', params: {
+    'p_frete_id': freteId,
+    'p_estrelas': estrelas,
+    'p_comentario': comentario,
+  });
 }

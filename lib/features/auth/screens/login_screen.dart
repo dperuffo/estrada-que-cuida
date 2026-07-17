@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
 
-// Tela 1 do app — motorista digita o celular (com DDD) e recebe um
-// código por SMS. Sem senha, sem cadastro aqui: o cadastro (nome, CPF,
-// CNH) já existe em `motoristas`, feito pela empresa dele; aqui só
-// provamos que o celular é dele.
+// Tela 1 do app — motorista digita o celular (com DDD). Sem cadastro aqui:
+// o cadastro (nome, CPF, CNH) já existe em `motoristas`, feito pela empresa
+// dele. Fase login-por-senha: se esse celular já tem senha cadastrada
+// (`motorista_tem_senha`), pedimos a senha (SenhaLoginScreen); senão é
+// primeiro acesso e mandamos o código por SMS (OtpScreen), que depois
+// obriga a criação da senha.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -26,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return '+55$digitos';
   }
 
-  Future<void> _enviarCodigo() async {
+  Future<void> _continuar() async {
     final telefone = _paraE164(_controller.text);
     if (telefone == null) {
       setState(() => _erro = 'Digite um celular válido, com DDD.');
@@ -37,11 +39,20 @@ class _LoginScreenState extends State<LoginScreen> {
       _erro = null;
     });
     try {
+      // Fase login-por-senha: primeiro acesso continua sendo só SMS; nos
+      // acessos seguintes (já com senha cadastrada) pedimos a senha em vez
+      // de mandar SMS de novo.
+      final jaTemSenha = await AuthService.temSenha(telefone);
+      if (!mounted) return;
+      if (jaTemSenha) {
+        context.push('/senha', extra: telefone);
+        return;
+      }
       await AuthService.enviarCodigo(telefone);
       if (!mounted) return;
       context.push('/otp', extra: telefone);
     } catch (e) {
-      setState(() => _erro = 'Não consegui enviar o código. Tente de novo em instantes.');
+      setState(() => _erro = 'Não consegui continuar agora. Tente de novo em instantes.');
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -88,10 +99,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: _enviando ? null : _enviarCodigo,
+                onPressed: _enviando ? null : _continuar,
                 child: _enviando
                     ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Receber código por SMS'),
+                    : const Text('Continuar'),
               ),
             ],
           ),

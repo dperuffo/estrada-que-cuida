@@ -15,14 +15,20 @@ class VinculoResultado {
   final String status;
   final String? motoristaId;
   final String? nome;
+  // Fase login-por-senha — vem junto nos status 'vinculado'/'ja_vinculado'
+  // (ver migração login_motorista_por_senha). false = motorista ainda não
+  // criou a senha de 6 dígitos, precisa passar pela CriarSenhaScreen antes
+  // de ir pra adesão/dashboard.
+  final bool senhaDefinida;
 
-  VinculoResultado({required this.status, this.motoristaId, this.nome});
+  VinculoResultado({required this.status, this.motoristaId, this.nome, this.senhaDefinida = false});
 
   factory VinculoResultado.fromJson(Map<String, dynamic> json) {
     return VinculoResultado(
       status: json['status'] as String,
       motoristaId: json['motorista_id'] as String?,
       nome: json['nome'] as String?,
+      senhaDefinida: json['senha_definida'] as bool? ?? false,
     );
   }
 }
@@ -51,14 +57,19 @@ class PerfilMotorista {
   final String id;
   final String nomeCompleto;
   final String? telefone;
+  // Fase chamados/avaliação — precisamos do empresa_id no cliente pra
+  // gravar em `tickets`/`avaliacoes` (tabelas que a RLS motorista_* exige
+  // bater com o empresa_id do próprio motorista).
+  final String? empresaId;
 
-  PerfilMotorista({required this.id, required this.nomeCompleto, this.telefone});
+  PerfilMotorista({required this.id, required this.nomeCompleto, this.telefone, this.empresaId});
 
   factory PerfilMotorista.fromJson(Map<String, dynamic> json) {
     return PerfilMotorista(
       id: json['id'] as String,
       nomeCompleto: json['nome_completo'] as String,
       telefone: json['telefone'] as String?,
+      empresaId: json['empresa_id'] as String?,
     );
   }
 }

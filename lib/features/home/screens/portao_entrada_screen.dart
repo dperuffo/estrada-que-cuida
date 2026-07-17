@@ -4,12 +4,15 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/motorista_provider.dart';
 import '../../adesao/screens/adesao_screen.dart';
 import '../../vinculo/screens/vinculo_screen.dart';
+import '../../auth/screens/criar_senha_screen.dart';
 import '../../dashboard/screens/dashboard_screen.dart';
 
 // Rota "/" — decide o que mostrar assim que existe sessão (pós-OTP):
 // 1. Ainda não vinculado a um cadastro de motorista -> VinculoScreen (pede CPF).
-// 2. Vinculado mas sem adesão ativa -> AdesaoScreen.
-// 3. Vinculado e aderido -> DashboardScreen (saldo, nível, atalhos).
+// 2. Vinculado mas ainda sem senha cadastrada (primeiro acesso) ->
+//    CriarSenhaScreen (obrigatório, Fase login-por-senha).
+// 3. Vinculado, com senha, mas sem adesão ativa -> AdesaoScreen.
+// 4. Vinculado, com senha e aderido -> DashboardScreen (saldo, nível, atalhos).
 class PortaoEntradaScreen extends ConsumerWidget {
   const PortaoEntradaScreen({super.key});
 
@@ -24,6 +27,9 @@ class PortaoEntradaScreen extends ConsumerWidget {
         switch (resultado.status) {
           case 'vinculado':
           case 'ja_vinculado':
+            if (!resultado.senhaDefinida) {
+              return CriarSenhaScreen(onSalvo: () => ref.invalidate(vinculoProvider(null)));
+            }
             return _PosVinculo(motoristaId: resultado.motoristaId!, nome: resultado.nome);
           case 'ambiguo_requer_cpf':
           case 'nao_encontrado':

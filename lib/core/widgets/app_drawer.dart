@@ -128,6 +128,21 @@ class AppDrawer extends ConsumerWidget {
                       );
                     },
                   ),
+                  _ItemMenu(
+                    icone: Icons.confirmation_number_outlined,
+                    label: 'Chamados',
+                    onTap: () => _ir(context, '/chamados'),
+                  ),
+                  _ItemMenu(
+                    icone: Icons.star_outline,
+                    label: 'Avaliar o app',
+                    onTap: () => _ir(context, '/avaliar'),
+                  ),
+                  _ItemMenu(
+                    icone: Icons.shield_outlined,
+                    label: 'Segurança',
+                    onTap: () => _ir(context, '/seguranca'),
+                  ),
                 ],
               ),
             ),
