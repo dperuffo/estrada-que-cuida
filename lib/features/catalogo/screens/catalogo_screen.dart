@@ -44,6 +44,13 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Resgatar por ${_formatoPontos.format(item.pontosNecessarios)} pontos?'),
+              const SizedBox(height: 4),
+              Text(
+                item.validadeDias != null
+                    ? 'O voucher vale por ${item.validadeDias} dias a partir do resgate.'
+                    : 'Esse voucher não tem prazo de validade.',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
               if (dependentes.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 const Text('Para quem?', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -174,6 +181,15 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                       parceiroNome: item.parceiroNome,
                       pontos: item.pontosNecessarios,
                       imagemUrl: item.imagemUrl,
+                      // Pedido do Daniel (17/07): a vigência do voucher já
+                      // aparece ANTES do resgate, não só depois em "Meus
+                      // resgates" — motorista precisa saber quanto tempo
+                      // vai ter pra usar o benefício antes de gastar os
+                      // pontos.
+                      rodape: Text(
+                        item.validadeDias != null ? 'Válido por ${item.validadeDias} dias após o resgate' : 'Sem prazo de validade',
+                        style: const TextStyle(fontSize: 11, color: Colors.black45, fontStyle: FontStyle.italic),
+                      ),
                       acoes: Align(
                         alignment: Alignment.centerRight,
                         child: ElevatedButton(
