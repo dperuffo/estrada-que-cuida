@@ -188,7 +188,17 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            ElevatedButton(onPressed: () => _resgatar(item), child: const Text('Resgatar')),
+                            // Sobrescreve o `minimumSize: Size.fromHeight(48)`
+                            // do tema global (pensado pra botões de largura
+                            // cheia, ex.: telas de login/adesão) — aqui o
+                            // botão precisa ficar do tamanho do texto, do
+                            // contrário o Row quebra o layout (largura
+                            // infinita) por estar fora de um Expanded.
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(minimumSize: const Size(64, 40)),
+                              onPressed: () => _resgatar(item),
+                              child: const Text('Resgatar'),
+                            ),
                           ],
                         ),
                       ),
