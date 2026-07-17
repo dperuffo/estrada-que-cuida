@@ -53,7 +53,7 @@ class _PosVinculo extends ConsumerWidget {
       error: (e, _) => _Erro(onTentarNovamente: () => ref.invalidate(adesaoAtivaProvider)),
       data: (aderido) {
         if (!aderido) return AdesaoScreen(motoristaId: motoristaId, nome: nome);
-        return DashboardScreen(nome: nome);
+        return DashboardScreen(motoristaId: motoristaId, nome: nome);
       },
     );
   }

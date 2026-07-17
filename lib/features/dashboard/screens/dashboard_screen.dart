@@ -8,9 +8,10 @@ import '../providers/dashboard_provider.dart';
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
 
 class DashboardScreen extends ConsumerWidget {
+  final String motoristaId;
   final String? nome;
 
-  const DashboardScreen({super.key, this.nome});
+  const DashboardScreen({super.key, required this.motoristaId, this.nome});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -54,11 +55,19 @@ class DashboardScreen extends ConsumerWidget {
               ),
               data: (saldo) => _CartaoNivel(saldo: saldo),
             ),
+            const SizedBox(height: 16),
+            _CartaoVoltePraCasa(onTap: () => context.push('/catalogo', extra: 'volte_para_casa')),
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () => context.push('/pendentes'),
               icon: const Icon(Icons.local_gas_station),
               label: const Text('Confirmar abastecimentos'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/catalogo'),
+              icon: const Icon(Icons.card_giftcard_outlined),
+              label: const Text('Catálogo de benefícios'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
@@ -86,7 +95,52 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/dependentes', extra: motoristaId),
+              icon: const Icon(Icons.family_restroom_outlined),
+              label: const Text('Conta Família'),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// Atalho de destaque — pilar "Volte para Casa" do programa: se o
+// motorista está cansado e precisa de ajuda pra voltar com segurança, o
+// benefício está a 1 toque, sem precisar navegar pelo catálogo inteiro.
+class _CartaoVoltePraCasa extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _CartaoVoltePraCasa({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: const Color(0xFFEAF5EE),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Icon(Icons.home_outlined, color: Color(0xFF1B7A43), size: 28),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Cansado na estrada?', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Veja os benefícios de Volte para Casa.', style: TextStyle(color: Colors.black54)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.black38),
+            ],
+          ),
         ),
       ),
     );
