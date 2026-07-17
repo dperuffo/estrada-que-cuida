@@ -195,9 +195,18 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
 
   Widget _blocoCadastro() {
     if (!_cadastrando) {
-      return ElevatedButton(
-        onPressed: _iniciarCadastro,
-        child: const Text('Ativar verificação em duas etapas'),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton(
+            onPressed: _iniciarCadastro,
+            child: const Text('Ativar verificação em duas etapas'),
+          ),
+          if (_erroCadastro != null) ...[
+            const SizedBox(height: 8),
+            Text(_erroCadastro!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+          ],
+        ],
       );
     }
 
