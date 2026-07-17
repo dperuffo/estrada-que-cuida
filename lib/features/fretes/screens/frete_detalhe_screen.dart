@@ -38,6 +38,17 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       _carregando = true;
       _erro = null;
     });
+    await _atualizar();
+  }
+
+  // Fase negociação — pedido do Daniel: a tela só buscava os dados do
+  // frete uma vez, ao abrir. Se o cliente contrapunha depois disso, o
+  // motorista continuava vendo "aguardando resposta do cliente" e os
+  // botões de aceitar/contrapropor/recusar sumiam, porque a tela nunca
+  // recarregava sozinha. `_atualizar` é a mesma busca, mas sem o
+  // spinner de tela cheia — usada no pull-to-refresh e no botão de
+  // atualizar do AppBar, pra não piscar a tela a cada toque.
+  Future<void> _atualizar() async {
     try {
       final frete = await buscarFrete(widget.freteId);
       final negociacao = frete != null && frete.status == 'disponivel' ? await buscarMinhaNegociacao(widget.freteId) : null;
@@ -80,7 +91,16 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalhes do frete')),
+      appBar: AppBar(
+        title: const Text('Detalhes do frete'),
+        actions: [
+          IconButton(
+            tooltip: 'Atualizar',
+            icon: const Icon(Icons.refresh),
+            onPressed: _carregando ? null : _atualizar,
+          ),
+        ],
+      ),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
@@ -99,18 +119,21 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 )
               : _frete == null
               ? const Center(child: Text('Frete não encontrado.'))
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    _CartaoInfo(frete: _frete!),
-                    const SizedBox(height: 20),
-                    if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
-                    if (_frete!.status == 'disponivel') _blocoNegociacao(),
-                    if (_frete!.status == 'aceito' || _frete!.status == 'em_andamento') ..._blocoExecucao(),
-                    if (_frete!.status == 'concluido') ..._blocoConcluido(),
-                    if (_frete!.status == 'cancelado') const _Aviso('Esse frete foi cancelado pelo cliente.', cor: Colors.red),
-                    if (_frete!.status == 'recusado') const _Aviso('Você recusou esse frete.', cor: Colors.black54),
-                  ],
+              : RefreshIndicator(
+                  onRefresh: _atualizar,
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      _CartaoInfo(frete: _frete!),
+                      const SizedBox(height: 20),
+                      if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
+                      if (_frete!.status == 'disponivel') _blocoNegociacao(),
+                      if (_frete!.status == 'aceito' || _frete!.status == 'em_andamento') ..._blocoExecucao(),
+                      if (_frete!.status == 'concluido') ..._blocoConcluido(),
+                      if (_frete!.status == 'cancelado') const _Aviso('Esse frete foi cancelado pelo cliente.', cor: Colors.red),
+                      if (_frete!.status == 'recusado') const _Aviso('Você recusou esse frete.', cor: Colors.black54),
+                    ],
+                  ),
                 ),
     );
   }
