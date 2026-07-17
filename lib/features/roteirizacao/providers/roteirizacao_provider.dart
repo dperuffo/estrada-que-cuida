@@ -132,6 +132,27 @@ Future<List<VeiculoRoteirizacao>> buscarMeusVeiculos() async {
   }
 }
 
+/// Registra o evento "rota_calculada" pra alimentar a missão de gamificação
+/// correspondente (fidelidade_missoes.tipo_metrica = 'rotas_calculadas') —
+/// silencioso de propósito: uma falha aqui não pode atrapalhar o motorista
+/// de ver o resultado da rota que ele acabou de calcular.
+Future<void> registrarRotaCalculada() async {
+  try {
+    final motoristaId = await SupabaseService.client
+        .from('motoristas')
+        .select('id')
+        .eq('auth_user_id', SupabaseService.client.auth.currentUser!.id)
+        .maybeSingle();
+    final id = motoristaId?['id'] as String?;
+    if (id == null) return;
+    await SupabaseService.client
+        .from('fidelidade_eventos_engajamento')
+        .insert({'motorista_id': id, 'tipo_evento': 'rota_calculada'});
+  } catch (_) {
+    // silencioso — não impacta o fluxo principal da roteirização
+  }
+}
+
 class ResultadoRota {
   final List<PontoRota> coordenadas;
   final double distanciaKm;

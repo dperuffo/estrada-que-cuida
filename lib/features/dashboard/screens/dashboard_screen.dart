@@ -316,7 +316,6 @@ class _CartaoMissao extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final info = infoMissoes[missao.codigo];
     final progresso = missao.meta == 0 ? 0.0 : missao.progresso / missao.meta;
     final cor = missao.concluida ? const Color(0xFF1B7A43) : const Color(0xFF1E6FBF);
 
@@ -326,13 +325,13 @@ class _CartaoMissao extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(info?.icone ?? Icons.flag_outlined, color: missao.concluida ? cor : Colors.black38, size: 30),
+            Icon(missao.iconeData, color: missao.concluida ? cor : Colors.black38, size: 30),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(info?.titulo ?? missao.codigo, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(missao.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
                   if (!missao.concluida) ...[
                     const SizedBox(height: 6),
                     ClipRRect(

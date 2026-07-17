@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
@@ -186,6 +187,10 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _paradas = paradas;
       _candidatosEncontrados = candidatos.length;
     });
+
+    // Alimenta a missão "rotas_calculadas" (gamificação) — não bloqueia a
+    // tela nem mostra erro se falhar.
+    unawaited(registrarRotaCalculada());
   }
 
   @override
