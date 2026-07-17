@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/motorista_provider.dart';
 import '../../../core/services/supabase_service.dart';
@@ -40,7 +41,15 @@ class _AdesaoScreenState extends ConsumerState<AdesaoScreen> {
       });
       ref.invalidate(adesaoAtivaProvider);
     } catch (e) {
-      setState(() => _erro = 'Não consegui registrar sua adesão agora. Tente de novo em instantes.');
+      // Fase debug-adesão — pedido do Daniel: a mensagem genérica escondia
+      // o motivo real (RLS, coluna obrigatória faltando etc.). Mostrar o
+      // erro do Postgrest quando existir ajuda a diagnosticar sem precisar
+      // ficar adivinhando.
+      setState(() {
+        _erro = e is PostgrestException
+            ? 'Não consegui registrar sua adesão agora: ${e.message}'
+            : 'Não consegui registrar sua adesão agora. Tente de novo em instantes. ($e)';
+      });
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
