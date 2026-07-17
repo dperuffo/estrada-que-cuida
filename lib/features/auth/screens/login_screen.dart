@@ -57,8 +57,10 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.local_shipping_rounded, size: 64, color: Color(0xFF1B7A43)),
-              const SizedBox(height: 16),
+              // Logo FNI em destaque (Fase 17/07, pedido do Daniel: "logo
+              // FNI imponente" no lugar do ícone de caminhão provisório).
+              Image.asset('assets/images/logo-fni.png', height: 110, fit: BoxFit.contain),
+              const SizedBox(height: 24),
               Text(
                 'Estrada que Cuida',
                 textAlign: TextAlign.center,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../providers/dependentes_provider.dart';
 
 final _formatoData = DateFormat('dd/MM/yyyy');
@@ -16,6 +17,7 @@ class DependentesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Conta Família')),
+      drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormularioNovo(context, ref),
         icon: const Icon(Icons.person_add_alt_1),

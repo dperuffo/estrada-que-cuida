@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../providers/missoes_provider.dart';
 
 class MissoesScreen extends ConsumerWidget {
@@ -11,6 +12,7 @@ class MissoesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Missões')),
+      drawer: const AppDrawer(),
       body: missoesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../core/providers/auth_provider.dart';
+import '../../../core/widgets/app_drawer.dart';
+import '../../catalogo/providers/catalogo_provider.dart';
 import '../providers/dashboard_provider.dart';
 
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
@@ -19,12 +20,8 @@ class DashboardScreen extends ConsumerWidget {
     final saldoAsync = ref.watch(saldoPontosProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Estrada que Cuida'),
-        actions: [
-          IconButton(onPressed: () => AuthService.sair(), icon: const Icon(Icons.logout), tooltip: 'Sair'),
-        ],
-      ),
+      appBar: AppBar(title: const Text('Estrada que Cuida')),
+      drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(saldoPontosProvider),
         child: ListView(
@@ -70,6 +67,28 @@ class DashboardScreen extends ConsumerWidget {
               label: const Text('Catálogo de benefícios'),
             ),
             const SizedBox(height: 12),
+            // Pedido do Daniel (17/07): "Meus Resgates" ficou escondido
+            // (só dava pra chegar lá pelo ícone no AppBar do Catálogo) —
+            // agora tem atalho direto na tela principal, com contador dos
+            // vouchers ainda não queimados (é ali que o código do voucher
+            // aparece pro motorista mostrar no posto).
+            Consumer(
+              builder: (context, ref, _) {
+                final resgatesAsync = ref.watch(meusResgatesProvider);
+                final ativos = resgatesAsync.maybeWhen(
+                  data: (lista) => lista.where((r) => r.status == 'solicitado' || r.status == 'em_andamento').length,
+                  orElse: () => 0,
+                );
+                return OutlinedButton.icon(
+                  onPressed: () => context.push('/meus-resgates'),
+                  icon: ativos > 0
+                      ? Badge(label: Text('$ativos'), child: const Icon(Icons.confirmation_number_outlined))
+                      : const Icon(Icons.confirmation_number_outlined),
+                  label: const Text('Meus Resgates'),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: () => context.push('/extrato'),
               icon: const Icon(Icons.receipt_long),
@@ -100,6 +119,12 @@ class DashboardScreen extends ConsumerWidget {
               onPressed: () => context.push('/dependentes', extra: motoristaId),
               icon: const Icon(Icons.family_restroom_outlined),
               label: const Text('Conta Família'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/roteirizacao'),
+              icon: const Icon(Icons.alt_route_outlined),
+              label: const Text('Roteirização'),
             ),
           ],
         ),

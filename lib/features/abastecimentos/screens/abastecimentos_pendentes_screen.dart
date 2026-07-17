@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/abastecimentos_provider.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
 
@@ -51,6 +52,7 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Abastecimentos pendentes')),
+      drawer: const AppDrawer(),
       body: pendentesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

@@ -46,3 +46,30 @@ final adesaoAtivaProvider = FutureProvider.autoDispose<bool>((ref) async {
       .limit(1);
   return (rows as List).isNotEmpty;
 });
+
+class PerfilMotorista {
+  final String id;
+  final String nomeCompleto;
+  final String? telefone;
+
+  PerfilMotorista({required this.id, required this.nomeCompleto, this.telefone});
+
+  factory PerfilMotorista.fromJson(Map<String, dynamic> json) {
+    return PerfilMotorista(
+      id: json['id'] as String,
+      nomeCompleto: json['nome_completo'] as String,
+      telefone: json['telefone'] as String?,
+    );
+  }
+}
+
+// Perfil básico do motorista logado — usado pelo AppDrawer (menu lateral)
+// pra mostrar nome/telefone sem cada tela precisar replicar esses dados via
+// construtor. RPC SECURITY DEFINER (meu_perfil_motorista) filtra por
+// auth_user_id = auth.uid() internamente.
+final meuPerfilProvider = FutureProvider.autoDispose<PerfilMotorista?>((ref) async {
+  final resp = await SupabaseService.client.rpc('meu_perfil_motorista');
+  final lista = resp as List;
+  if (lista.isEmpty) return null;
+  return PerfilMotorista.fromJson(lista.first as Map<String, dynamic>);
+});

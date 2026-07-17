@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../providers/catalogo_provider.dart';
 import '../widgets/card_voucher.dart';
 
@@ -29,6 +30,7 @@ class MeusResgatesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Meus resgates')),
+      drawer: const AppDrawer(),
       body: resgatesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

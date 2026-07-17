@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../providers/extrato_provider.dart';
 
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
@@ -31,6 +32,7 @@ class ExtratoScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Extrato de pontos')),
+      drawer: const AppDrawer(),
       body: extratoAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(

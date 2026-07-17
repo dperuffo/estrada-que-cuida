@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../providers/ranking_provider.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
@@ -18,6 +19,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ranking')),
+      drawer: const AppDrawer(),
       body: Column(
         children: [
           Padding(

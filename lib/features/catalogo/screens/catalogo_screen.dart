@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/widgets/app_drawer.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../dependentes/providers/dependentes_provider.dart';
 import '../providers/catalogo_provider.dart';
@@ -124,6 +125,7 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
           ),
         ],
       ),
+      drawer: const AppDrawer(),
       body: Column(
         children: [
           SizedBox(

@@ -1,21 +1,43 @@
 import 'package:flutter/material.dart';
 
-// Paleta simples pro MVP — verde-estrada como cor principal. Sem
-// pretensão de identidade visual final, só o suficiente pra não ficar no
-// Material padrão cinza/roxo.
+// Identidade visual FNI (Fase 17/07, pedido do Daniel: "seguir o design
+// system de FNI, com as mesmas cores e layout") — extraída de
+// tailwind.config.ts / globals.css do painel web "Gestão de Frotas"
+// (família de cor "frota" + cores semânticas de status). Substitui a
+// paleta verde provisória do MVP inicial.
 class AppTheme {
-  static const Color corPrincipal = Color(0xFF1B7A43);
+  // "frota" — mesma família de cor do painel web, do mais escuro (fundo do
+  // menu lateral) ao mais claro.
+  static const Color frota950 = Color(0xFF0B1220); // fundo do menu/drawer
+  static const Color frota900 = Color(0xFF0F2A4A);
+  static const Color frota800 = Color(0xFF123A63);
+  static const Color frota700 = Color(0xFF155080);
+  static const Color frota600 = Color(0xFF0E7490); // destaque secundário
+  static const Color frota500 = Color(0xFF0EA5E9); // ação principal / CTA
+  static const Color frota100 = Color(0xFFE0F2FE);
+  static const Color frota50 = Color(0xFFF0F9FF);
+
+  // Cores semânticas — mesmos códigos usados nos badges do painel web.
+  static const Color statusAtivo = Color(0xFF16A34A);
+  static const Color statusAtencao = Color(0xFFF59E0B);
+  static const Color statusInativo = Color(0xFFDC2626);
+
+  /// Cor principal de ação (botões, ícones em destaque) — mantido como alias
+  /// pra não quebrar quem já importa `corPrincipal`.
+  static const Color corPrincipal = frota500;
 
   static ThemeData get tema {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: corPrincipal),
-      scaffoldBackgroundColor: const Color(0xFFF7F7F5),
+      colorScheme: ColorScheme.fromSeed(seedColor: frota500, brightness: Brightness.light),
+      scaffoldBackgroundColor: const Color(0xFFF8FAFC), // slate-50, igual ao painel web
       appBarTheme: const AppBarTheme(
-        backgroundColor: corPrincipal,
+        backgroundColor: frota950,
         foregroundColor: Colors.white,
         centerTitle: true,
+        iconTheme: IconThemeData(color: Colors.white),
       ),
+      drawerTheme: const DrawerThemeData(backgroundColor: frota950),
       // ATENÇÃO: `Size.fromHeight(48)` deixa a LARGURA mínima infinita —
       // funciona bem pros botões de tela cheia (login, OTP, adesão), mas
       // quebra o layout (erro "BoxConstraints forces an infinite width")
@@ -25,8 +47,16 @@ class AppTheme {
       // (ver exemplo em catalogo_screen.dart, botão "Resgatar").
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: corPrincipal,
+          backgroundColor: frota500,
           foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(48),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: frota700,
+          side: const BorderSide(color: frota600),
           minimumSize: const Size.fromHeight(48),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
