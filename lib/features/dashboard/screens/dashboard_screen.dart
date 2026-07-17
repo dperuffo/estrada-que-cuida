@@ -126,6 +126,12 @@ class DashboardScreen extends ConsumerWidget {
               icon: const Icon(Icons.alt_route_outlined),
               label: const Text('Roteirização'),
             ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/fretes'),
+              icon: const Icon(Icons.local_shipping_outlined),
+              label: const Text('Fretes'),
+            ),
           ],
         ),
       ),

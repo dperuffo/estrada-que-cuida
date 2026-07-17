@@ -13,6 +13,8 @@ import '../../features/catalogo/screens/catalogo_screen.dart';
 import '../../features/catalogo/screens/meus_resgates_screen.dart';
 import '../../features/dependentes/screens/dependentes_screen.dart';
 import '../../features/roteirizacao/screens/roteirizacao_screen.dart';
+import '../../features/fretes/screens/fretes_screen.dart';
+import '../../features/fretes/screens/frete_detalhe_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -57,5 +59,10 @@ final appRouter = GoRouter(
     GoRoute(path: '/meus-resgates', builder: (context, state) => const MeusResgatesScreen()),
     GoRoute(path: '/dependentes', builder: (context, state) => DependentesScreen(motoristaId: state.extra as String)),
     GoRoute(path: '/roteirizacao', builder: (context, state) => const RoteirizacaoScreen()),
+    GoRoute(path: '/fretes', builder: (context, state) => const FretesScreen()),
+    GoRoute(
+      path: '/fretes/:id',
+      builder: (context, state) => FreteDetalheScreen(freteId: state.pathParameters['id']!),
+    ),
   ],
 );
