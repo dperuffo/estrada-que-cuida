@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_drawer.dart';
 
 // Fase MFA-opcional — tela de "Segurança": mostra se já existe um fator
@@ -28,6 +29,17 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
   bool _confirmando = false;
   String? _erroCadastro;
 
+  // Alterar senha (Fase Segurança-2) — pedido do Daniel: "inserir mecanismo
+  // de alteração de senha dentro do PWA motorista na aba Segurança". Exige a
+  // senha atual antes de trocar (reautentica com AuthService.entrarComSenha,
+  // mesma checagem do login normal) — evita que alguém com o celular
+  // destravado troque a senha sem saber a atual.
+  final _senhaAtualCtrl = TextEditingController();
+  final _novaSenhaCtrl = TextEditingController();
+  final _confirmarNovaSenhaCtrl = TextEditingController();
+  bool _alterandoSenha = false;
+  String? _erroSenha;
+
   @override
   void initState() {
     super.initState();
@@ -37,7 +49,63 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
   @override
   void dispose() {
     _codigoCtrl.dispose();
+    _senhaAtualCtrl.dispose();
+    _novaSenhaCtrl.dispose();
+    _confirmarNovaSenhaCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _alterarSenha() async {
+    final atual = _senhaAtualCtrl.text.trim();
+    final nova = _novaSenhaCtrl.text.trim();
+    final confirmar = _confirmarNovaSenhaCtrl.text.trim();
+
+    if (atual.length != 6) {
+      setState(() => _erroSenha = 'Digite os 6 dígitos da sua senha atual.');
+      return;
+    }
+    if (nova.length != 6) {
+      setState(() => _erroSenha = 'A nova senha precisa ter exatamente 6 números.');
+      return;
+    }
+    if (nova != confirmar) {
+      setState(() => _erroSenha = 'As senhas digitadas são diferentes.');
+      return;
+    }
+    if (nova == atual) {
+      setState(() => _erroSenha = 'A nova senha precisa ser diferente da atual.');
+      return;
+    }
+
+    // auth.users.phone vem sem o "+" (mesmo formato usado no vínculo por
+    // telefone) — telefoneE164 aqui precisa do "+", igual ao login normal.
+    final telefone = SupabaseService.client.auth.currentUser?.phone;
+    if (telefone == null || telefone.isEmpty) {
+      setState(() => _erroSenha = 'Não consegui identificar seu telefone. Saia e entre de novo.');
+      return;
+    }
+
+    setState(() {
+      _alterandoSenha = true;
+      _erroSenha = null;
+    });
+    try {
+      await AuthService.entrarComSenha(telefoneE164: '+$telefone', senha: atual);
+      await AuthService.definirSenha(nova);
+      if (!mounted) return;
+      setState(() {
+        _alterandoSenha = false;
+        _senhaAtualCtrl.clear();
+        _novaSenhaCtrl.clear();
+        _confirmarNovaSenhaCtrl.clear();
+      });
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha alterada com sucesso!')));
+    } catch (e) {
+      setState(() {
+        _erroSenha = 'Senha atual incorreta. Confira e tente de novo.';
+        _alterandoSenha = false;
+      });
+    }
   }
 
   Future<void> _carregar() async {
@@ -163,6 +231,14 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
               : ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
+                    const Text('Alterar senha', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    const Text('Digite sua senha atual e a nova senha numérica de 6 dígitos.'),
+                    const SizedBox(height: 20),
+                    _blocoAlterarSenha(),
+                    const SizedBox(height: 28),
+                    const Divider(),
+                    const SizedBox(height: 12),
                     const Text('Verificação em duas etapas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
                     const Text(
@@ -172,6 +248,35 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
                     if (_fatorAtivo != null) _blocoAtivo() else _blocoCadastro(),
                   ],
                 ),
+    );
+  }
+
+  Widget _blocoAlterarSenha() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _CampoSenha(controller: _senhaAtualCtrl, label: 'Senha atual'),
+            const SizedBox(height: 12),
+            _CampoSenha(controller: _novaSenhaCtrl, label: 'Nova senha'),
+            const SizedBox(height: 12),
+            _CampoSenha(controller: _confirmarNovaSenhaCtrl, label: 'Confirme a nova senha', onSubmitted: _alterarSenha),
+            if (_erroSenha != null) ...[
+              const SizedBox(height: 8),
+              Text(_erroSenha!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+            ],
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: _alterandoSenha ? null : _alterarSenha,
+              child: _alterandoSenha
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : const Text('Salvar nova senha'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -280,6 +385,29 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CampoSenha extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final VoidCallback? onSubmitted;
+
+  const _CampoSenha({required this.controller, required this.label, this.onSubmitted});
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      keyboardType: TextInputType.number,
+      obscureText: true,
+      maxLength: 6,
+      textAlign: TextAlign.center,
+      style: const TextStyle(fontSize: 22, letterSpacing: 6),
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      decoration: InputDecoration(labelText: label, hintText: '••••••', counterText: ''),
+      onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
     );
   }
 }

@@ -9,6 +9,28 @@ import '../../features/dashboard/providers/dashboard_provider.dart';
 
 final _formatoPontosDrawer = NumberFormat.decimalPattern('pt_BR');
 
+// Máscara de telefone (Fase Segurança-2) — pedido do Daniel: "ajustar a
+// máscara do telefone no menu principal". `motoristas.telefone` vem com
+// formatos inconsistentes conforme a origem do cadastro (alguns já
+// importados como "(11) 98569-7865", outros como dígitos crus
+// "21909087653") — em vez de confiar no que já veio pronto, extrai só os
+// dígitos e remonta sempre no mesmo padrão brasileiro.
+String _formatarTelefone(String bruto) {
+  var digitos = bruto.replaceAll(RegExp(r'\D'), '');
+  // Remove o "55" do Brasil quando vier junto (ex.: telefoneE164 sem o "+",
+  // 13 dígitos no total) — a máscara mostra só DDD + número, sem o país.
+  if (digitos.length == 13 && digitos.startsWith('55')) {
+    digitos = digitos.substring(2);
+  }
+  if (digitos.length == 11) {
+    return '(${digitos.substring(0, 2)}) ${digitos.substring(2, 7)}-${digitos.substring(7)}';
+  }
+  if (digitos.length == 10) {
+    return '(${digitos.substring(0, 2)}) ${digitos.substring(2, 6)}-${digitos.substring(6)}';
+  }
+  return bruto; // formato inesperado — mostra como veio, não quebra a tela
+}
+
 // Menu lateral com a identidade FNI — pedido do Daniel (17/07): "criar um
 // menu no pwa motorista assim como no pwa cliente, com a Logo FNI, com os
 // dados do motorista e com as cores e identidade visual de FNI". Espelha a
@@ -58,7 +80,7 @@ class AppDrawer extends ConsumerWidget {
                     data: (perfil) => perfil?.telefone != null
                         ? Padding(
                             padding: const EdgeInsets.only(top: 2),
-                            child: Text(perfil!.telefone!, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            child: Text(_formatarTelefone(perfil!.telefone!), style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           )
                         : const SizedBox.shrink(),
                     orElse: () => const SizedBox.shrink(),
