@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../dependentes/providers/dependentes_provider.dart';
 import '../providers/catalogo_provider.dart';
+import '../widgets/card_voucher.dart';
 
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
 
@@ -166,40 +167,24 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (context, i) {
                     final item = itens[i];
-                    return Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(item.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  if (item.parceiroNome != null)
-                                    Text(item.parceiroNome!, style: const TextStyle(color: Colors.black54, fontSize: 12)),
-                                  if (item.descricao != null) ...[
-                                    const SizedBox(height: 4),
-                                    Text(item.descricao!, style: const TextStyle(color: Colors.black54)),
-                                  ],
-                                  const SizedBox(height: 8),
-                                  Text('${_formatoPontos.format(item.pontosNecessarios)} pontos', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1B7A43))),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // Sobrescreve o `minimumSize: Size.fromHeight(48)`
-                            // do tema global (pensado pra botões de largura
-                            // cheia, ex.: telas de login/adesão) — aqui o
-                            // botão precisa ficar do tamanho do texto, do
-                            // contrário o Row quebra o layout (largura
-                            // infinita) por estar fora de um Expanded.
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(minimumSize: const Size(64, 40)),
-                              onPressed: () => _resgatar(item),
-                              child: const Text('Resgatar'),
-                            ),
-                          ],
+                    return CardVoucher(
+                      titulo: item.titulo,
+                      descricao: item.descricao,
+                      categoria: item.categoria,
+                      parceiroNome: item.parceiroNome,
+                      pontos: item.pontosNecessarios,
+                      imagemUrl: item.imagemUrl,
+                      acoes: Align(
+                        alignment: Alignment.centerRight,
+                        child: ElevatedButton(
+                          // Sobrescreve o `minimumSize: Size.fromHeight(48)`
+                          // do tema global (largura cheia, pensado pros
+                          // botões de login/adesão) — aqui o botão precisa
+                          // ficar do tamanho do texto (ver footgun
+                          // documentado em app_theme.dart).
+                          style: ElevatedButton.styleFrom(minimumSize: const Size(64, 40)),
+                          onPressed: () => _resgatar(item),
+                          child: const Text('Resgatar'),
                         ),
                       ),
                     );

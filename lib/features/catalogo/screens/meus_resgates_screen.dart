@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/catalogo_provider.dart';
+import '../widgets/card_voucher.dart';
 
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -55,16 +56,31 @@ class MeusResgatesScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(meusResgatesProvider),
             child: ListView.separated(
+              padding: const EdgeInsets.all(16),
               itemCount: resgates.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final r = resgates[i];
-                return ListTile(
-                  title: Text(r.titulo),
-                  subtitle: Text('${_formatoData.format(r.solicitadoEm)} • ${r.pontosGastos} pontos'),
-                  trailing: Text(
-                    _labelStatus[r.status] ?? r.status,
-                    style: TextStyle(color: _corStatus[r.status] ?? Colors.black54, fontWeight: FontWeight.bold),
+                return CardVoucher(
+                  titulo: r.titulo,
+                  categoria: r.categoria,
+                  parceiroNome: r.parceiroNome,
+                  pontos: r.pontosGastos,
+                  imagemUrl: r.imagemUrl,
+                  numeroVoucher: r.numeroVoucher,
+                  validoAte: r.validoAte,
+                  rodape: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _formatoData.format(r.solicitadoEm),
+                        style: const TextStyle(fontSize: 11, color: Colors.black45),
+                      ),
+                      Text(
+                        _labelStatus[r.status] ?? r.status,
+                        style: TextStyle(color: _corStatus[r.status] ?? Colors.black54, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ],
                   ),
                 );
               },
