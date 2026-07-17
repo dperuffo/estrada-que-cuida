@@ -200,7 +200,7 @@ Future<Negociacao?> buscarMinhaNegociacao(String freteId) async {
       .from('fretes_negociacoes_rodadas')
       .select()
       .eq('negociacao_id', linha['id'] as String)
-      .order('numero_rodada');
+      .order('numero_rodada', ascending: true);
 
   return Negociacao(
     id: linha['id'] as String,
@@ -303,7 +303,7 @@ Future<List<PostoRecomendado>> buscarPostosRecomendados(String freteId) async {
       .from('fretes_postos_recomendados')
       .select()
       .eq('frete_id', freteId)
-      .order('ordem');
+      .order('ordem', ascending: true);
   return (linhas as List).map((l) => PostoRecomendado.fromMap(l as Map<String, dynamic>)).toList();
 }
 
@@ -312,7 +312,7 @@ Future<List<EventoFrete>> buscarEventosFrete(String freteId) async {
       .from('fretes_eventos')
       .select()
       .eq('frete_id', freteId)
-      .order('criado_em');
+      .order('criado_em', ascending: true);
   return (linhas as List).map((l) => EventoFrete.fromMap(l as Map<String, dynamic>)).toList();
 }
 
