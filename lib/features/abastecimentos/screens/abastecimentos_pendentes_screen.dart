@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../providers/abastecimentos_provider.dart';
+import '../../dashboard/providers/dashboard_provider.dart';
+import '../../gamificacao/providers/missoes_provider.dart';
 
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
@@ -19,10 +21,15 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
       final resultado = await AbastecimentoFidelidadeService.confirmar(item);
       if (resultado.status == 'confirmado') {
         messenger.showSnackBar(SnackBar(content: Text('Confirmado! +${resultado.pontos} pontos.')));
+        // Confirmar pode ter destravado uma missão (ex.: "primeira
+        // confirmação") — reavalia na hora pra creditar o bônus já.
+        await AsyncValue.guard(() => ref.read(missoesProvider.future));
       } else {
         messenger.showSnackBar(const SnackBar(content: Text('Esse abastecimento não pôde ser confirmado (já foi confirmado ou não é mais seu).')));
       }
       ref.invalidate(abastecimentosPendentesProvider);
+      ref.invalidate(saldoPontosProvider);
+      ref.invalidate(missoesProvider);
     } catch (e) {
       messenger.showSnackBar(const SnackBar(content: Text('Não consegui confirmar agora. Tente de novo em instantes.')));
     }

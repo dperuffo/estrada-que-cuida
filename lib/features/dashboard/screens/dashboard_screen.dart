@@ -66,6 +66,26 @@ class DashboardScreen extends ConsumerWidget {
               icon: const Icon(Icons.receipt_long),
               label: const Text('Extrato de pontos'),
             ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/missoes'),
+                    icon: const Icon(Icons.flag_outlined),
+                    label: const Text('Missões'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => context.push('/ranking'),
+                    icon: const Icon(Icons.leaderboard_outlined),
+                    label: const Text('Ranking'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
