@@ -5,17 +5,24 @@ import 'package:latlong2/latlong.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/roteirizacao_provider.dart';
+import '../utils/cores_bandeira.dart';
+import '../utils/roteirizacao_algoritmo.dart';
+import '../utils/roteirizacao_constantes.dart';
 
 final _formatoKm = NumberFormat('#,##0.0', 'pt_BR');
+final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
+const _motivoLabel = {
+  'otimizado': 'Melhor custo-benefício',
+  'estrategico': 'Vale a pena esticar até aqui',
+  'emergencia': 'Parada obrigatória (tanque no limite)',
+};
 
 // Roteirização self-service (Fase 17/07) — pedido do Daniel: "trazer as
-// consultas de roteirização assim como tem no pwa cliente". Decisão
-// (confirmada via pergunta ao usuário): versão simplificada e individual —
-// o motorista planeja a PRÓPRIA rota (origem/destino, sem salvar), bem
-// diferente do planejador completo do painel web (que é ligado à empresa,
-// com múltiplas estratégias de comparação de preço — rotas_salvas não tem
-// nenhum vínculo com motorista_id hoje). Mesmos serviços públicos e
-// gratuitos (Nominatim + OSRM) chamados direto daqui.
+// consultas de roteirização assim como tem no pwa cliente". Fase 17/07-3
+// ampliou pra trazer o mesmo motor de otimização do painel web: cor do
+// marcador por bandeira, filtro de combustível, combustível já no tanque e
+// preço/custo sugeridos de cada parada.
 class RoteirizacaoScreen extends StatefulWidget {
   const RoteirizacaoScreen({super.key});
 
@@ -26,18 +33,17 @@ class RoteirizacaoScreen extends StatefulWidget {
 class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   final _origemCtrl = TextEditingController();
   final _destinoCtrl = TextEditingController();
+  final _combustivelInicialCtrl = TextEditingController();
   SugestaoLocal? _origem;
   SugestaoLocal? _destino;
+  String? _combustivel;
 
   bool _carregando = false;
   String? _erro;
   ResultadoRota? _resultado;
-  List<PostoSugerido> _postos = [];
+  List<ParadaSugerida> _paradas = [];
+  int _candidatosEncontrados = 0;
 
-  // Placa/tanque/autonomia do veículo (Fase 17/07-2) — pedido do Daniel:
-  // roteirização inteligente precisa saber a autonomia real do veículo pra
-  // calcular ONDE o motorista realmente precisa abastecer, em vez de um
-  // intervalo fixo de 80km igual pra qualquer caminhão.
   bool _carregandoVeiculos = true;
   List<VeiculoRoteirizacao> _veiculos = [];
   VeiculoRoteirizacao? _veiculoSelecionado;
@@ -55,6 +61,9 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _veiculos = veiculos;
       _veiculoSelecionado = veiculos.isNotEmpty ? veiculos.first : null;
       _carregandoVeiculos = false;
+      if (_veiculoSelecionado != null && _veiculoSelecionado!.tanque > 0) {
+        _combustivelInicialCtrl.text = _veiculoSelecionado!.tanque.toStringAsFixed(0);
+      }
     });
   }
 
@@ -62,6 +71,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   void dispose() {
     _origemCtrl.dispose();
     _destinoCtrl.dispose();
+    _combustivelInicialCtrl.dispose();
     super.dispose();
   }
 
@@ -121,11 +131,20 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       setState(() => _erro = 'Selecione a placa do veículo antes de calcular.');
       return;
     }
+    if (_veiculoSelecionado!.tanque <= 0 || _veiculoSelecionado!.autonomia <= 0) {
+      setState(() => _erro = 'O cadastro dessa placa não tem tanque/autonomia — fale com sua empresa.');
+      return;
+    }
+    if (_combustivel == null) {
+      setState(() => _erro = 'Selecione o combustível dessa viagem antes de calcular.');
+      return;
+    }
     setState(() {
       _carregando = true;
       _erro = null;
       _resultado = null;
-      _postos = [];
+      _paradas = [];
+      _candidatosEncontrados = 0;
     });
 
     final origemPonto = PontoRota(lat: _origem!.lat, lon: _origem!.lon);
@@ -141,24 +160,39 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       return;
     }
 
-    // Intervalo de abastecimento real do veículo (tanque × autonomia), com
-    // 20% de margem de segurança pra não deixar o motorista chegar no
-    // limite da reserva. Limitado entre 60km e 700km pra cobrir cadastros
-    // incompletos ou tanques enormes sem gerar poucos/muitos demais pontos.
-    final autonomiaKm = _veiculoSelecionado!.autonomiaKm;
-    final intervaloKm = autonomiaKm > 0 ? (autonomiaKm * 0.8).clamp(60.0, 700.0) : 80.0;
+    final candidatos = await buscarCandidatosAbastecimento(
+      coordenadas: resultado.coordenadas,
+      combustivel: _combustivel!,
+    );
 
-    final postos = await buscarPostosProximos(resultado.coordenadas, intervaloKm: intervaloKm);
+    final combustivelInicial = double.tryParse(_combustivelInicialCtrl.text.replaceAll(',', '.'));
+
+    final paradas = otimizarAbastecimento(
+      candidatos: candidatos,
+      capacidadeTanqueL: _veiculoSelecionado!.tanque,
+      autonomiaKmPorL: _veiculoSelecionado!.autonomia,
+      distanciaTotalRotaKm: resultado.distanciaKm,
+      // Perfil "Equilíbrio" do painel web — pondera preço, qualidade do
+      // posto e desvio da rota (sem expor os 4 perfis nesta tela mais
+      // simples do motorista).
+      pesos: const PesosOtimizacao(preco: 0.5, score: 0.3, desvio: 0.2),
+      combustivelInicialL: combustivelInicial,
+    );
+
     if (!mounted) return;
     setState(() {
       _carregando = false;
       _resultado = resultado;
-      _postos = postos;
+      _paradas = paradas;
+      _candidatosEncontrados = candidatos.length;
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final litrosTotal = _paradas.fold<int>(0, (s, p) => s + p.litrosSugeridos);
+    final custoTotal = _paradas.fold<double>(0, (s, p) => s + p.custoAbastecimento);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Roteirização')),
       drawer: const AppDrawer(),
@@ -166,7 +200,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Informe sua origem e destino pra ver a distância, o tempo estimado e os pontos de abastecimento recomendados pra sua placa.',
+            'Informe sua origem, destino e o combustível da viagem pra ver a distância, o tempo estimado e onde vale a pena abastecer no caminho.',
             style: TextStyle(color: Colors.black54),
           ),
           const SizedBox(height: 16),
@@ -174,12 +208,44 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
             carregando: _carregandoVeiculos,
             veiculos: _veiculos,
             selecionado: _veiculoSelecionado,
-            onSelecionar: (v) => setState(() => _veiculoSelecionado = v),
+            onSelecionar: (v) => setState(() {
+              _veiculoSelecionado = v;
+              if (v != null && v.tanque > 0) _combustivelInicialCtrl.text = v.tanque.toStringAsFixed(0);
+            }),
           ),
           const SizedBox(height: 16),
           _CampoLocal(label: 'Origem', controller: _origemCtrl, onBuscar: () => _buscarLocal(origem: true)),
           const SizedBox(height: 12),
           _CampoLocal(label: 'Destino', controller: _destinoCtrl, onBuscar: () => _buscarLocal(origem: false)),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<String>(
+                  initialValue: _combustivel,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Combustível'),
+                  items: produtosPosto
+                      .map((p) => DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _combustivel = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: TextField(
+                  controller: _combustivelInicialCtrl,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Combustível no tanque (L)',
+                    helperText: 'padrão: tanque cheio',
+                    helperMaxLines: 2,
+                  ),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 16),
           if (_erro != null) ...[
             Text(_erro!, style: const TextStyle(color: Colors.red)),
@@ -192,19 +258,38 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ),
           if (_resultado != null) ...[
             const SizedBox(height: 24),
-            _CartaoResultado(resultado: _resultado!, postos: _postos),
+            _CartaoResultado(resultado: _resultado!, paradas: _paradas),
           ],
-          if (_postos.isNotEmpty) ...[
+          if (_resultado != null) ...[
+            const SizedBox(height: 16),
+            _CartaoCustoTotal(litrosTotal: litrosTotal, custoTotal: custoTotal, numParadas: _paradas.length),
+          ],
+          if (_resultado != null && _paradas.isEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _candidatosEncontrados == 0 ? Colors.amber.withValues(alpha: 0.12) : AppTheme.frota50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _candidatosEncontrados == 0
+                    ? 'Nenhum posto com preço registrado pra "$_combustivel" dentro do corredor da rota.'
+                    : 'Com o tanque informado dá pra fazer essa viagem sem precisar abastecer.',
+                style: const TextStyle(fontSize: 12.5),
+              ),
+            ),
+          ],
+          if (_paradas.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const Text('Pontos de abastecimento recomendados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Text('Paradas sugeridas para abastecer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 4),
             const Text(
-              'Calculados pela autonomia real da sua placa (tanque × km/l do cadastro). '
-              'Mostramos o posto mais próximo de cada ponto — ainda não comparamos preço entre postos.',
+              'Ordem calculada pelo mesmo motor de otimização do painel web: pondera preço, qualidade do posto e desvio da rota.',
               style: TextStyle(fontSize: 11.5, color: Colors.black54),
             ),
             const SizedBox(height: 8),
-            ..._postos.map((p) => _CartaoPosto(posto: p)),
+            for (var i = 0; i < _paradas.length; i++) _CartaoParada(numero: i + 1, parada: _paradas[i]),
           ],
         ],
       ),
@@ -352,9 +437,9 @@ class _CampoLocal extends StatelessWidget {
 
 class _CartaoResultado extends StatelessWidget {
   final ResultadoRota resultado;
-  final List<PostoSugerido> postos;
+  final List<ParadaSugerida> paradas;
 
-  const _CartaoResultado({required this.resultado, required this.postos});
+  const _CartaoResultado({required this.resultado, required this.paradas});
 
   @override
   Widget build(BuildContext context) {
@@ -366,6 +451,14 @@ class _CartaoResultado extends StatelessWidget {
     final origem = pontosRota.first;
     final destino = pontosRota.last;
     final limites = LatLngBounds.fromPoints(pontosRota);
+
+    // Bandeiras distintas entre as paradas sugeridas — vira a legenda de
+    // cores do mapa (mesma cor calculada por corPorBandeira, igual ao web).
+    final legenda = <String, CorMarcador>{};
+    for (final p in paradas) {
+      final label = formatarLabelBandeira(p.posto.bandeira);
+      legenda[label] = corPorBandeira(p.posto.bandeira);
+    }
 
     return Card(
       child: Padding(
@@ -385,9 +478,9 @@ class _CartaoResultado extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             // Mapa OSM de verdade (tiles públicos, sem chave de API) —
-            // pedido do Daniel (17/07): "quero o mapa OSM assim como tenho
-            // na visão do cliente na web", com origem/destino/postos
-            // plotados igual ao planejador do painel.
+            // marcadores dos postos coloridos por bandeira, igual ao
+            // planejador do painel web (Ipiranga=amarelo, Shell/Raízen=
+            // vermelho, BR/Petrobras/Vibra=verde).
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
               child: SizedBox(
@@ -419,12 +512,16 @@ class _CartaoResultado extends StatelessWidget {
                           height: 36,
                           child: const Icon(Icons.location_on, color: AppTheme.statusInativo, size: 34),
                         ),
-                        for (final posto in postos)
+                        for (final parada in paradas)
                           Marker(
-                            point: LatLng(posto.lat, posto.lon),
+                            point: LatLng(parada.posto.lat, parada.posto.lon),
                             width: 30,
                             height: 30,
-                            child: const Icon(Icons.local_gas_station, color: AppTheme.frota700, size: 24),
+                            child: Icon(
+                              Icons.local_gas_station,
+                              color: coresHexBandeira[corPorBandeira(parada.posto.bandeira)],
+                              size: 26,
+                            ),
                           ),
                       ],
                     ),
@@ -437,9 +534,49 @@ class _CartaoResultado extends StatelessWidget {
               '© OpenStreetMap contributors',
               style: TextStyle(fontSize: 9, color: Colors.black38),
             ),
+            if (legenda.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 12,
+                runSpacing: 6,
+                children: legenda.entries
+                    .map((e) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: BoxDecoration(color: coresHexBandeira[e.value], shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(e.key, style: const TextStyle(fontSize: 11.5)),
+                          ],
+                        ))
+                    .toList(),
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CartaoCustoTotal extends StatelessWidget {
+  final int litrosTotal;
+  final double custoTotal;
+  final int numParadas;
+
+  const _CartaoCustoTotal({required this.litrosTotal, required this.custoTotal, required this.numParadas});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: _Metrica(icone: Icons.local_gas_station_outlined, valor: '$litrosTotal L', label: 'Litros totais')),
+        Expanded(child: _Metrica(icone: Icons.payments_outlined, valor: _formatoMoeda.format(custoTotal), label: 'Custo estimado')),
+        Expanded(child: _Metrica(icone: Icons.alt_route, valor: '$numParadas', label: 'Paradas')),
+      ],
     );
   }
 }
@@ -457,38 +594,74 @@ class _Metrica extends StatelessWidget {
       children: [
         Icon(icone, color: AppTheme.frota600, size: 28),
         const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(valor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
-          ],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(valor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), overflow: TextOverflow.ellipsis),
+              Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
+            ],
+          ),
         ),
       ],
     );
   }
 }
 
-class _CartaoPosto extends StatelessWidget {
-  final PostoSugerido posto;
+class _CartaoParada extends StatelessWidget {
+  final int numero;
+  final ParadaSugerida parada;
 
-  const _CartaoPosto({required this.posto});
+  const _CartaoParada({required this.numero, required this.parada});
 
   @override
   Widget build(BuildContext context) {
+    final posto = parada.posto;
+    final cor = coresHexBandeira[corPorBandeira(posto.bandeira)];
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const Icon(Icons.local_gas_station, color: AppTheme.frota600),
-        title: Text(posto.razaoSocial, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        subtitle: Text(
-          [
-            if (posto.bandeira != null) posto.bandeira!,
-            if (posto.municipio != null) posto.municipio!,
-          ].join(' • '),
-          style: const TextStyle(fontSize: 12),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CircleAvatar(radius: 14, backgroundColor: cor, child: Text('$numero', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(posto.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(
+                    [formatarLabelBandeira(posto.bandeira), if (posto.municipio != null) posto.municipio!].join(' • '),
+                    style: const TextStyle(fontSize: 12, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _motivoLabel[parada.motivo] ?? parada.motivo,
+                    style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontStyle: FontStyle.italic),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 14,
+                    runSpacing: 4,
+                    children: [
+                      Text('${_formatoKm.format(posto.km)} km', style: const TextStyle(fontSize: 12)),
+                      Text('${parada.litrosSugeridos} L', style: const TextStyle(fontSize: 12)),
+                      Text('${posto.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12)),
+                      Text(_formatoMoeda.format(parada.custoAbastecimento), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Chega com ${parada.pctChegada.toStringAsFixed(0)}% do tanque · sai com ${parada.pctApos.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        trailing: Text('${_formatoKm.format(posto.distanciaKm)} km', style: const TextStyle(fontSize: 12, color: Colors.black54)),
       ),
     );
   }
