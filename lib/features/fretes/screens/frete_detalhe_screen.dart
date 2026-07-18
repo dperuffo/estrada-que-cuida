@@ -228,13 +228,47 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   // em abasteceu/chegou_destino/concluido/ocorrencia (a RPC também valida
   // isso do lado do banco — ver migração foto_evidencia_checkpoints_frete),
   // opcional em saiu_origem/chegou_posto/parada.
-  Future<Uint8List?> _tirarFoto() async {
+  Future<Uint8List?> _capturarFoto() async {
     try {
       final foto = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70, maxWidth: 1600);
       if (foto == null) return null;
       return await foto.readAsBytes();
     } catch (_) {
       return null;
+    }
+  }
+
+  // Fase foto-evidência-checkpoints-2 — pedido do Daniel: "o aplicativo
+  // precisa abrir automaticamente a câmera, o usuário tira a foto, confirma,
+  // e a foto é enviada como evidência". `ImageSource.camera` já manda o
+  // navegador abrir a câmera direto (sem passar pela galeria); o que faltava
+  // era o passo de CONFIRMAR — antes a foto ia direto pro upload assim que
+  // tirada, sem chance de ver se saiu ruim e tirar de novo antes de virar
+  // evidência pro cliente decidir o pagamento do frete.
+  Future<Uint8List?> _tirarFoto() async {
+    while (true) {
+      final bytes = await _capturarFoto();
+      if (bytes == null || !mounted) return null;
+
+      final confirmou = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Usar esta foto?'),
+          content: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.memory(bytes, fit: BoxFit.contain),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Tirar de novo')),
+            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+          ],
+        ),
+      );
+      if (confirmou == true) return bytes;
+      if (confirmou == null) return null; // fechou o diálogo sem escolher — cancela
+      // false: volta pro topo do loop e abre a câmera de novo
+      if (!mounted) return null;
     }
   }
 
