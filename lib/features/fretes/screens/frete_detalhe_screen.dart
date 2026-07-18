@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -26,6 +27,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   List<EventoFrete> _eventos = [];
   List<AvaliacaoFrete> _avaliacoes = [];
   bool _processando = false;
+  // Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa
+  // saber se o ponto de coleta está longe dele ANTES de decidir aceitar.
+  Position? _minhaPosicao;
 
   @override
   void initState() {
@@ -55,6 +59,11 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       final postos = frete != null ? await buscarPostosRecomendados(widget.freteId) : <PostoRecomendado>[];
       final eventos = frete != null ? await buscarEventosFrete(widget.freteId) : <EventoFrete>[];
       final avaliacoes = frete != null && frete.status == 'concluido' ? await buscarAvaliacoesFrete(widget.freteId) : <AvaliacaoFrete>[];
+      // Só pergunta a localização quando ainda faz sentido decidir (mercado
+      // aberto ou atribuição direta aguardando confirmação) — depois disso
+      // o motorista já aceitou, não precisa mais do prompt do navegador.
+      final precisaDistancia = frete != null && (frete.status == 'disponivel' || frete.status == 'aguardando_confirmacao');
+      final posicao = precisaDistancia && _minhaPosicao == null ? await obterLocalizacaoAtual() : _minhaPosicao;
       if (!mounted) return;
       setState(() {
         _frete = frete;
@@ -62,6 +71,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         _postos = postos;
         _eventos = eventos;
         _avaliacoes = avaliacoes;
+        _minhaPosicao = posicao;
         _carregando = false;
       });
     } catch (e) {
@@ -124,7 +134,13 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      _CartaoInfo(frete: _frete!),
+                      _CartaoInfo(frete: _frete!, minhaPosicao: _minhaPosicao),
+                      if (_frete!.coleta.preenchido || _frete!.entrega.preenchido) ...[
+                        const SizedBox(height: 12),
+                        _BlocoEndereco(titulo: '📍 Coleta', endereco: _frete!.coleta),
+                        const SizedBox(height: 8),
+                        _BlocoEndereco(titulo: '📍 Entrega', endereco: _frete!.entrega),
+                      ],
                       const SizedBox(height: 20),
                       if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
                       if (_frete!.status == 'disponivel') _blocoNegociacao(),
@@ -567,10 +583,15 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
 
 class _CartaoInfo extends StatelessWidget {
   final Frete frete;
-  const _CartaoInfo({required this.frete});
+  final Position? minhaPosicao;
+  const _CartaoInfo({required this.frete, this.minhaPosicao});
 
   @override
   Widget build(BuildContext context) {
+    final posicao = minhaPosicao;
+    final distanciaAteColeta =
+        posicao == null ? null : distanciaKm(posicao.latitude, posicao.longitude, frete.origemLat, frete.origemLon);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -580,6 +601,13 @@ class _CartaoInfo extends StatelessWidget {
             Text(frete.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
             const SizedBox(height: 6),
             Text('${frete.origemLabel} → ${frete.destinoLabel}', style: const TextStyle(fontSize: 14)),
+            if (distanciaAteColeta != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até o ponto de coleta',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.frota700),
+              ),
+            ],
             const SizedBox(height: 10),
             Text(
               _formatoMoeda.format(frete.valorOferecido),
@@ -596,10 +624,60 @@ class _CartaoInfo extends StatelessWidget {
                 if (frete.dataSaidaPrevista != null) Text('Saída: ${frete.dataSaidaPrevista}', style: const TextStyle(fontSize: 12.5)),
               ],
             ),
+            if (frete.cargaComprimentoM != null || frete.cargaLarguraM != null || frete.cargaAlturaM != null) ...[
+              const SizedBox(height: 6),
+              Text(
+                '📐 ${frete.cargaComprimentoM ?? '—'}m × ${frete.cargaLarguraM ?? '—'}m × ${frete.cargaAlturaM ?? '—'}m (C×L×A)',
+                style: const TextStyle(fontSize: 12, color: Colors.black54),
+              ),
+            ],
             if (frete.descricao != null) ...[
               const SizedBox(height: 10),
               Text(frete.descricao!, style: const TextStyle(fontSize: 13, color: Colors.black87)),
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BlocoEndereco extends StatelessWidget {
+  final String titulo;
+  final EnderecoFrete endereco;
+  const _BlocoEndereco({required this.titulo, required this.endereco});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!endereco.preenchido) return const SizedBox.shrink();
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 4),
+            Text(endereco.linhaEndereco, style: const TextStyle(fontSize: 13)),
+            if (endereco.cep != null) Text('CEP ${endereco.cep}', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+            if (endereco.referencia != null)
+              Text('Referência: ${endereco.referencia}', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+            if (endereco.data != null || endereco.hora != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '🗓️ ${endereco.data ?? 'Data não informada'}${endereco.hora != null ? ' às ${endereco.hora!.substring(0, 5)}' : ''}',
+                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                ),
+              ),
+            if (endereco.contatoNome != null || endereco.contatoTelefone != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  '👤 ${endereco.contatoNome ?? 'Contato'}${endereco.contatoTelefone != null ? ' — ${endereco.contatoTelefone}' : ''}',
+                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                ),
+              ),
           ],
         ),
       ),

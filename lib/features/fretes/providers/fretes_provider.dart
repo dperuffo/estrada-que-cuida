@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'dart:typed_data';
+import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 
@@ -32,6 +34,14 @@ class Frete {
   final double valorOferecido;
   final String? motoristaId;
   final DateTime criadoEm;
+  // Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa de
+  // endereço completo, horário e dimensões pra decidir se aceita o frete
+  // (origemLabel/destinoLabel acima são só a cidade, pro mapa/km).
+  final EnderecoFrete coleta;
+  final EnderecoFrete entrega;
+  final double? cargaComprimentoM;
+  final double? cargaLarguraM;
+  final double? cargaAlturaM;
 
   const Frete({
     required this.id,
@@ -52,6 +62,11 @@ class Frete {
     required this.valorOferecido,
     this.motoristaId,
     required this.criadoEm,
+    required this.coleta,
+    required this.entrega,
+    this.cargaComprimentoM,
+    this.cargaLarguraM,
+    this.cargaAlturaM,
   });
 
   factory Frete.fromMap(Map<String, dynamic> m) => Frete(
@@ -73,7 +88,105 @@ class Frete {
         valorOferecido: (m['valor_oferecido'] as num).toDouble(),
         motoristaId: m['motorista_id'] as String?,
         criadoEm: DateTime.parse(m['criado_em'] as String),
+        coleta: EnderecoFrete.fromMap(m, 'coleta'),
+        entrega: EnderecoFrete.fromMap(m, 'entrega'),
+        cargaComprimentoM: (m['carga_comprimento_m'] as num?)?.toDouble(),
+        cargaLarguraM: (m['carga_largura_m'] as num?)?.toDouble(),
+        cargaAlturaM: (m['carga_altura_m'] as num?)?.toDouble(),
       );
+}
+
+class EnderecoFrete {
+  final String? rua;
+  final String? numero;
+  final String? bairro;
+  final String? cidade;
+  final String? uf;
+  final String? cep;
+  final String? referencia;
+  final String? data;
+  final String? hora;
+  final String? contatoNome;
+  final String? contatoTelefone;
+
+  const EnderecoFrete({
+    this.rua,
+    this.numero,
+    this.bairro,
+    this.cidade,
+    this.uf,
+    this.cep,
+    this.referencia,
+    this.data,
+    this.hora,
+    this.contatoNome,
+    this.contatoTelefone,
+  });
+
+  bool get preenchido => rua != null || cidade != null;
+
+  String get linhaEndereco {
+    final partes = <String>[
+      ?(rua != null ? (numero != null ? '$rua, $numero' : rua) : null),
+      ?bairro,
+      ?(cidade != null ? (uf != null ? '$cidade/$uf' : cidade) : null),
+    ];
+    return partes.join(' — ');
+  }
+
+  factory EnderecoFrete.fromMap(Map<String, dynamic> m, String prefixo) => EnderecoFrete(
+        rua: m['${prefixo}_rua'] as String?,
+        numero: m['${prefixo}_numero'] as String?,
+        bairro: m['${prefixo}_bairro'] as String?,
+        cidade: m['${prefixo}_cidade'] as String?,
+        uf: m['${prefixo}_uf'] as String?,
+        cep: m['${prefixo}_cep'] as String?,
+        referencia: m['${prefixo}_referencia'] as String?,
+        data: m['${prefixo}_data'] as String?,
+        hora: m['${prefixo}_hora'] as String?,
+        contatoNome: m['${prefixo}_contato_nome'] as String?,
+        contatoTelefone: m['${prefixo}_contato_telefone'] as String?,
+      );
+}
+
+// Fase Fretes-Dados-Completos — distância em linha reta (haversine) do
+// motorista até o ponto de coleta, pra ele decidir se vale a pena aceitar
+// antes mesmo de abrir o frete. Mesma fórmula usada na Roteirização.
+double distanciaKm(double lat1, double lon1, double lat2, double lon2) {
+  const raioTerraKm = 6371.0;
+  final dLat = _paraRad(lat2 - lat1);
+  final dLon = _paraRad(lon2 - lon1);
+  final a = sin(dLat / 2) * sin(dLat / 2) +
+      cos(_paraRad(lat1)) * cos(_paraRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
+  final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+  return raioTerraKm * c;
+}
+
+double _paraRad(double graus) => graus * (pi / 180);
+
+// Fase Fretes-Dados-Completos — best-effort: se o motorista negar a
+// permissão, o navegador não suportar geolocalização, ou o serviço de
+// localização estiver desligado no aparelho, simplesmente não mostra a
+// distância (não pode travar a lista de fretes por causa disso).
+Future<Position?> obterLocalizacaoAtual() async {
+  try {
+    final servicoAtivo = await Geolocator.isLocationServiceEnabled();
+    if (!servicoAtivo) return null;
+
+    var permissao = await Geolocator.checkPermission();
+    if (permissao == LocationPermission.denied) {
+      permissao = await Geolocator.requestPermission();
+    }
+    if (permissao == LocationPermission.denied || permissao == LocationPermission.deniedForever) {
+      return null;
+    }
+
+    return await Geolocator.getCurrentPosition(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.low),
+    );
+  } catch (_) {
+    return null;
+  }
 }
 
 class RodadaNegociacao {

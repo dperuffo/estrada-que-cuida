@@ -60,6 +60,13 @@ dependencies:
   # cliente, que é pra upload de arquivo já existente por quem trabalha
   # de escritório).
   image_picker: ^1.1.2
+  # Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa saber
+  # se o ponto de coleta está longe dele antes de aceitar o frete. No build
+  # web (único alvo deste app) usa a API de geolocalização do próprio
+  # navegador, com o prompt de permissão nativo do browser — não precisa de
+  # nenhuma configuração extra de Android/iOS porque este app não tem esses
+  # alvos nativos.
+  geolocator: ^13.0.2
 
 dev_dependencies:
   flutter_test:

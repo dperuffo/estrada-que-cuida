@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -33,6 +34,11 @@ class _FretesScreenState extends State<FretesScreen> {
   List<Frete> _mercado = [];
   List<(Negociacao, Frete)> _negociando = [];
   List<Frete> _atribuidos = [];
+  // Fase Fretes-Dados-Completos — pedido do Daniel: "pode ser que o
+  // endereço de coleta esteja longe dele" — pega a localização atual uma
+  // vez ao abrir a lista pra mostrar "X km até a coleta" em cada card,
+  // antes mesmo do motorista abrir o frete pra decidir.
+  Position? _minhaPosicao;
 
   @override
   void initState() {
@@ -49,12 +55,14 @@ class _FretesScreenState extends State<FretesScreen> {
       final mercado = await buscarFretesMercado();
       final negociando = await buscarMinhasNegociacoes();
       final atribuidos = await buscarMeusFretesAtribuidos();
+      final posicao = await obterLocalizacaoAtual();
       if (!mounted) return;
       final idsNegociando = negociando.map((n) => n.$2.id).toSet();
       setState(() {
         _mercado = mercado.where((f) => !idsNegociando.contains(f.id)).toList();
         _negociando = negociando;
         _atribuidos = atribuidos;
+        _minhaPosicao = posicao;
         _carregando = false;
       });
     } catch (e) {
@@ -94,7 +102,7 @@ class _FretesScreenState extends State<FretesScreen> {
                 children: [
                   if (_atribuidos.isNotEmpty) ...[
                     const _TituloSecao('Meus fretes'),
-                    ..._atribuidos.map((f) => _CardFrete(frete: f, onTap: () => _abrir(f.id))),
+                    ..._atribuidos.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
                     const SizedBox(height: 20),
                   ],
                   if (_negociando.isNotEmpty) ...[
@@ -102,6 +110,7 @@ class _FretesScreenState extends State<FretesScreen> {
                     ..._negociando.map(
                       (par) => _CardFrete(
                         frete: par.$2,
+                        minhaPosicao: _minhaPosicao,
                         subtitulo: 'Rodada ${par.$1.rodadaAtual} · ${_labelNegociacao(par.$1.status)}',
                         onTap: () => _abrir(par.$2.id),
                       ),
@@ -114,7 +123,7 @@ class _FretesScreenState extends State<FretesScreen> {
                       padding: EdgeInsets.symmetric(vertical: 24),
                       child: Text('Nenhum frete disponível no momento.', style: TextStyle(color: Colors.black54)),
                     ),
-                  ..._mercado.map((f) => _CardFrete(frete: f, onTap: () => _abrir(f.id))),
+                  ..._mercado.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
                 ],
               ),
             ),
@@ -160,12 +169,17 @@ class _TituloSecao extends StatelessWidget {
 class _CardFrete extends StatelessWidget {
   final Frete frete;
   final String? subtitulo;
+  final Position? minhaPosicao;
   final VoidCallback onTap;
 
-  const _CardFrete({required this.frete, this.subtitulo, required this.onTap});
+  const _CardFrete({required this.frete, this.subtitulo, this.minhaPosicao, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final posicao = minhaPosicao;
+    final distanciaAteColeta =
+        posicao == null ? null : distanciaKm(posicao.latitude, posicao.longitude, frete.origemLat, frete.origemLon);
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
@@ -189,6 +203,20 @@ class _CardFrete extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text('${frete.origemLabel} → ${frete.destinoLabel}', style: const TextStyle(fontSize: 12.5, color: Colors.black87)),
+              if (distanciaAteColeta != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até a coleta',
+                  style: const TextStyle(fontSize: 11.5, color: AppTheme.frota700, fontWeight: FontWeight.w600),
+                ),
+              ],
+              if (frete.coleta.data != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '🗓️ Coleta: ${frete.coleta.data}${frete.coleta.hora != null ? ' às ${frete.coleta.hora!.substring(0, 5)}' : ''}',
+                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                ),
+              ],
               const SizedBox(height: 6),
               Text(
                 subtitulo ?? _labelStatus[frete.status] ?? frete.status,
