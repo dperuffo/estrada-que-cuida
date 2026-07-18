@@ -231,9 +231,19 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   Future<Uint8List?> _capturarFoto() async {
     try {
       final foto = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70, maxWidth: 1600);
-      if (foto == null) return null;
+      if (foto == null) return null; // usuário cancelou — não é erro, não mostra nada
       return await foto.readAsBytes();
-    } catch (_) {
+    } catch (e) {
+      // Fase foto-evidência-checkpoints-3 — achado do Daniel: "não está
+      // abrindo o fluxo da câmera" e o app não dizia por quê (erro era
+      // engolido em silêncio). Mostra o motivo real agora — no navegador,
+      // isso costuma ser permissão de câmera negada/bloqueada ou o
+      // dispositivo não tendo câmera disponível.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não consegui abrir a câmera: $e')),
+        );
+      }
       return null;
     }
   }

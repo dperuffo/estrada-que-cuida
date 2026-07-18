@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
-import '../../../core/services/supabase_service.dart';
 import '../../../core/widgets/app_drawer.dart';
 
 // Fase MFA-opcional — tela de "Segurança": mostra se já existe um fator
@@ -77,20 +76,20 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       return;
     }
 
-    // auth.users.phone vem sem o "+" (mesmo formato usado no vínculo por
-    // telefone) — telefoneE164 aqui precisa do "+", igual ao login normal.
-    final telefone = SupabaseService.client.auth.currentUser?.phone;
-    if (telefone == null || telefone.isEmpty) {
-      setState(() => _erroSenha = 'Não consegui identificar seu telefone. Saia e entre de novo.');
-      return;
-    }
-
     setState(() {
       _alterandoSenha = true;
       _erroSenha = null;
     });
     try {
-      await AuthService.entrarComSenha(telefoneE164: '+$telefone', senha: atual);
+      final senhaOk = await AuthService.verificarSenhaAtual(atual);
+      if (!senhaOk) {
+        if (!mounted) return;
+        setState(() {
+          _erroSenha = 'Senha atual incorreta. Confira e tente de novo.';
+          _alterandoSenha = false;
+        });
+        return;
+      }
       await AuthService.definirSenha(nova);
       if (!mounted) return;
       setState(() {
@@ -101,8 +100,9 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha alterada com sucesso!')));
     } catch (e) {
+      if (!mounted) return;
       setState(() {
-        _erroSenha = 'Senha atual incorreta. Confira e tente de novo.';
+        _erroSenha = 'Não consegui alterar sua senha agora. Tente de novo em instantes.';
         _alterandoSenha = false;
       });
     }

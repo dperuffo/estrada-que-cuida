@@ -58,6 +58,20 @@ class AuthService {
     return _client.auth.signInWithPassword(phone: telefoneE164, password: senha);
   }
 
+  /// Confirma a senha ATUAL sem criar uma sessão nova — achado real: usar
+  /// `entrarComSenha` (signInWithPassword) só pra "verificar" a senha atual
+  /// dentro do fluxo de troca disparava um evento SIGNED_IN, e pra
+  /// motorista com TOTP (2FA) ativo isso derrubava a sessão de volta pro
+  /// nível aal1 e o GoRouter redirecionava à força pra tela de MFA no meio
+  /// da troca de senha — a nova senha só gravava se `updateUser` vencesse
+  /// essa corrida contra o redirect, e nem sempre vencia. RPC
+  /// `motorista_verificar_senha_atual` compara o hash bcrypt direto (mesmo
+  /// mecanismo do GoTrue) sem mexer na sessão.
+  static Future<bool> verificarSenhaAtual(String senha) async {
+    final resp = await _client.rpc('motorista_verificar_senha_atual', params: {'p_senha': senha});
+    return resp as bool? ?? false;
+  }
+
   /// Define (ou redefine) a senha do motorista já autenticado — chamado
   /// tanto na criação da senha no primeiro acesso quanto no fluxo de
   /// "esqueci minha senha" (que reusa o SMS como o "código temporário").
