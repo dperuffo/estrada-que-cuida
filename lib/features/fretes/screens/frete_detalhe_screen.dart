@@ -6,6 +6,8 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../roteirizacao/providers/roteirizacao_provider.dart';
+import '../../roteirizacao/utils/roteirizacao_constantes.dart';
 import '../providers/fretes_provider.dart';
 
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -140,6 +142,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                         _BlocoEndereco(titulo: '📍 Coleta', endereco: _frete!.coleta),
                         const SizedBox(height: 8),
                         _BlocoEndereco(titulo: '📍 Entrega', endereco: _frete!.entrega),
+                      ],
+                      if (_frete!.status == 'disponivel' || _frete!.status == 'aguardando_confirmacao') ...[
+                        const SizedBox(height: 12),
+                        _CalculadoraLucro(frete: _frete!),
                       ],
                       const SizedBox(height: 20),
                       if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
@@ -631,6 +637,17 @@ class _CartaoInfo extends StatelessWidget {
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
+            if (frete.veiculosAceitos.isNotEmpty || frete.carroceriasAceitas.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  ...frete.veiculosAceitos.map((v) => _tagDetalhe(v, AppTheme.frota700)),
+                  ...frete.carroceriasAceitas.map((c) => _tagDetalhe(c, Colors.black54)),
+                ],
+              ),
+            ],
             if (frete.descricao != null) ...[
               const SizedBox(height: 10),
               Text(frete.descricao!, style: const TextStyle(fontSize: 13, color: Colors.black87)),
@@ -641,6 +658,217 @@ class _CartaoInfo extends StatelessWidget {
     );
   }
 }
+
+// Fase Fretes-Dados-Completos — pedido do Daniel (inspirado em telas de
+// outras plataformas de frete): "antes de pegar a estrada, calcule seus
+// custos e veja o quanto você vai lucrar". Usa o mesmo tanque/autonomia já
+// cadastrados do veículo (Roteirização) e o mesmo preço médio ANP por
+// estado — nada digitado que já existe em algum cadastro.
+class _CalculadoraLucro extends StatefulWidget {
+  final Frete frete;
+  const _CalculadoraLucro({required this.frete});
+
+  @override
+  State<_CalculadoraLucro> createState() => _CalculadoraLucroState();
+}
+
+class _CalculadoraLucroState extends State<_CalculadoraLucro> {
+  List<VeiculoRoteirizacao> _veiculos = [];
+  bool _carregandoVeiculos = true;
+  VeiculoRoteirizacao? _veiculoSelecionado;
+  String _combustivel = produtosPosto.first;
+  late final TextEditingController _kmCtrl;
+
+  bool _calculando = false;
+  double? _precoMedio;
+  String? _erro;
+
+  @override
+  void initState() {
+    super.initState();
+    final kmInicial = widget.frete.kmEstimado ??
+        distanciaKm(
+          widget.frete.origemLat,
+          widget.frete.origemLon,
+          widget.frete.destinoLat,
+          widget.frete.destinoLon,
+        );
+    _kmCtrl = TextEditingController(text: kmInicial.toStringAsFixed(0));
+    _carregarVeiculos();
+  }
+
+  @override
+  void dispose() {
+    _kmCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _carregarVeiculos() async {
+    final veiculos = await buscarMeusVeiculos();
+    if (!mounted) return;
+    setState(() {
+      _veiculos = veiculos;
+      _veiculoSelecionado = veiculos.isNotEmpty ? veiculos.first : null;
+      _carregandoVeiculos = false;
+    });
+  }
+
+  String? _estadoDoLabel(String label) {
+    final partes = label.split(' – ');
+    return partes.length > 1 ? partes.last.trim() : null;
+  }
+
+  Future<void> _calcular() async {
+    final veiculo = _veiculoSelecionado;
+    if (veiculo == null || veiculo.autonomia <= 0) {
+      setState(() => _erro = 'Selecione um veículo com autonomia cadastrada.');
+      return;
+    }
+    final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.'));
+    if (km == null || km <= 0) {
+      setState(() => _erro = 'Informe uma distância válida.');
+      return;
+    }
+    setState(() {
+      _calculando = true;
+      _erro = null;
+    });
+    final categoria = produtoParaCategoriaAnp[_combustivel] ?? _combustivel;
+    final estado = _estadoDoLabel(widget.frete.origemLabel);
+    final preco = await buscarPrecoMedioCombustivelPorEstado(categoria, estado);
+    if (!mounted) return;
+    setState(() {
+      _precoMedio = preco;
+      _calculando = false;
+      if (preco == null) _erro = 'Não achei preço de referência pra esse combustível agora.';
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final km = double.tryParse(_kmCtrl.text.replaceAll(',', '.'));
+    final veiculo = _veiculoSelecionado;
+    final preco = _precoMedio;
+    double? custoEstimado;
+    double? lucroEstimado;
+    double? margemPct;
+    if (km != null && veiculo != null && veiculo.autonomia > 0 && preco != null) {
+      custoEstimado = (km / veiculo.autonomia) * preco;
+      lucroEstimado = widget.frete.valorOferecido - custoEstimado;
+      margemPct = widget.frete.valorOferecido > 0 ? (lucroEstimado / widget.frete.valorOferecido) * 100 : null;
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('🧮 Calculadora de lucro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 2),
+            const Text(
+              'Antes de decidir, veja quanto esse frete deve custar de combustível e o quanto sobra pra você.',
+              style: TextStyle(fontSize: 11, color: Colors.black54),
+            ),
+            const SizedBox(height: 10),
+            if (_carregandoVeiculos)
+              const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+            else if (_veiculos.isEmpty)
+              const Text(
+                'Cadastre um veículo com tanque e autonomia (mesmo cadastro da Roteirização) pra usar a calculadora.',
+                style: TextStyle(fontSize: 12, color: Colors.black54),
+              )
+            else ...[
+              DropdownButtonFormField<VeiculoRoteirizacao>(
+                initialValue: _veiculoSelecionado,
+                decoration: const InputDecoration(labelText: 'Veículo', isDense: true, border: OutlineInputBorder()),
+                items: _veiculos
+                    .map((v) => DropdownMenuItem(
+                          value: v,
+                          child: Text('${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}', style: const TextStyle(fontSize: 13)),
+                        ))
+                    .toList(),
+                onChanged: (v) => setState(() => _veiculoSelecionado = v),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _combustivel,
+                      decoration: const InputDecoration(labelText: 'Combustível', isDense: true, border: OutlineInputBorder()),
+                      items: produtosPosto.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
+                      onChanged: (v) => setState(() => _combustivel = v ?? _combustivel),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: _kmCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(labelText: 'Km', isDense: true, border: OutlineInputBorder()),
+                      onChanged: (_) => setState(() {}),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: _calculando ? null : _calcular,
+                child: Text(_calculando ? 'Calculando...' : 'Calcular'),
+              ),
+              if (_erro != null) ...[
+                const SizedBox(height: 6),
+                Text(_erro!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+              ],
+              if (custoEstimado != null && lucroEstimado != null) ...[
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Custo estimado de combustível', style: TextStyle(fontSize: 12.5)),
+                    Text(_formatoMoeda.format(custoEstimado), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Lucro estimado', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    Text(
+                      _formatoMoeda.format(lucroEstimado),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: lucroEstimado >= 0 ? AppTheme.statusAtivo : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+                if (margemPct != null) ...[
+                  const SizedBox(height: 2),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Text('${margemPct.toStringAsFixed(0)}% de margem sobre o valor do frete', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                  ),
+                ],
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _tagDetalhe(String texto, Color cor) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
+      child: Text(texto, style: TextStyle(fontSize: 10, color: cor)),
+    );
 
 class _BlocoEndereco extends StatelessWidget {
   final String titulo;

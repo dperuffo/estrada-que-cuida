@@ -132,6 +132,47 @@ Future<List<VeiculoRoteirizacao>> buscarMeusVeiculos() async {
   }
 }
 
+/// Fase Fretes-Dados-Completos — pedido do Daniel (inspirado em telas de
+/// outras plataformas de frete): calculadora de lucro pro motorista, "antes
+/// de pegar a estrada, calcule seus custos e veja o quanto você vai
+/// lucrar". Preço médio do combustível pelo NOME do estado (não a sigla) —
+/// os endereços de frete guardam "cidade/estado" por extenso, então evita
+/// precisar de outro de-para: normaliza o texto e casa direto com os
+/// valores de `ufParaEstadoAnp` (já em maiúsculas sem acento). Cai pro nível
+/// Brasil se não achar preço daquele estado especificamente.
+Future<double?> buscarPrecoMedioCombustivelPorEstado(String categoriaAnp, String? nomeEstado) async {
+  try {
+    if (nomeEstado != null && nomeEstado.trim().isNotEmpty) {
+      final estadoNormalizado = normalizarTexto(nomeEstado).toUpperCase();
+      final estadoValido = ufParaEstadoAnp.values.contains(estadoNormalizado);
+      if (estadoValido) {
+        final linha = await SupabaseService.client
+            .from('anp_precos_referencia')
+            .select('preco_medio')
+            .eq('nivel', 'estado')
+            .eq('produto', categoriaAnp)
+            .eq('estado', estadoNormalizado)
+            .order('data_final', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        final preco = (linha?['preco_medio'] as num?)?.toDouble();
+        if (preco != null) return preco;
+      }
+    }
+    final linhaBrasil = await SupabaseService.client
+        .from('anp_precos_referencia')
+        .select('preco_medio')
+        .eq('nivel', 'brasil')
+        .eq('produto', categoriaAnp)
+        .order('data_final', ascending: false)
+        .limit(1)
+        .maybeSingle();
+    return (linhaBrasil?['preco_medio'] as num?)?.toDouble();
+  } catch (_) {
+    return null;
+  }
+}
+
 /// Registra o evento "rota_calculada" pra alimentar a missão de gamificação
 /// correspondente (fidelidade_missoes.tipo_metrica = 'rotas_calculadas') —
 /// silencioso de propósito: uma falha aqui não pode atrapalhar o motorista

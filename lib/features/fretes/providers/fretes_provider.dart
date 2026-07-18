@@ -42,6 +42,8 @@ class Frete {
   final double? cargaComprimentoM;
   final double? cargaLarguraM;
   final double? cargaAlturaM;
+  final List<String> veiculosAceitos;
+  final List<String> carroceriasAceitas;
 
   const Frete({
     required this.id,
@@ -67,6 +69,8 @@ class Frete {
     this.cargaComprimentoM,
     this.cargaLarguraM,
     this.cargaAlturaM,
+    this.veiculosAceitos = const [],
+    this.carroceriasAceitas = const [],
   });
 
   factory Frete.fromMap(Map<String, dynamic> m) => Frete(
@@ -93,6 +97,8 @@ class Frete {
         cargaComprimentoM: (m['carga_comprimento_m'] as num?)?.toDouble(),
         cargaLarguraM: (m['carga_largura_m'] as num?)?.toDouble(),
         cargaAlturaM: (m['carga_altura_m'] as num?)?.toDouble(),
+        veiculosAceitos: (m['veiculos_aceitos'] as List?)?.map((v) => v as String).toList() ?? const [],
+        carroceriasAceitas: (m['carrocerias_aceitas'] as List?)?.map((v) => v as String).toList() ?? const [],
       );
 }
 
