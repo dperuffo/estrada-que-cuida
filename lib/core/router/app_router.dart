@@ -18,6 +18,7 @@ import '../../features/dependentes/screens/dependentes_screen.dart';
 import '../../features/roteirizacao/screens/roteirizacao_screen.dart';
 import '../../features/fretes/screens/fretes_screen.dart';
 import '../../features/fretes/screens/frete_detalhe_screen.dart';
+import '../../features/financeiro/screens/financeiro_screen.dart';
 import '../../features/chamados/screens/chamados_screen.dart';
 import '../../features/chamados/screens/chamado_novo_screen.dart';
 import '../../features/chamados/screens/chamado_detalhe_screen.dart';
@@ -107,6 +108,7 @@ final appRouter = GoRouter(
       path: '/fretes/:id',
       builder: (context, state) => FreteDetalheScreen(freteId: state.pathParameters['id']!),
     ),
+    GoRoute(path: '/financeiro', builder: (context, state) => const FinanceiroScreen()),
     GoRoute(path: '/chamados', builder: (context, state) => const ChamadosScreen()),
     GoRoute(path: '/chamados/novo', builder: (context, state) => const ChamadoNovoScreen()),
     GoRoute(

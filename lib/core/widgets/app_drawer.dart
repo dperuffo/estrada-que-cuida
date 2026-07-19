@@ -140,6 +140,11 @@ class AppDrawer extends ConsumerWidget {
                     label: 'Fretes',
                     onTap: () => _ir(context, '/fretes'),
                   ),
+                  _ItemMenu(
+                    icone: Icons.account_balance_wallet_outlined,
+                    label: 'Financeiro',
+                    onTap: () => _ir(context, '/financeiro'),
+                  ),
                   Consumer(
                     builder: (context, ref, _) {
                       final perfil = ref.watch(meuPerfilProvider).valueOrNull;
