@@ -6,8 +6,12 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../abastecimentos/providers/abastecimentos_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
 import '../providers/dashboard_provider.dart';
+import '../providers/home_resumo_provider.dart';
 
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
+final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+final _formatoNumero = NumberFormat.decimalPattern('pt_BR');
+final _formatoDiaCurto = DateFormat('dd/MM');
 
 // Fase Home-interativa — pedido do Daniel (17/07): os botões que
 // duplicavam o menu lateral saíram daqui (já dá pra chegar em todo lugar
@@ -28,6 +32,7 @@ class DashboardScreen extends ConsumerWidget {
     final saldoAsync = ref.watch(saldoPontosProvider);
     final missoesAsync = ref.watch(missoesProvider);
     final pendentesAsync = ref.watch(abastecimentosPendentesProvider);
+    final homeResumoAsync = ref.watch(homeResumoProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Estrada que Cuida')),
@@ -37,6 +42,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(saldoPontosProvider);
           ref.invalidate(missoesProvider);
           ref.invalidate(abastecimentosPendentesProvider);
+          ref.invalidate(homeResumoProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -46,6 +52,26 @@ class DashboardScreen extends ConsumerWidget {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
+
+            // Cartão do cliente/cota/frete — pedido do Daniel (19/07): quem
+            // é o cliente, se o motorista é próprio/agregado/terceiro, e os
+            // saldos de combustível (cota do veículo e, se houver, frete
+            // ativo) logo no topo. Some da tela se ainda não tem vínculo de
+            // veículo nem nada configurado — não força cartão vazio.
+            homeResumoAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => const SizedBox.shrink(),
+              data: (resumo) => resumo == null || resumo.status != 'ok'
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _CartaoCliente(resumo: resumo),
+                    ),
+            ),
+
             saldoAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 40),
@@ -118,9 +144,280 @@ class DashboardScreen extends ConsumerWidget {
               ),
               data: (missoes) => _BlocoMissoes(missoes: missoes),
             ),
+
+            // Seção de consumo — pedido do Daniel (19/07): volume e valor
+            // abastecidos hoje, médias de consumo do veículo (KM/L e
+            // R$/L) e gráfico dos últimos 7 dias. Some se ainda não há
+            // veículo vinculado (nada pra mostrar).
+            homeResumoAsync.maybeWhen(
+              data: (resumo) => resumo == null || resumo.status != 'ok' || resumo.placa == null
+                  ? const SizedBox.shrink()
+                  : Padding(
+                      padding: const EdgeInsets.only(top: 28),
+                      child: _SecaoConsumo(resumo: resumo),
+                    ),
+              orElse: () => const SizedBox.shrink(),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// Badge "Próprio" / "Agregado" / "Terceiro" — cor muda conforme a
+// classificação, só pra dar uma pista visual rápida.
+class _BadgeClassificacao extends StatelessWidget {
+  final String classificacao;
+
+  const _BadgeClassificacao({required this.classificacao});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = switch (classificacao) {
+      'Próprio' => const Color(0xFF1B7A43),
+      'Agregado' => const Color(0xFF1E6FBF),
+      _ => const Color(0xFF9E7A00),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+      child: Text(
+        classificacao,
+        style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
+    );
+  }
+}
+
+// Barra de progresso de um saldo (cota ou frete) — verde quando sobra
+// bastante, amarelo quando está acabando, vermelho quando estourou
+// (saldo negativo, ainda assim mostra pra deixar claro que passou).
+class _BarraSaldo extends StatelessWidget {
+  final String rotulo;
+  final double limite;
+  final double saldo;
+  final bool emVolume;
+
+  const _BarraSaldo({required this.rotulo, required this.limite, required this.saldo, required this.emVolume});
+
+  String _formata(double v) => emVolume ? '${_formatoNumero.format(v)} L' : _formatoMoeda.format(v);
+
+  @override
+  Widget build(BuildContext context) {
+    final progresso = limite <= 0 ? 0.0 : (saldo / limite).clamp(0.0, 1.0);
+    final estourou = saldo < 0;
+    final cor = estourou
+        ? Colors.redAccent
+        : progresso < 0.2
+            ? const Color(0xFFC97A00)
+            : const Color(0xFF1B7A43);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(rotulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            Text(
+              estourou ? '${_formata(saldo)} (estourou)' : '${_formata(saldo)} disponível',
+              style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: LinearProgressIndicator(
+            value: estourou ? 1.0 : progresso,
+            minHeight: 8,
+            backgroundColor: const Color(0xFFE5E5E0),
+            valueColor: AlwaysStoppedAnimation(cor),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text('de ${_formata(limite)}', style: const TextStyle(color: Colors.black45, fontSize: 11.5)),
+      ],
+    );
+  }
+}
+
+class _CartaoCliente extends StatelessWidget {
+  final HomeResumo resumo;
+
+  const _CartaoCliente({required this.resumo});
+
+  @override
+  Widget build(BuildContext context) {
+    final cota = resumo.cota;
+    final frete = resumo.frete;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.apartment_outlined, color: Colors.black54, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    resumo.empresaNome ?? 'Cliente',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (resumo.classificacao != null) _BadgeClassificacao(classificacao: resumo.classificacao!),
+              ],
+            ),
+            if (cota != null || frete != null) ...[
+              const SizedBox(height: 18),
+              if (frete != null) ...[
+                _BarraSaldo(
+                  rotulo: 'Saldo de combustível — frete: ${frete.titulo}',
+                  limite: frete.alocado,
+                  saldo: frete.saldo,
+                  emVolume: frete.emVolume,
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Abastecimentos consomem desse saldo primeiro, enquanto durar.',
+                  style: TextStyle(color: Colors.black45, fontSize: 11.5),
+                ),
+                if (cota != null) const SizedBox(height: 16),
+              ],
+              if (cota != null)
+                _BarraSaldo(
+                  rotulo: 'Cota de combustível (${cota.periodicidade.toLowerCase()})',
+                  limite: cota.limite,
+                  saldo: cota.saldo,
+                  emVolume: cota.emVolume,
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _IndicadorConsumo extends StatelessWidget {
+  final String rotulo;
+  final String valor;
+  final IconData icone;
+
+  const _IndicadorConsumo({required this.rotulo, required this.valor, required this.icone});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3F3EF),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          children: [
+            Icon(icone, color: const Color(0xFF1E6FBF), size: 22),
+            const SizedBox(height: 6),
+            Text(valor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            const SizedBox(height: 2),
+            Text(rotulo, style: const TextStyle(color: Colors.black54, fontSize: 11.5), textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SecaoConsumo extends StatelessWidget {
+  final HomeResumo resumo;
+
+  const _SecaoConsumo({required this.resumo});
+
+  @override
+  Widget build(BuildContext context) {
+    final medias = resumo.medias;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Seu consumo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 4),
+        Text(
+          'Hoje: ${_formatoNumero.format(resumo.hoje.litros)} L · ${_formatoMoeda.format(resumo.hoje.valor)}',
+          style: const TextStyle(color: Colors.black54),
+        ),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            _IndicadorConsumo(
+              rotulo: 'Média KM/L (30 dias)',
+              valor: medias.kmL == null ? '—' : '${medias.kmL!.toStringAsFixed(2)} km/L',
+              icone: Icons.speed_outlined,
+            ),
+            const SizedBox(width: 12),
+            _IndicadorConsumo(
+              rotulo: 'Média R\$/L (30 dias)',
+              valor: medias.valorPorLitro == null ? '—' : _formatoMoeda.format(medias.valorPorLitro),
+              icone: Icons.local_gas_station_outlined,
+            ),
+          ],
+        ),
+        if (resumo.serie7Dias.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text('Litros abastecidos — últimos 7 dias', style: TextStyle(color: Colors.black54, fontSize: 12.5)),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 140,
+            child: _GraficoBarrasDiario(pontos: resumo.serie7Dias),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+// Gráfico de barras simples (sem dependência nova) — 1 barra por dia dos
+// últimos 7 dias, altura proporcional aos litros abastecidos. Rótulo do
+// dia embaixo, valor em litros em cima da barra quando > 0.
+class _GraficoBarrasDiario extends StatelessWidget {
+  final List<PontoSerieDia> pontos;
+
+  const _GraficoBarrasDiario({required this.pontos});
+
+  @override
+  Widget build(BuildContext context) {
+    final maximo = pontos.map((p) => p.litros).fold<double>(0, (a, b) => a > b ? a : b);
+    const alturaMax = 92.0;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: pontos.map((p) {
+        final altura = maximo <= 0 ? 0.0 : (p.litros / maximo) * alturaMax;
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            if (p.litros > 0)
+              Text(_formatoNumero.format(p.litros), style: const TextStyle(fontSize: 10, color: Colors.black54)),
+            const SizedBox(height: 4),
+            Container(
+              width: 22,
+              height: altura < 3 && p.litros > 0 ? 3 : altura,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E6FBF),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(_formatoDiaCurto.format(p.dia), style: const TextStyle(fontSize: 10.5, color: Colors.black54)),
+          ],
+        );
+      }).toList(),
     );
   }
 }
