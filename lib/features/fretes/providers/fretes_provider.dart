@@ -358,6 +358,15 @@ Future<void> responderFreteDireto(String freteId, bool aceitar) async {
   await SupabaseService.client.rpc('responder_frete_direto', params: {'p_frete_id': freteId, 'p_aceitar': aceitar});
 }
 
+// Fase Fretes-Aceitar-Direto-Mercado (19/07) — pedido do Daniel: aceitar o
+// valor já anunciado num frete de mercado aberto sem precisar negociar
+// primeiro (mesmo espírito de responderFreteDireto, só que pro caso de
+// mercado aberto). Primeiro motorista a chamar leva — a RLS/lock no banco
+// garante isso (ver aceitar_frete_disponivel).
+Future<void> aceitarFreteDisponivel(String freteId) async {
+  await SupabaseService.client.rpc('aceitar_frete_disponivel', params: {'p_frete_id': freteId});
+}
+
 // Fase Fretes B — postos recomendados, checkpoints de execução e avaliação.
 
 class PostoRecomendado {

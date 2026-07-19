@@ -185,9 +185,35 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   Widget _blocoNegociacao() {
     final negociacao = _negociacao;
     if (negociacao == null) {
-      return _FormularioProposta(
-        processando: _processando,
-        onEnviar: (valor) => _executar(() => abrirNegociacaoFrete(widget.freteId, valor)),
+      // Fase Fretes-Aceitar-Direto-Mercado (19/07) — pedido do Daniel:
+      // antes só dava pra propor outro valor; agora dá pra aceitar o valor
+      // já anunciado (ou recusar/ignorar) direto, sem precisar negociar.
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton(
+            onPressed: _processando ? null : () => _executar(() => aceitarFreteDisponivel(widget.freteId)),
+            child: Text('Aceitar ${_formatoMoeda.format(_frete!.valorOferecido)}'),
+          ),
+          const SizedBox(height: 8),
+          const Row(
+            children: [
+              Expanded(child: Divider()),
+              Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('ou', style: TextStyle(color: Colors.black45, fontSize: 12))),
+              Expanded(child: Divider()),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _FormularioProposta(
+            processando: _processando,
+            onEnviar: (valor) => _executar(() => abrirNegociacaoFrete(widget.freteId, valor)),
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton(
+            onPressed: _processando ? null : () => Navigator.of(context).maybePop(),
+            child: const Text('Não me interessa'),
+          ),
+        ],
       );
     }
 
@@ -781,11 +807,16 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
             else ...[
               DropdownButtonFormField<VeiculoRoteirizacao>(
                 initialValue: _veiculoSelecionado,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Veículo', isDense: true, border: OutlineInputBorder()),
                 items: _veiculos
                     .map((v) => DropdownMenuItem(
                           value: v,
-                          child: Text('${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}', style: const TextStyle(fontSize: 13)),
+                          child: Text(
+                            '${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}',
+                            style: const TextStyle(fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ))
                     .toList(),
                 onChanged: (v) => setState(() => _veiculoSelecionado = v),
