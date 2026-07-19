@@ -213,18 +213,17 @@ class _BarraSaldo extends StatelessWidget {
             ? const Color(0xFFC97A00)
             : const Color(0xFF1B7A43);
 
+    // Rótulo (pode incluir o título do frete, tamanho variável) numa linha
+    // e o saldo embaixo, à parte — um Row com os dois lado a lado estourava
+    // a largura do cartão quando o rótulo era comprido (achado do Daniel).
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(rotulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-            Text(
-              estourou ? '${_formata(saldo)} (estourou)' : '${_formata(saldo)} disponível',
-              style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ],
+        Text(rotulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        const SizedBox(height: 4),
+        Text(
+          estourou ? '${_formata(saldo)} (estourou)' : '${_formata(saldo)} disponível',
+          style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
         ),
         const SizedBox(height: 6),
         ClipRRect(
