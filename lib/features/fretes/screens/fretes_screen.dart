@@ -20,8 +20,24 @@ const _labelStatus = {
   'recusado': 'Recusado',
 };
 
+// Fase Fretes-Home-3-Abas (19/07) — pedido do Daniel: cor por status, com
+// destaque forte (badge preenchida) pro que está "em_andamento" — é o que
+// mais importa saber de relance na lista.
+const _corStatus = {
+  'disponivel': AppTheme.frota500,
+  'aguardando_confirmacao': AppTheme.statusAtencao,
+  'aceito': AppTheme.frota600,
+  'em_andamento': AppTheme.statusAtivo,
+  'concluido': Colors.black45,
+  'cancelado': AppTheme.statusInativo,
+  'recusado': AppTheme.statusInativo,
+};
+
 // Fretes (Fase Fretes) — "Uber de frete": mercado aberto com negociação de
 // valor, ou frete atribuído direto (próprio/parceiro) só pra confirmar.
+// Fase Fretes-Home-3-Abas (19/07) — pedido do Daniel: dividir em 3 abas
+// (Em Negociação / Aceitos-Em Andamento / Concluídos) pra melhorar a
+// visibilidade — antes tudo vinha numa lista só, misturado.
 class FretesScreen extends StatefulWidget {
   const FretesScreen({super.key});
 
@@ -58,6 +74,13 @@ class _FretesScreenState extends State<FretesScreen> {
             f.carroceriasAceitas.any(_filtroCarrocerias.contains);
         return combinaVeiculo && combinaCarroceria;
       }).toList();
+
+  // Fase Fretes-Home-3-Abas — os 3 grupos que viram as 3 abas.
+  List<Frete> get _aguardandoConfirmacao => _atribuidos.where((f) => f.status == 'aguardando_confirmacao').toList();
+  List<Frete> get _emAndamento => _atribuidos.where((f) => f.status == 'em_andamento').toList();
+  List<Frete> get _aceitos => _atribuidos.where((f) => f.status == 'aceito').toList();
+  List<Frete> get _finalizados =>
+      _atribuidos.where((f) => f.status == 'concluido' || f.status == 'cancelado' || f.status == 'recusado').toList();
 
   Future<void> _abrirFiltros() async {
     final selecionados = await showModalBottomSheet<(Set<String>, Set<String>)>(
@@ -112,75 +135,163 @@ class _FretesScreenState extends State<FretesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Fretes')),
-      drawer: const AppDrawer(),
-      body: _carregando
-          ? const Center(child: CircularProgressIndicator())
-          : _erro != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
-                      ],
-                    ),
-                  ),
-                )
-              : RefreshIndicator(
-              onRefresh: _carregar,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  if (_atribuidos.isNotEmpty) ...[
-                    const _TituloSecao('Meus fretes'),
-                    ..._atribuidos.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
-                    const SizedBox(height: 20),
+    // Contagens nas abas — ajuda o motorista a saber onde tem algo novo
+    // sem precisar entrar em cada uma.
+    final totalNegociacao = _aguardandoConfirmacao.length + _negociando.length + _mercadoFiltrado.length;
+    final totalAndamento = _emAndamento.length + _aceitos.length;
+    final totalFinalizados = _finalizados.length;
+
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Fretes'),
+          bottom: _carregando || _erro != null
+              ? null
+              : TabBar(
+                  labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                  unselectedLabelStyle: const TextStyle(fontSize: 12.5),
+                  tabs: [
+                    Tab(text: 'Em Negociação${totalNegociacao > 0 ? ' ($totalNegociacao)' : ''}'),
+                    Tab(text: 'Aceitos/Em Andamento${totalAndamento > 0 ? ' ($totalAndamento)' : ''}'),
+                    Tab(text: 'Concluídos${totalFinalizados > 0 ? ' ($totalFinalizados)' : ''}'),
                   ],
-                  if (_negociando.isNotEmpty) ...[
-                    const _TituloSecao('Em negociação'),
-                    ..._negociando.map(
-                      (par) => _CardFrete(
-                        frete: par.$2,
-                        minhaPosicao: _minhaPosicao,
-                        subtitulo: 'Rodada ${par.$1.rodadaAtual} · ${_labelNegociacao(par.$1.status)}',
-                        onTap: () => _abrir(par.$2.id),
+                ),
+        ),
+        drawer: const AppDrawer(),
+        body: _carregando
+            ? const Center(child: CircularProgressIndicator())
+            : _erro != null
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
+                          const SizedBox(height: 12),
+                          ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  )
+                : TabBarView(
                     children: [
-                      const _TituloSecao('Disponíveis pra negociar'),
-                      OutlinedButton.icon(
-                        onPressed: _abrirFiltros,
-                        icon: const Icon(Icons.tune, size: 16),
-                        label: Text(
-                          (_filtroVeiculos.isEmpty && _filtroCarrocerias.isEmpty)
-                              ? 'Filtros'
-                              : 'Filtros (${_filtroVeiculos.length + _filtroCarrocerias.length})',
-                        ),
-                        style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact, textStyle: const TextStyle(fontSize: 12)),
-                      ),
+                      _abaNegociacao(),
+                      _abaAndamento(),
+                      _abaFinalizados(),
                     ],
                   ),
-                  if (_mercadoFiltrado.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        _mercado.isEmpty ? 'Nenhum frete disponível no momento.' : 'Nenhum frete combina com o filtro selecionado.',
-                        style: const TextStyle(color: Colors.black54),
-                      ),
-                    ),
-                  ..._mercadoFiltrado.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
-                ],
+      ),
+    );
+  }
+
+  Widget _abaNegociacao() {
+    return RefreshIndicator(
+      onRefresh: _carregar,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (_aguardandoConfirmacao.isNotEmpty) ...[
+            const _TituloSecao('Aguardando sua confirmação'),
+            ..._aguardandoConfirmacao.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+            const SizedBox(height: 20),
+          ],
+          if (_negociando.isNotEmpty) ...[
+            const _TituloSecao('Em negociação'),
+            ..._negociando.map(
+              (par) => _CardFrete(
+                frete: par.$2,
+                minhaPosicao: _minhaPosicao,
+                subtitulo: 'Rodada ${par.$1.rodadaAtual} · ${_labelNegociacao(par.$1.status)}',
+                onTap: () => _abrir(par.$2.id),
               ),
             ),
+            const SizedBox(height: 20),
+          ],
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const _TituloSecao('Disponíveis pra negociar'),
+              OutlinedButton.icon(
+                onPressed: _abrirFiltros,
+                icon: const Icon(Icons.tune, size: 16),
+                label: Text(
+                  (_filtroVeiculos.isEmpty && _filtroCarrocerias.isEmpty)
+                      ? 'Filtros'
+                      : 'Filtros (${_filtroVeiculos.length + _filtroCarrocerias.length})',
+                ),
+                style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact, textStyle: const TextStyle(fontSize: 12)),
+              ),
+            ],
+          ),
+          if (_mercadoFiltrado.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
+              child: Text(
+                _mercado.isEmpty ? 'Nenhum frete disponível no momento.' : 'Nenhum frete combina com o filtro selecionado.',
+                style: const TextStyle(color: Colors.black54),
+              ),
+            ),
+          ..._mercadoFiltrado.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+          if (_aguardandoConfirmacao.isEmpty && _negociando.isEmpty && _mercadoFiltrado.isEmpty && _mercado.isNotEmpty)
+            const SizedBox.shrink(),
+        ],
+      ),
+    );
+  }
+
+  Widget _abaAndamento() {
+    if (_emAndamento.isEmpty && _aceitos.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _carregar,
+        child: ListView(
+          children: const [
+            SizedBox(height: 80),
+            Center(child: Text('Nenhum frete aceito ou em andamento agora.', style: TextStyle(color: Colors.black45))),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _carregar,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Em andamento primeiro e com destaque — é o que está rolando
+          // agora, o resto é só "aceito, ainda não começou".
+          if (_emAndamento.isNotEmpty) ...[
+            const _TituloSecao('Em andamento'),
+            ..._emAndamento.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+            const SizedBox(height: 20),
+          ],
+          if (_aceitos.isNotEmpty) ...[
+            const _TituloSecao('Aceitos, aguardando início'),
+            ..._aceitos.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _abaFinalizados() {
+    if (_finalizados.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _carregar,
+        child: ListView(
+          children: const [
+            SizedBox(height: 80),
+            Center(child: Text('Nenhum frete concluído ainda.', style: TextStyle(color: Colors.black45))),
+          ],
+        ),
+      );
+    }
+    return RefreshIndicator(
+      onRefresh: _carregar,
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: _finalizados.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))).toList(),
+      ),
     );
   }
 
@@ -220,6 +331,31 @@ class _TituloSecao extends StatelessWidget {
   }
 }
 
+// Fase Fretes-Home-3-Abas — badge de status colorida. "em_andamento" vem
+// preenchida (fundo sólido, texto branco) pra saltar aos olhos na lista;
+// os demais status vêm só com um tom claro de fundo.
+class _ChipStatusFrete extends StatelessWidget {
+  final String status;
+  const _ChipStatusFrete({required this.status});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = _corStatus[status] ?? Colors.black45;
+    final destaque = status == 'em_andamento';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: destaque ? cor : cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        _labelStatus[status] ?? status,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: destaque ? Colors.white : cor),
+      ),
+    );
+  }
+}
+
 class _CardFrete extends StatelessWidget {
   final Frete frete;
   final String? subtitulo;
@@ -233,9 +369,18 @@ class _CardFrete extends StatelessWidget {
     final posicao = minhaPosicao;
     final distanciaAteColeta =
         posicao == null ? null : distanciaKm(posicao.latitude, posicao.longitude, frete.origemLat, frete.origemLon);
+    final destaque = frete.status == 'em_andamento';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      // Fase Fretes-Home-3-Abas — borda colorida discreta pros "em
+      // andamento" pra reforçar o destaque mesmo antes de ler a badge.
+      shape: destaque
+          ? RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: AppTheme.statusAtivo.withValues(alpha: 0.5), width: 1.5),
+            )
+          : null,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -282,10 +427,16 @@ class _CardFrete extends StatelessWidget {
                   ],
                 ),
               ],
-              const SizedBox(height: 6),
-              Text(
-                subtitulo ?? _labelStatus[frete.status] ?? frete.status,
-                style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontWeight: FontWeight.w500),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  _ChipStatusFrete(status: frete.status),
+                  if (subtitulo != null)
+                    Text(subtitulo!, style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontWeight: FontWeight.w500)),
+                ],
               ),
             ],
           ),
