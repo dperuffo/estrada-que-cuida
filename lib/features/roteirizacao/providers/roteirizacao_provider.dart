@@ -91,6 +91,12 @@ class VeiculoRoteirizacao {
   final double tanque;
   final double autonomia;
   final bool vinculoAtivo;
+  // Fase Fretes-Compatibilidade-Veiculo (19/07) — 'Leve' | 'Pesado', vindo
+  // do cadastro do veículo (cadastro_veiculos.tipo). Usado pra pré-filtrar
+  // a lista de fretes de mercado aberto pelo que o motorista realmente
+  // pode aceitar (a trava de verdade mora no banco, ver
+  // compativel_veiculo_frete).
+  final String? tipo;
 
   const VeiculoRoteirizacao({
     required this.placa,
@@ -99,6 +105,7 @@ class VeiculoRoteirizacao {
     required this.tanque,
     required this.autonomia,
     required this.vinculoAtivo,
+    this.tipo,
   });
 
   /// Autonomia total do tanque cheio, em km (tanque em litros × autonomia
@@ -125,6 +132,7 @@ Future<List<VeiculoRoteirizacao>> buscarMeusVeiculos() async {
         tanque: (mapa['tanque'] as num?)?.toDouble() ?? 0,
         autonomia: (mapa['autonomia'] as num?)?.toDouble() ?? 0,
         vinculoAtivo: mapa['vinculo_ativo'] as bool? ?? false,
+        tipo: mapa['tipo'] as String?,
       );
     }).toList();
   } catch (_) {

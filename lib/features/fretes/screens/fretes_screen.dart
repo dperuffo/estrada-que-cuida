@@ -5,8 +5,20 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../roteirizacao/providers/roteirizacao_provider.dart';
 import '../fretes_veiculos_constantes.dart';
 import '../providers/fretes_provider.dart';
+
+// Fase Fretes-Compatibilidade-Veiculo (19/07) — mesma simplificação do
+// banco (ver migração fretes_trava_compatibilidade_veiculo_funcoes):
+// cadastro_veiculos.tipo só tem 'Leve'/'Pesado', enquanto os fretes
+// restringem por nome granular (3 grupos). 'Leve' cobre só o grupo
+// Leves; 'Pesado' cobre Médios+Pesados (mais permissivo pro motorista de
+// veículo pesado, já que o cadastro não distingue os dois).
+const Map<String, Set<String>> _nomesCompativeisPorTipo = {
+  'Leve': {'3/4', 'Toco', 'VLC', 'Fiorino', 'Van', 'HR'},
+  'Pesado': {'Bitruck', 'Truck', 'Carreta', 'Carreta LS', 'Bitrem', 'Rodotrem'},
+};
 
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
@@ -56,6 +68,12 @@ class _FretesScreenState extends State<FretesScreen> {
   // vez ao abrir a lista pra mostrar "X km até a coleta" em cada card,
   // antes mesmo do motorista abrir o frete pra decidir.
   Position? _minhaPosicao;
+  // Fase Fretes-Compatibilidade-Veiculo — tipo do veículo vinculado ao
+  // motorista ('Leve'/'Pesado'/null), pra pré-filtrar a lista de mercado
+  // aberto pelo que ele realmente pode aceitar (a trava de verdade mora
+  // no banco — isso aqui é só pra não mostrar o que ele não vai conseguir
+  // pegar de qualquer jeito).
+  String? _tipoVeiculo;
 
   // Fase Fretes-Dados-Completos-2 — pedido do Daniel (inspirado em telas de
   // outras plataformas de frete): "veja fretes... filtros personalizados de
@@ -65,7 +83,20 @@ class _FretesScreenState extends State<FretesScreen> {
   final Set<String> _filtroVeiculos = {};
   final Set<String> _filtroCarrocerias = {};
 
-  List<Frete> get _mercadoFiltrado => _mercado.where((f) {
+  // Compatibilidade real com o veículo cadastrado do motorista — some da
+  // lista o que ele não vai conseguir aceitar de qualquer forma (a trava
+  // que impede de verdade fica no banco, ver compativel_veiculo_frete).
+  bool _compativelComMeuVeiculo(Frete f) {
+    if (f.veiculosAceitos.isEmpty) return true;
+    final tipo = _tipoVeiculo;
+    if (tipo == null) return true; // sem vínculo/dado — não bloqueia por falta de info
+    final aceitos = _nomesCompativeisPorTipo[tipo] ?? const {};
+    return f.veiculosAceitos.any(aceitos.contains);
+  }
+
+  List<Frete> get _mercadoCompativel => _mercado.where(_compativelComMeuVeiculo).toList();
+
+  List<Frete> get _mercadoFiltrado => _mercadoCompativel.where((f) {
         final combinaVeiculo = f.veiculosAceitos.isEmpty ||
             _filtroVeiculos.isEmpty ||
             f.veiculosAceitos.any(_filtroVeiculos.contains);
@@ -115,13 +146,23 @@ class _FretesScreenState extends State<FretesScreen> {
       final negociando = await buscarMinhasNegociacoes();
       final atribuidos = await buscarMeusFretesAtribuidos();
       final posicao = await obterLocalizacaoAtual();
+      final veiculos = await buscarMeusVeiculos();
       if (!mounted) return;
       final idsNegociando = negociando.map((n) => n.$2.id).toSet();
+      VeiculoRoteirizacao? veiculoVinculado;
+      for (final v in veiculos) {
+        if (v.vinculoAtivo) {
+          veiculoVinculado = v;
+          break;
+        }
+      }
+      veiculoVinculado ??= veiculos.isNotEmpty ? veiculos.first : null;
       setState(() {
         _mercado = mercado.where((f) => !idsNegociando.contains(f.id)).toList();
         _negociando = negociando;
         _atribuidos = atribuidos;
         _minhaPosicao = posicao;
+        _tipoVeiculo = veiculoVinculado?.tipo;
         _carregando = false;
       });
     } catch (e) {
@@ -149,6 +190,11 @@ class _FretesScreenState extends State<FretesScreen> {
           bottom: _carregando || _erro != null
               ? null
               : TabBar(
+                  // Pedido do Daniel (19/07): texto branco na barra azul
+                  // escura do AppBar, pra ficar legível de verdade.
+                  labelColor: Colors.white,
+                  unselectedLabelColor: Colors.white70,
+                  indicatorColor: Colors.white,
                   labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
                   unselectedLabelStyle: const TextStyle(fontSize: 12.5),
                   tabs: [
@@ -229,7 +275,11 @@ class _FretesScreenState extends State<FretesScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                _mercado.isEmpty ? 'Nenhum frete disponível no momento.' : 'Nenhum frete combina com o filtro selecionado.',
+                _mercado.isEmpty
+                    ? 'Nenhum frete disponível no momento.'
+                    : _mercadoCompativel.isEmpty
+                        ? 'Nenhum frete disponível aceita o tipo do seu veículo cadastrado.'
+                        : 'Nenhum frete combina com o filtro selecionado.',
                 style: const TextStyle(color: Colors.black54),
               ),
             ),
