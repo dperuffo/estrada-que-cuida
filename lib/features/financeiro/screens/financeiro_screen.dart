@@ -127,11 +127,23 @@ class FinanceiroScreen extends ConsumerWidget {
                   const SizedBox(height: 28),
                 ],
                 if (!semCombustivel) ...[
-                  const Text('Saldo de combustível de frete', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                  // Fase Financeiro-Motorista-Ajuste (pedido do Daniel: "a
+                  // plataforma não é uma carteira digital e nao tem como usar
+                  // o saldo de frete dentro do aplicativo pra novos
+                  // abastecimentos") — texto reescrito pra não sugerir que
+                  // existe um saldo "resgatável": é só o acompanhamento do
+                  // orçamento que o cliente reservou por frete, descontado
+                  // automaticamente (alocar_abastecimento_saldo) sempre que o
+                  // motorista abastece normalmente pela rede/cartão da
+                  // empresa — nunca algo que o motorista aciona ou usa
+                  // manualmente dentro do app.
+                  const Text('Orçamento de combustível por frete', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                   const SizedBox(height: 4),
                   const Text(
-                    'Quanto foi depositado pra combustível em cada frete e quanto já foi consumido em abastecimentos. '
-                    'Mesmo depois do frete concluído, o saldo que sobrar continua disponível pros seus próximos abastecimentos.',
+                    'Quanto o cliente reservou de orçamento para combustível em cada frete e quanto já foi descontado '
+                    'automaticamente nos seus abastecimentos feitos pela rede. Isso não é um saldo em carteira digital — '
+                    'é só o acompanhamento de quanto ainda resta do orçamento que o cliente definiu; o desconto acontece '
+                    'sozinho, conforme você abastece normalmente.',
                     style: TextStyle(color: Colors.black54),
                   ),
                   const SizedBox(height: 12),
@@ -262,7 +274,7 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Depositado${emVolume ? ' (litros)' : ''}', style: const TextStyle(color: Colors.black54, fontSize: 11.5)),
+                Text('Orçamento${emVolume ? ' (litros)' : ''}', style: const TextStyle(color: Colors.black54, fontSize: 11.5)),
                 Text(_formata(totais.depositado), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
@@ -271,7 +283,7 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Consumido', style: TextStyle(color: Colors.black54, fontSize: 11.5)),
+                const Text('Descontado', style: TextStyle(color: Colors.black54, fontSize: 11.5)),
                 Text(_formata(totais.consumido), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
               ],
             ),
@@ -280,7 +292,7 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Saldo', style: TextStyle(color: Colors.black54, fontSize: 11.5)),
+                const Text('Restante', style: TextStyle(color: Colors.black54, fontSize: 11.5)),
                 Text(
                   _formata(totais.saldo),
                   style: TextStyle(
@@ -346,7 +358,9 @@ class _CartaoFreteCombustivel extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              estourou ? '${_formata(frete.saldo)} (estourou)' : '${_formata(frete.saldo)} disponível',
+              estourou
+                  ? 'Orçamento estourado em ${_formata(frete.saldo.abs())}'
+                  : '${_formata(frete.saldo)} restantes do orçamento',
               style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 6),
@@ -361,7 +375,7 @@ class _CartaoFreteCombustivel extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              'Depositado ${_formata(frete.depositado)} · consumido ${_formata(frete.consumido)}',
+              'Orçamento ${_formata(frete.depositado)} · descontado ${_formata(frete.consumido)}',
               style: const TextStyle(color: Colors.black45, fontSize: 11.5),
             ),
           ],

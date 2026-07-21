@@ -198,8 +198,22 @@ class _BarraSaldo extends StatelessWidget {
   final double limite;
   final double saldo;
   final bool emVolume;
+  // Fase Financeiro-Motorista-Ajuste — pedido do Daniel: o texto padrão
+  // ("disponível"/"estourou") serve bem pra Cota (limite real, controlado
+  // pelo cartão da rede), mas dava a entender que o saldo de frete é uma
+  // carteira digital que o motorista "usa". Textos customizáveis por
+  // chamada, mantendo o padrão pra Cota e trocando só na chamada de frete.
+  final String textoDentroDoLimite;
+  final String textoEstourou;
 
-  const _BarraSaldo({required this.rotulo, required this.limite, required this.saldo, required this.emVolume});
+  const _BarraSaldo({
+    required this.rotulo,
+    required this.limite,
+    required this.saldo,
+    required this.emVolume,
+    this.textoDentroDoLimite = 'disponível',
+    this.textoEstourou = '(estourou)',
+  });
 
   String _formata(double v) => emVolume ? '${_formatoNumero.format(v)} L' : _formatoMoeda.format(v);
 
@@ -222,7 +236,7 @@ class _BarraSaldo extends StatelessWidget {
         Text(rotulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 4),
         Text(
-          estourou ? '${_formata(saldo)} (estourou)' : '${_formata(saldo)} disponível',
+          estourou ? '${_formata(saldo)} $textoEstourou' : '${_formata(saldo)} $textoDentroDoLimite',
           style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
         ),
         const SizedBox(height: 6),
@@ -276,14 +290,16 @@ class _CartaoCliente extends StatelessWidget {
               const SizedBox(height: 18),
               if (frete != null) ...[
                 _BarraSaldo(
-                  rotulo: 'Saldo de combustível — frete: ${frete.titulo}',
+                  rotulo: 'Orçamento de combustível — frete: ${frete.titulo}',
                   limite: frete.alocado,
                   saldo: frete.saldo,
                   emVolume: frete.emVolume,
+                  textoDentroDoLimite: 'restantes do orçamento',
+                  textoEstourou: 'de orçamento estourado',
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Abastecimentos consomem desse saldo primeiro, enquanto durar.',
+                  'É só acompanhamento — o desconto é automático conforme você abastece pela rede, sem carteira pra usar no app.',
                   style: TextStyle(color: Colors.black45, fontSize: 11.5),
                 ),
                 if (cota != null) const SizedBox(height: 16),
