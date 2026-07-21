@@ -3,12 +3,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/roteirizacao_provider.dart';
 import '../utils/cores_bandeira.dart';
 import '../utils/roteirizacao_algoritmo.dart';
 import '../utils/roteirizacao_constantes.dart';
+
+// Fase Roteirização-Google-Maps — pedido do Daniel: "ao clicar no card do
+// posto, o usuario seja direcionado para o google maps para visualizacao
+// do posto". Formato de URL universal do Google Maps (funciona tanto
+// abrindo o app nativo, se instalado, quanto o navegador) — mesmo padrão
+// já usado no motor de testes de outras telas do projeto.
+Future<void> _abrirNoGoogleMaps(double lat, double lon) async {
+  final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+  await launchUrl(uri, mode: LaunchMode.externalApplication);
+}
 
 final _formatoKm = NumberFormat('#,##0.0', 'pt_BR');
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -700,47 +711,59 @@ class _CartaoParada extends StatelessWidget {
     final cor = coresHexBandeira[corPorBandeira(posto.bandeira)];
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CircleAvatar(radius: 14, backgroundColor: cor, child: Text('$numero', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(posto.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text(
-                    [formatarLabelBandeira(posto.bandeira), if (posto.municipio != null) posto.municipio!].join(' • '),
-                    style: const TextStyle(fontSize: 12, color: Colors.black54),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _motivoLabel[parada.motivo] ?? parada.motivo,
-                    style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontStyle: FontStyle.italic),
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 14,
-                    runSpacing: 4,
-                    children: [
-                      Text('${_formatoKm.format(posto.km)} km', style: const TextStyle(fontSize: 12)),
-                      Text('${parada.litrosSugeridos} L', style: const TextStyle(fontSize: 12)),
-                      Text('${posto.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12)),
-                      Text(_formatoMoeda.format(parada.custoAbastecimento), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    'Chega com ${parada.pctChegada.toStringAsFixed(0)}% do tanque · sai com ${parada.pctApos.toStringAsFixed(0)}%',
-                    style: const TextStyle(fontSize: 11, color: Colors.black45),
-                  ),
-                ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _abrirNoGoogleMaps(posto.lat, posto.lon),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              CircleAvatar(radius: 14, backgroundColor: cor, child: Text('$numero', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(posto.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text(
+                      [formatarLabelBandeira(posto.bandeira), if (posto.municipio != null) posto.municipio!].join(' • '),
+                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _motivoLabel[parada.motivo] ?? parada.motivo,
+                      style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontStyle: FontStyle.italic),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 14,
+                      runSpacing: 4,
+                      children: [
+                        Text('${_formatoKm.format(posto.km)} km', style: const TextStyle(fontSize: 12)),
+                        Text('${parada.litrosSugeridos} L', style: const TextStyle(fontSize: 12)),
+                        Text('${posto.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12)),
+                        Text(_formatoMoeda.format(parada.custoAbastecimento), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Chega com ${parada.pctChegada.toStringAsFixed(0)}% do tanque · sai com ${parada.pctApos.toStringAsFixed(0)}%',
+                      style: const TextStyle(fontSize: 11, color: Colors.black45),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: const [
+                        Icon(Icons.map_outlined, size: 13, color: Colors.black45),
+                        SizedBox(width: 4),
+                        Text('Toque para ver no Google Maps', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

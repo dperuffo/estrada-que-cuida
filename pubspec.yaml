@@ -67,6 +67,11 @@ dependencies:
   # nenhuma configuração extra de Android/iOS porque este app não tem esses
   # alvos nativos.
   geolocator: ^13.0.2
+  # Fase Roteirização-Google-Maps — pedido do Daniel: "ao clicar no card do
+  # posto, o usuario seja direcionado para o google maps". Já vinha como
+  # dependência transitiva (via geolocator/outros); tornado direto porque
+  # agora é importado explicitamente na tela de Roteirização.
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
