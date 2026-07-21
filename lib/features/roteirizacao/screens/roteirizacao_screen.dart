@@ -44,6 +44,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   ResultadoRota? _resultado;
   List<ParadaSugerida> _paradas = [];
   int _candidatosEncontrados = 0;
+  List<PracaPedagioNaRota> _pracasPedagio = [];
 
   bool _carregandoVeiculos = true;
   List<VeiculoRoteirizacao> _veiculos = [];
@@ -146,6 +147,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _resultado = null;
       _paradas = [];
       _candidatosEncontrados = 0;
+      _pracasPedagio = [];
     });
 
     final origemPonto = PontoRota(lat: _origem!.lat, lon: _origem!.lon);
@@ -165,6 +167,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       coordenadas: resultado.coordenadas,
       combustivel: _combustivel!,
     );
+    final pracasPedagio = await buscarPracasPedagioNaRota(resultado.coordenadas);
 
     final combustivelInicial = double.tryParse(_combustivelInicialCtrl.text.replaceAll(',', '.'));
 
@@ -186,6 +189,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _resultado = resultado;
       _paradas = paradas;
       _candidatosEncontrados = candidatos.length;
+      _pracasPedagio = pracasPedagio;
     });
 
     // Alimenta a missão "rotas_calculadas" (gamificação) — não bloqueia a
@@ -197,6 +201,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   Widget build(BuildContext context) {
     final litrosTotal = _paradas.fold<int>(0, (s, p) => s + p.litrosSugeridos);
     final custoTotal = _paradas.fold<double>(0, (s, p) => s + p.custoAbastecimento);
+    final custoPedagio = custoPedagioTotal(_pracasPedagio, categoriaPedagioDoVeiculo(_veiculoSelecionado));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Roteirização')),
@@ -263,11 +268,23 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ),
           if (_resultado != null) ...[
             const SizedBox(height: 24),
-            _CartaoResultado(resultado: _resultado!, paradas: _paradas),
+            _CartaoResultado(resultado: _resultado!, paradas: _paradas, pracasPedagio: _pracasPedagio),
           ],
           if (_resultado != null) ...[
             const SizedBox(height: 16),
-            _CartaoCustoTotal(litrosTotal: litrosTotal, custoTotal: custoTotal, numParadas: _paradas.length),
+            _CartaoCustoTotal(
+              litrosTotal: litrosTotal,
+              custoTotal: custoTotal,
+              numParadas: _paradas.length,
+              custoPedagio: custoPedagio,
+            ),
+          ],
+          if (_pracasPedagio.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            Text('Pedágios na rota (${_pracasPedagio.length})',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            for (final praca in _pracasPedagio) _CartaoPedagio(praca: praca),
           ],
           if (_resultado != null && _paradas.isEmpty) ...[
             const SizedBox(height: 16),
@@ -443,8 +460,9 @@ class _CampoLocal extends StatelessWidget {
 class _CartaoResultado extends StatelessWidget {
   final ResultadoRota resultado;
   final List<ParadaSugerida> paradas;
+  final List<PracaPedagioNaRota> pracasPedagio;
 
-  const _CartaoResultado({required this.resultado, required this.paradas});
+  const _CartaoResultado({required this.resultado, required this.paradas, this.pracasPedagio = const []});
 
   @override
   Widget build(BuildContext context) {
@@ -528,6 +546,15 @@ class _CartaoResultado extends StatelessWidget {
                               size: 26,
                             ),
                           ),
+                        // Fase Motorista-Pedagios — praças de pedágio na
+                        // rota traçada, mesmo emoji/estilo do PWA Cliente.
+                        for (final praca in pracasPedagio)
+                          Marker(
+                            point: LatLng(praca.lat, praca.lon),
+                            width: 26,
+                            height: 26,
+                            child: const Text('🎫', style: TextStyle(fontSize: 20)),
+                          ),
                       ],
                     ),
                   ],
@@ -571,17 +598,65 @@ class _CartaoCustoTotal extends StatelessWidget {
   final int litrosTotal;
   final double custoTotal;
   final int numParadas;
+  final double custoPedagio;
 
-  const _CartaoCustoTotal({required this.litrosTotal, required this.custoTotal, required this.numParadas});
+  const _CartaoCustoTotal({
+    required this.litrosTotal,
+    required this.custoTotal,
+    required this.numParadas,
+    this.custoPedagio = 0,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Wrap(
+      runSpacing: 12,
       children: [
-        Expanded(child: _Metrica(icone: Icons.local_gas_station_outlined, valor: '$litrosTotal L', label: 'Litros totais')),
-        Expanded(child: _Metrica(icone: Icons.payments_outlined, valor: _formatoMoeda.format(custoTotal), label: 'Custo estimado')),
-        Expanded(child: _Metrica(icone: Icons.alt_route, valor: '$numParadas', label: 'Paradas')),
+        SizedBox(
+          width: 160,
+          child: _Metrica(icone: Icons.local_gas_station_outlined, valor: '$litrosTotal L', label: 'Litros totais'),
+        ),
+        SizedBox(
+          width: 160,
+          child: _Metrica(icone: Icons.payments_outlined, valor: _formatoMoeda.format(custoTotal), label: 'Custo estimado'),
+        ),
+        SizedBox(
+          width: 160,
+          child: _Metrica(icone: Icons.alt_route, valor: '$numParadas', label: 'Paradas'),
+        ),
+        // Fase Motorista-Pedagios — pedido do Daniel: "no resumo de custo
+        // total, colocar o valor total de pedágio também".
+        SizedBox(
+          width: 160,
+          child: _Metrica(icone: Icons.confirmation_number_outlined, valor: _formatoMoeda.format(custoPedagio), label: '🎫 Pedágio'),
+        ),
       ],
+    );
+  }
+}
+
+class _CartaoPedagio extends StatelessWidget {
+  final PracaPedagioNaRota praca;
+
+  const _CartaoPedagio({required this.praca});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      child: ListTile(
+        dense: true,
+        leading: const Text('🎫', style: TextStyle(fontSize: 18)),
+        title: Text(praca.nome, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        subtitle: Text(
+          '${praca.rodovia ?? praca.concessionaria ?? '—'} · km ${_formatoKm.format(praca.kmNaRota)}',
+          style: const TextStyle(fontSize: 11.5),
+        ),
+        trailing: Text(
+          praca.valorCarro != null ? _formatoMoeda.format(praca.valorCarro!) : '—',
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        ),
+      ),
     );
   }
 }
