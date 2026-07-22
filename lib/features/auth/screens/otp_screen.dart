@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
 
 // Tela 2 do login — motorista digita o código de 6 dígitos recebido por
@@ -48,8 +49,14 @@ class _OtpScreenState extends State<OtpScreen> {
       // A sessão nova dispara o redirect do router pra '/' (Gate), que
       // decide se falta vínculo, senha, adesão, ou já vai pro início.
       context.go('/');
+    } on AuthException catch (e) {
+      // otp_expired etc. ganham mensagem própria; código só errado continua
+      // com a mensagem padrão de "confira e tente de novo".
+      setState(() => _erro = e.code == 'otp_expired'
+          ? AuthService.mensagemDeErro(e, contexto: 'otp')
+          : 'Código incorreto ou expirado. Confira e tente de novo.');
     } catch (e) {
-      setState(() => _erro = 'Código incorreto ou expirado. Confira e tente de novo.');
+      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'otp'));
     } finally {
       if (mounted) setState(() => _confirmando = false);
     }
@@ -61,6 +68,11 @@ class _OtpScreenState extends State<OtpScreen> {
       await AuthService.enviarCodigo(widget.telefoneE164);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código reenviado.')));
+    } catch (e) {
+      // Antes o reenvio não tinha catch — falha do Twilio estourava sem
+      // aviso nenhum pro motorista.
+      if (!mounted) return;
+      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'otp-reenvio'));
     } finally {
       if (mounted) setState(() => _reenviando = false);
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_service.dart';
@@ -84,6 +85,39 @@ class AuthService {
 
   static Future<void> sair() {
     return _client.auth.signOut();
+  }
+
+  /// Traduz erros do Supabase Auth em mensagens úteis pro motorista —
+  /// nasceu do caso real (22/07/26) em que o Twilio em modo trial recusava
+  /// SMS pra número não verificado (erro 21608 → `sms_send_failed`) e o app
+  /// só mostrava "Não consegui continuar agora", escondendo a causa.
+  /// Também registra o erro real no console (`debugPrint`) pra diagnóstico.
+  static String mensagemDeErro(Object e, {String? contexto}) {
+    if (e is AuthException) {
+      debugPrint('[auth${contexto != null ? '/$contexto' : ''}] '
+          'code=${e.code} status=${e.statusCode} msg=${e.message}');
+      switch (e.code) {
+        case 'sms_send_failed':
+          return 'Não conseguimos enviar o SMS para este número. '
+              'Avise o suporte da sua empresa — o problema é no envio da mensagem, não no seu cadastro.';
+        case 'otp_expired':
+          return 'Código expirado. Toque em "Reenviar código" para receber um novo.';
+        case 'otp_disabled':
+          return 'Login por SMS indisponível no momento. Avise o suporte.';
+        case 'over_sms_send_rate_limit':
+        case 'over_request_rate_limit':
+        case 'over_email_send_rate_limit':
+          return 'Muitas tentativas seguidas. Aguarde um minuto e tente de novo.';
+        case 'invalid_credentials':
+          return 'Telefone ou senha incorretos. Confira e tente de novo.';
+        case 'user_banned':
+          return 'Este acesso está bloqueado. Fale com o suporte da sua empresa.';
+      }
+      return 'Não deu para continuar (erro ${e.code ?? e.statusCode ?? 'desconhecido'}). '
+          'Tente de novo em instantes.';
+    }
+    debugPrint('[auth${contexto != null ? '/$contexto' : ''}] erro inesperado: $e');
+    return 'Não consegui continuar agora. Verifique sua conexão e tente de novo.';
   }
 
   // Fase MFA-opcional (TOTP) — camada extra de segurança em cima do

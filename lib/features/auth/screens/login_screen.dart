@@ -52,7 +52,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       context.push('/otp', extra: telefone);
     } catch (e) {
-      setState(() => _erro = 'Não consegui continuar agora. Tente de novo em instantes.');
+      // Mensagem específica por tipo de erro (sms_send_failed, rate limit
+      // etc.) + log do erro real no console — ver AuthService.mensagemDeErro.
+      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'login'));
     } finally {
       if (mounted) setState(() => _enviando = false);
     }

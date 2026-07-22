@@ -37,7 +37,9 @@ class _SenhaLoginScreenState extends State<SenhaLoginScreen> {
       // Sessão nova dispara o redirect do router pra '/' (Gate).
       context.go('/');
     } catch (e) {
-      setState(() => _erro = 'Senha incorreta. Confira e tente de novo.');
+      // invalid_credentials vira "Telefone ou senha incorretos"; outros
+      // erros (rate limit, rede) ganham mensagem própria + log no console.
+      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'senha'));
     } finally {
       if (mounted) setState(() => _entrando = false);
     }
@@ -56,7 +58,7 @@ class _SenhaLoginScreenState extends State<SenhaLoginScreen> {
       if (!mounted) return;
       context.push('/otp-redefinir', extra: widget.telefoneE164);
     } catch (e) {
-      setState(() => _erro = 'Não consegui enviar o código. Tente de novo em instantes.');
+      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'esqueci-senha'));
     } finally {
       if (mounted) setState(() => _enviandoRecuperacao = false);
     }
