@@ -72,6 +72,10 @@ dependencies:
   # dependência transitiva (via geolocator/outros); tornado direto porque
   # agora é importado explicitamente na tela de Roteirização.
   url_launcher: ^6.3.2
+  # Fase P0.4 (canhoto digital / POD) — assinatura do recebedor na tela, na
+  # confirmação de entrega do frete. Funciona em Flutter Web (CustomPainter +
+  # gestos, sem depender de plugin nativo), mesmo alvo único deste app.
+  signature: ^5.5.0
 
 dev_dependencies:
   flutter_test:

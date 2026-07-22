@@ -394,6 +394,8 @@ class EventoFrete {
   // `fretes-evidencias` (não a URL: assinada sob demanda, só quando o
   // cliente/motorista realmente abre a foto).
   final String? fotoPath;
+  // Fase P0.4 — só preenchido quando tipoEvento == 'ocorrencia'.
+  final String? codigoOcorrencia;
 
   const EventoFrete({
     required this.id,
@@ -401,6 +403,7 @@ class EventoFrete {
     this.observacao,
     required this.criadoEm,
     this.fotoPath,
+    this.codigoOcorrencia,
   });
 
   factory EventoFrete.fromMap(Map<String, dynamic> m) => EventoFrete(
@@ -409,6 +412,7 @@ class EventoFrete {
         observacao: m['observacao'] as String?,
         criadoEm: DateTime.parse(m['criado_em'] as String),
         fotoPath: m['foto_path'] as String?,
+        codigoOcorrencia: m['codigo_ocorrencia'] as String?,
       );
 }
 
@@ -455,6 +459,9 @@ Future<void> registrarEventoFrete(
   String? postoRecomendadoId,
   String? observacao,
   String? fotoPath,
+  // Fase P0.4 — obrigatório (validado no banco) quando tipoEvento ==
+  // 'ocorrencia': atraso, avaria, recusa, reentrega ou devolucao.
+  String? codigoOcorrencia,
 }) async {
   await SupabaseService.client.rpc('registrar_evento_frete', params: {
     'p_frete_id': freteId,
@@ -462,6 +469,7 @@ Future<void> registrarEventoFrete(
     'p_posto_recomendado_id': postoRecomendadoId,
     'p_observacao': observacao,
     'p_foto_path': fotoPath,
+    'p_codigo_ocorrencia': codigoOcorrencia,
   });
 }
 
@@ -488,5 +496,45 @@ Future<void> avaliarFrete(String freteId, int estrelas, {String? comentario}) as
     'p_frete_id': freteId,
     'p_estrelas': estrelas,
     'p_comentario': comentario,
+  });
+}
+
+// Fase P0.4 — canhoto digital (POD): confirmação de entrega substitui o
+// antigo botão "Concluir frete" — agora exige nome do recebedor, foto do
+// canhoto e assinatura na tela. A RPC grava fretes_entregas, registra o
+// mesmo evento 'concluido' de sempre (mantendo a timeline) e muda o status
+// do frete pra 'concluido' (nenhum status novo — mesma máquina de estados
+// que o resto do app já lê).
+
+Future<String> enviarAssinaturaEntregaFrete({
+  required String freteId,
+  required Uint8List bytes,
+}) async {
+  final caminho = '$freteId/assinatura_${DateTime.now().millisecondsSinceEpoch}.png';
+  await SupabaseService.client.storage.from('fretes-evidencias').uploadBinary(
+        caminho,
+        bytes,
+        fileOptions: const FileOptions(contentType: 'image/png'),
+      );
+  return caminho;
+}
+
+Future<void> confirmarEntregaFrete(
+  String freteId, {
+  required String nomeRecebedor,
+  String? documentoRecebedor,
+  required String fotoCanhotoPath,
+  required String assinaturaPath,
+  double? lat,
+  double? lon,
+}) async {
+  await SupabaseService.client.rpc('confirmar_entrega_frete', params: {
+    'p_frete_id': freteId,
+    'p_nome_recebedor': nomeRecebedor,
+    'p_foto_canhoto_path': fotoCanhotoPath,
+    'p_assinatura_path': assinaturaPath,
+    'p_documento_recebedor': documentoRecebedor,
+    'p_lat': lat,
+    'p_lon': lon,
   });
 }

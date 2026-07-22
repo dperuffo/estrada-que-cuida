@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
+import 'package:signature/signature.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -349,6 +350,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     String tipoEvento, {
     String? postoId,
     String? observacao,
+    String? codigoOcorrencia,
     required bool fotoObrigatoria,
   }) async {
     Uint8List? fotoBytes;
@@ -377,6 +379,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         postoRecomendadoId: postoId,
         observacao: observacao,
         fotoPath: fotoPath,
+        codigoOcorrencia: codigoOcorrencia,
       );
     });
   }
@@ -411,28 +414,71 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     await _registrarEvento(tipoEvento, postoId: postoId, fotoObrigatoria: fotoObrigatoria);
   }
 
+  // Fase P0.4 — pedido do plano: ocorrência precisa de um código
+  // estruturado (atraso/avaria/recusa/reentrega/devolução), não só texto
+  // livre — a RPC registrar_evento_frete já exige isso quando
+  // tipo_evento='ocorrencia'.
+  static const _labelCodigoOcorrencia = {
+    'atraso': 'Atraso',
+    'avaria': 'Avaria',
+    'recusa': 'Recusa',
+    'reentrega': 'Reentrega',
+    'devolucao': 'Devolução',
+  };
+
   Future<void> _registrarOcorrencia() async {
-    final observacao = await showDialog<String>(
+    final controller = TextEditingController();
+    String? codigoSelecionado;
+
+    final resultado = await showDialog<(String, String)>(
       context: context,
       builder: (ctx) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Descreva a ocorrência'),
-          content: TextField(
-            controller: controller,
-            maxLines: 3,
-            decoration: const InputDecoration(hintText: 'O que aconteceu?'),
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) => AlertDialog(
+            title: const Text('Registrar ocorrência'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DropdownButtonFormField<String>(
+                  initialValue: codigoSelecionado,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Tipo de ocorrência', isDense: true),
+                  items: _labelCodigoOcorrencia.entries
+                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .toList(),
+                  onChanged: (v) => setStateDialog(() => codigoSelecionado = v),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  maxLines: 3,
+                  decoration: const InputDecoration(hintText: 'Descreva o que aconteceu'),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              TextButton(
+                onPressed: codigoSelecionado == null
+                    ? null
+                    : () => Navigator.pop(ctx, (codigoSelecionado!, controller.text.trim())),
+                child: const Text('Continuar'),
+              ),
+            ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-            TextButton(onPressed: () => Navigator.pop(ctx, controller.text.trim()), child: const Text('Continuar')),
-          ],
         );
       },
     );
-    if (observacao == null || observacao.isEmpty) return;
+    if (resultado == null) return;
     if (!mounted) return;
-    await _registrarEvento('ocorrencia', observacao: observacao, fotoObrigatoria: true);
+    final (codigo, observacao) = resultado;
+    await _registrarEvento(
+      'ocorrencia',
+      observacao: observacao.isEmpty ? null : observacao,
+      codigoOcorrencia: codigo,
+      fotoObrigatoria: true,
+    );
   }
 
   Future<void> _verFoto(String path) async {
@@ -516,31 +562,118 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       ),
       const SizedBox(height: 12),
       ElevatedButton.icon(
-        onPressed: _processando ? null : () => _confirmarConcluir(),
+        onPressed: _processando ? null : _confirmarEntrega,
         style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusAtivo, foregroundColor: Colors.white),
         icon: const Icon(Icons.check_circle_outline, size: 18),
-        label: const Text('Concluir frete 📷'),
+        label: const Text('Confirmar entrega ✍️'),
       ),
       const SizedBox(height: 20),
       if (_eventos.isNotEmpty) _timeline(),
     ];
   }
 
-  Future<void> _confirmarConcluir() async {
-    final confirmar = await showDialog<bool>(
+  // Fase P0.4 (canhoto digital / POD) — pedido do plano: a conclusão do
+  // frete passa a exigir nome do recebedor, foto do canhoto e assinatura na
+  // tela (não só uma foto genérica como antes). A RPC confirmar_entrega_frete
+  // grava tudo isso E o mesmo evento 'concluido' de sempre, então a
+  // timeline/status continuam funcionando exatamente como já funcionavam.
+  Future<Uint8List?> _capturarAssinatura() async {
+    final controller = SignatureController(
+      penStrokeWidth: 3,
+      penColor: Colors.black,
+      exportBackgroundColor: Colors.white,
+    );
+    final bytes = await showDialog<Uint8List>(
       context: context,
+      barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('Concluir frete?'),
-        content: const Text('Confirma que chegou no destino e finalizou a entrega?'),
+        title: const Text('Assinatura do recebedor'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 220,
+          child: Signature(controller: controller, backgroundColor: Colors.white),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Concluir')),
+          TextButton(onPressed: controller.clear, child: const Text('Limpar')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.isEmpty) return;
+              final png = await controller.toPngBytes();
+              if (ctx.mounted) Navigator.pop(ctx, png);
+            },
+            child: const Text('Confirmar'),
+          ),
         ],
       ),
     );
-    if (confirmar == true) {
-      await _registrarEvento('concluido', fotoObrigatoria: true);
+    controller.dispose();
+    return bytes;
+  }
+
+  Future<void> _confirmarEntrega() async {
+    final dadosRecebedor = await showDialog<(String, String)>(
+      context: context,
+      builder: (ctx) {
+        final nomeCtrl = TextEditingController();
+        final docCtrl = TextEditingController();
+        return AlertDialog(
+          title: const Text('Confirmar entrega'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nomeCtrl, decoration: const InputDecoration(labelText: 'Nome de quem recebeu')),
+              const SizedBox(height: 8),
+              TextField(controller: docCtrl, decoration: const InputDecoration(labelText: 'Documento (opcional)')),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () {
+                if (nomeCtrl.text.trim().isEmpty) return;
+                Navigator.pop(ctx, (nomeCtrl.text.trim(), docCtrl.text.trim()));
+              },
+              child: const Text('Continuar'),
+            ),
+          ],
+        );
+      },
+    );
+    if (dadosRecebedor == null || !mounted) return;
+    final (nomeRecebedor, documentoRecebedor) = dadosRecebedor;
+
+    final fotoCanhoto = await _tirarFoto();
+    if (fotoCanhoto == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto do canhoto é obrigatória.')));
+      }
+      return;
     }
+    if (!mounted) return;
+
+    final assinatura = await _capturarAssinatura();
+    if (assinatura == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A assinatura do recebedor é obrigatória.')));
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    await _executar(() async {
+      final fotoPath = await enviarFotoEvidenciaFrete(freteId: widget.freteId, tipoEvento: 'canhoto', bytes: fotoCanhoto);
+      final assinaturaPath = await enviarAssinaturaEntregaFrete(freteId: widget.freteId, bytes: assinatura);
+      await confirmarEntregaFrete(
+        widget.freteId,
+        nomeRecebedor: nomeRecebedor,
+        documentoRecebedor: documentoRecebedor.isEmpty ? null : documentoRecebedor,
+        fotoCanhotoPath: fotoPath,
+        assinaturaPath: assinaturaPath,
+        lat: _minhaPosicao?.latitude,
+        lon: _minhaPosicao?.longitude,
+      );
+    });
   }
 
   Widget _timeline() {
@@ -564,7 +697,14 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(child: Text(labelEvento[e.tipoEvento] ?? e.tipoEvento, style: const TextStyle(fontSize: 12.5))),
+                Expanded(
+                  child: Text(
+                    e.codigoOcorrencia != null
+                        ? '${labelEvento[e.tipoEvento] ?? e.tipoEvento} — ${_labelCodigoOcorrencia[e.codigoOcorrencia] ?? e.codigoOcorrencia}'
+                        : labelEvento[e.tipoEvento] ?? e.tipoEvento,
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                ),
                 if (e.fotoPath != null)
                   IconButton(
                     onPressed: () => _verFoto(e.fotoPath!),
