@@ -8,9 +8,12 @@ import '../../../core/services/supabase_service.dart';
 // Dois modos, ambos na mesma tabela `fretes`:
 //   - Direto: motorista_id já vem preenchido, status "aguardando_confirmacao"
 //     — só o motorista escolhido (próprio ou parceiro) vê, aceita ou recusa.
-//   - Mercado aberto: status "disponivel", visível pra rede toda; motorista
-//     propõe um valor (abrirNegociacaoFrete) e pode receber contraproposta
-//     do cliente, até alguém aceitar (aceitarNegociacao) ou recusar.
+//   - Mercado aberto: status "disponivel"; motorista propõe um valor
+//     (abrirNegociacaoFrete) e pode receber contraproposta do cliente, até
+//     alguém aceitar (aceitarNegociacao) ou recusar. Fase Público-Alvo
+//     (23/07/26): visibilidade depende de `publico_alvo` — 'fora_base' só
+//     pra motoristas de fora da empresa dona; 'base' só pros próprios
+//     (RLS e RPCs no banco garantem; aqui é transparente).
 // A RLS já escopa tudo certinho (mercado aberto visível a qualquer
 // autenticado; o resto só pro motorista_id dono) — aqui não precisa nem
 // saber o próprio motorista_id, só filtrar por status.
@@ -44,6 +47,11 @@ class Frete {
   final double? cargaAlturaM;
   final List<String> veiculosAceitos;
   final List<String> carroceriasAceitas;
+  // Fase Fretes-Público-Alvo (23/07/26) — alvo da solicitação no mercado
+  // aberto: 'fora_base' (rede/parceiros) ou 'base' (motoristas próprios da
+  // empresa dona). A RLS já garante que só chega aqui o que eu posso ver —
+  // este campo é só pra UI sinalizar "exclusivo da sua frota".
+  final String publicoAlvo;
 
   const Frete({
     required this.id,
@@ -71,6 +79,7 @@ class Frete {
     this.cargaAlturaM,
     this.veiculosAceitos = const [],
     this.carroceriasAceitas = const [],
+    this.publicoAlvo = 'fora_base',
   });
 
   factory Frete.fromMap(Map<String, dynamic> m) => Frete(
@@ -99,6 +108,7 @@ class Frete {
         cargaAlturaM: (m['carga_altura_m'] as num?)?.toDouble(),
         veiculosAceitos: (m['veiculos_aceitos'] as List?)?.map((v) => v as String).toList() ?? const [],
         carroceriasAceitas: (m['carrocerias_aceitas'] as List?)?.map((v) => v as String).toList() ?? const [],
+        publicoAlvo: m['publico_alvo'] as String? ?? 'fora_base',
       );
 }
 

@@ -484,6 +484,11 @@ class _CardFrete extends StatelessWidget {
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _ChipStatusFrete(status: frete.status),
+                  // Fase Fretes-Público-Alvo (23/07/26) — quando o cliente
+                  // enviou a solicitação só pra base dele, o motorista vê
+                  // que o frete é exclusivo da frota (menos concorrência).
+                  if (frete.status == 'disponivel' && frete.publicoAlvo == 'base')
+                    _tagFrete('⭐ Exclusivo da sua frota', AppTheme.frota700),
                   if (subtitulo != null)
                     Text(subtitulo!, style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontWeight: FontWeight.w500)),
                 ],
