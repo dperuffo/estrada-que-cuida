@@ -254,3 +254,90 @@ List<ParadaSugerida> otimizarAbastecimento({
 
   return paradas;
 }
+
+/// Resultado de [calcularAbastecimentoParaSelecao]: as paradas (na ordem
+/// escolhida pelo motorista, com litros/custo/viabilidade calculados) e
+/// avisos não bloqueantes de trechos onde o tanque não cobre a distância.
+class ResultadoSelecaoManual {
+  final List<ParadaSugerida> paradas;
+  final List<String> alertas;
+
+  const ResultadoSelecaoManual({required this.paradas, required this.alertas});
+}
+
+/// Fase Seleção-Manual-de-Postos (28/07/2026) — port fiel de
+/// calcularAbastecimentoParaSelecao() em src/lib/roteirizacaoAlgoritmo.ts
+/// (painel web). Pedido do Daniel: o motorista também pode clicar em
+/// qualquer posto do corredor (não só os sugeridos pelo algoritmo guloso
+/// acima) pra montar ele mesmo a lista de paradas — esta função só decide
+/// QUANTO abastecer em cada parada JÁ ESCOLHIDA (ordenadas por km), nunca
+/// ONDE parar (isso quem decide é o toque do motorista no mapa/lista).
+ResultadoSelecaoManual calcularAbastecimentoParaSelecao({
+  required List<CandidatoAbastecimento> candidatosSelecionados,
+  required double capacidadeTanqueL,
+  required double autonomiaKmPorL,
+  required double distanciaTotalRotaKm,
+  double? combustivelInicialL,
+}) {
+  final rcap = capacidadeTanqueL;
+  final raut = autonomiaKmPorL;
+  final rd = distanciaTotalRotaKm;
+  final alertas = <String>[];
+  if (raut <= 0 || rcap <= 0) return ResultadoSelecaoManual(paradas: [], alertas: alertas);
+
+  final rmin = rcap * _nivelMinimoPct;
+  final ordenados = [...candidatosSelecionados]..sort((a, b) => a.km.compareTo(b.km));
+  final paradas = <ParadaSugerida>[];
+  var pos = 0.0;
+  var fuel = combustivelInicialL ?? rcap;
+
+  for (var i = 0; i < ordenados.length; i++) {
+    final candidato = ordenados[i];
+    final kmAte = candidato.km - pos;
+    final fuelChegadaBruto = fuel - kmAte / raut;
+    if (fuelChegadaBruto < 0) {
+      final faltamKm = (-fuelChegadaBruto * raut).round();
+      final origemTrecho = i == 0 ? 'origem' : ordenados[i - 1].label;
+      alertas.add(
+        'De $origemTrecho até ${candidato.label} (${kmAte.toStringAsFixed(0)} km), o tanque não é suficiente — '
+        'faltariam $faltamKm km de autonomia. Considere adicionar um posto no meio ou revisar a ordem.',
+      );
+    }
+    final fuelChegada = math.max(0.0, fuelChegadaBruto);
+    final pctChegada = (fuelChegada / rcap) * 100;
+    final proximoKm = i < ordenados.length - 1 ? ordenados[i + 1].km : rd;
+    final distProxima = proximoKm - candidato.km;
+    final litrosNecessarios = (distProxima / raut) * 1.15 + rmin - fuelChegada;
+    var litrosFill = math.max(0.0, litrosNecessarios);
+    litrosFill = math.min(litrosFill, rcap - fuelChegada);
+    litrosFill = litrosFill.ceilToDouble();
+    final fuelApos = math.min(fuelChegada + litrosFill, rcap);
+    final pctApos = (fuelApos / rcap) * 100;
+    final custoAbastecimento = (litrosFill * candidato.preco * 100).round() / 100;
+
+    paradas.add(ParadaSugerida(
+      posto: candidato,
+      motivo: 'manual',
+      fuelChegadaL: (fuelChegada * 10).round() / 10,
+      pctChegada: (pctChegada * 10).round() / 10,
+      litrosSugeridos: litrosFill.round(),
+      custoAbastecimento: custoAbastecimento,
+      fuelAposL: (fuelApos * 10).round() / 10,
+      pctApos: (pctApos * 10).round() / 10,
+    ));
+
+    pos = candidato.km;
+    fuel = fuelApos;
+  }
+
+  final distFinal = rd - pos;
+  final fuelFinal = fuel - distFinal / raut;
+  if (fuelFinal < 0) {
+    final faltamKm = (-fuelFinal * raut).round();
+    final origemTrecho = ordenados.isNotEmpty ? ordenados.last.label : 'origem';
+    alertas.add('De $origemTrecho até o destino (${distFinal.toStringAsFixed(0)} km), o tanque não é suficiente — '
+        'faltariam $faltamKm km de autonomia.');
+  }
+
+  return ResultadoSelecaoManual(paradas: paradas, alertas: alertas);
+}

@@ -28,6 +28,16 @@ const _motivoLabel = {
   'otimizado': 'Melhor custo-benefício',
   'estrategico': 'Vale a pena esticar até aqui',
   'emergencia': 'Parada obrigatória (tanque no limite)',
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — parada escolhida pelo
+  // próprio motorista (não pelo algoritmo), ver calcularAbastecimentoParaSelecao.
+  'manual': 'Selecionada por você',
+};
+
+const _gradeCor = {
+  'A': AppTheme.statusAtivo,
+  'B': AppTheme.frota500,
+  'C': AppTheme.statusAtencao,
+  'D': AppTheme.statusInativo,
 };
 
 // Roteirização self-service (Fase 17/07) — pedido do Daniel: "trazer as
@@ -53,9 +63,18 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   bool _carregando = false;
   String? _erro;
   ResultadoRota? _resultado;
-  List<ParadaSugerida> _paradas = [];
-  int _candidatosEncontrados = 0;
   List<PracaPedagioNaRota> _pracasPedagio = [];
+
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — pedido do Daniel: a mesma
+  // interatividade que o gestor de frota ganhou no painel web ("clicar nos
+  // postos desejados... a partir da seleção eles já vão compondo a rota e o
+  // custo total") também pro motorista aqui no PWA. `_candidatos` guarda
+  // TODOS os postos do corredor (não só os sugeridos); `_selecionados`
+  // começa com a sugestão do algoritmo guloso (otimizarAbastecimento) e o
+  // motorista ajusta tocando no mapa ou na lista — litros/custo recalculam
+  // na hora via calcularAbastecimentoParaSelecao (função pura, sem round-trip).
+  List<CandidatoAbastecimento> _candidatos = [];
+  Set<String> _selecionados = {};
 
   bool _carregandoVeiculos = true;
   List<VeiculoRoteirizacao> _veiculos = [];
@@ -156,8 +175,8 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _carregando = true;
       _erro = null;
       _resultado = null;
-      _paradas = [];
-      _candidatosEncontrados = 0;
+      _candidatos = [];
+      _selecionados = {};
       _pracasPedagio = [];
     });
 
@@ -198,8 +217,10 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
     setState(() {
       _carregando = false;
       _resultado = resultado;
-      _paradas = paradas;
-      _candidatosEncontrados = candidatos.length;
+      _candidatos = candidatos;
+      // A sugestão do algoritmo vira o ponto de partida da seleção — o
+      // motorista ajusta a partir daí (toca pra marcar/desmarcar postos).
+      _selecionados = paradas.map((p) => p.posto.cnpj).toSet();
       _pracasPedagio = pracasPedagio;
     });
 
@@ -208,10 +229,39 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
     unawaited(registrarRotaCalculada());
   }
 
+  // Recalcula litros/custo/viabilidade a cada toque — 100% no client (função
+  // pura), sem round-trip ao servidor. Também recalcula se o motorista mudar
+  // o combustível já no tanque depois de já ter um resultado.
+  ResultadoSelecaoManual get _selecao {
+    if (_resultado == null || _veiculoSelecionado == null) {
+      return const ResultadoSelecaoManual(paradas: [], alertas: []);
+    }
+    final combustivelInicial = double.tryParse(_combustivelInicialCtrl.text.replaceAll(',', '.'));
+    return calcularAbastecimentoParaSelecao(
+      candidatosSelecionados: _candidatos.where((c) => _selecionados.contains(c.cnpj)).toList(),
+      capacidadeTanqueL: _veiculoSelecionado!.tanque,
+      autonomiaKmPorL: _veiculoSelecionado!.autonomia,
+      distanciaTotalRotaKm: _resultado!.distanciaKm,
+      combustivelInicialL: combustivelInicial,
+    );
+  }
+
+  void _alternarPosto(String cnpj) {
+    setState(() {
+      if (_selecionados.contains(cnpj)) {
+        _selecionados.remove(cnpj);
+      } else {
+        _selecionados.add(cnpj);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final litrosTotal = _paradas.fold<int>(0, (s, p) => s + p.litrosSugeridos);
-    final custoTotal = _paradas.fold<double>(0, (s, p) => s + p.custoAbastecimento);
+    final selecao = _selecao;
+    final paradasAtuais = selecao.paradas;
+    final litrosTotal = paradasAtuais.fold<int>(0, (s, p) => s + p.litrosSugeridos);
+    final custoTotal = paradasAtuais.fold<double>(0, (s, p) => s + p.custoAbastecimento);
     final custoPedagio = custoPedagioTotal(_pracasPedagio, categoriaPedagioDoVeiculo(_veiculoSelecionado));
 
     return Scaffold(
@@ -258,6 +308,9 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
                 child: TextField(
                   controller: _combustivelInicialCtrl,
                   keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  // Recalcula litros/custo ao vivo se o motorista ajustar o
+                  // combustível já no tanque depois de já ter um resultado.
+                  onChanged: (_) => setState(() {}),
                   decoration: const InputDecoration(
                     labelText: 'Combustível no tanque (L)',
                     helperText: 'padrão: tanque cheio',
@@ -279,15 +332,49 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ),
           if (_resultado != null) ...[
             const SizedBox(height: 24),
-            _CartaoResultado(resultado: _resultado!, paradas: _paradas, pracasPedagio: _pracasPedagio),
+            _CartaoResultado(
+              resultado: _resultado!,
+              candidatos: _candidatos,
+              selecionados: _selecionados,
+              paradasAtuais: paradasAtuais,
+              pracasPedagio: _pracasPedagio,
+              onTogglePosto: _alternarPosto,
+            ),
           ],
           if (_resultado != null) ...[
             const SizedBox(height: 16),
             _CartaoCustoTotal(
               litrosTotal: litrosTotal,
               custoTotal: custoTotal,
-              numParadas: _paradas.length,
+              numParadas: paradasAtuais.length,
               custoPedagio: custoPedagio,
+            ),
+          ],
+          // Fase Seleção-Manual-de-Postos — avisos não bloqueantes quando o
+          // tanque não cobre a distância até a próxima parada escolhida (ou
+          // até o destino), pra alertar sem travar a tela.
+          if (selecao.alertas.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('⚠️ Verifique as paradas escolhidas:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                  const SizedBox(height: 4),
+                  for (final alerta in selecao.alertas)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text('• $alerta', style: const TextStyle(fontSize: 12, color: Colors.red)),
+                    ),
+                ],
+              ),
             ),
           ],
           if (_pracasPedagio.isNotEmpty) ...[
@@ -297,32 +384,47 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
             const SizedBox(height: 8),
             for (final praca in _pracasPedagio) _CartaoPedagio(praca: praca),
           ],
-          if (_resultado != null && _paradas.isEmpty) ...[
+          if (_resultado != null && _candidatos.isEmpty) ...[
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: _candidatosEncontrados == 0 ? Colors.amber.withValues(alpha: 0.12) : AppTheme.frota50,
+                color: Colors.amber.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
-                _candidatosEncontrados == 0
-                    ? 'Nenhum posto com preço registrado pra "$_combustivel" dentro do corredor da rota.'
-                    : 'Com o tanque informado dá pra fazer essa viagem sem precisar abastecer.',
+                'Nenhum posto com preço registrado pra "$_combustivel" dentro do corredor da rota.',
                 style: const TextStyle(fontSize: 12.5),
               ),
             ),
           ],
-          if (_paradas.isNotEmpty) ...[
+          if (_candidatos.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const Text('Paradas sugeridas para abastecer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Text('Postos no corredor da rota', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 4),
             const Text(
-              'Ordem calculada pelo mesmo motor de otimização do painel web: pondera preço, qualidade do posto e desvio da rota.',
+              'Toque num posto (aqui ou no mapa) pra marcar ou desmarcar como parada de abastecimento. '
+              'A sugestão inicial já vem marcada — ajuste do seu jeito.',
               style: TextStyle(fontSize: 11.5, color: Colors.black54),
             ),
             const SizedBox(height: 8),
-            for (var i = 0; i < _paradas.length; i++) _CartaoParada(numero: i + 1, parada: _paradas[i]),
+            _ListaCandidatos(
+              candidatos: _candidatos,
+              selecionados: _selecionados,
+              paradasAtuais: paradasAtuais,
+              onToggle: _alternarPosto,
+            ),
+          ],
+          if (paradasAtuais.isNotEmpty) ...[
+            const SizedBox(height: 20),
+            const Text('Suas paradas, na ordem da viagem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 4),
+            const Text(
+              'Toque num cartão pra ver o posto no Google Maps.',
+              style: TextStyle(fontSize: 11.5, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            for (var i = 0; i < paradasAtuais.length; i++) _CartaoParada(numero: i + 1, parada: paradasAtuais[i]),
           ],
         ],
       ),
@@ -470,10 +572,25 @@ class _CampoLocal extends StatelessWidget {
 
 class _CartaoResultado extends StatelessWidget {
   final ResultadoRota resultado;
-  final List<ParadaSugerida> paradas;
+  // Fase Seleção-Manual-de-Postos (28/07/2026) — o mapa agora mostra TODOS
+  // os candidatos do corredor (não só as paradas escolhidas): selecionados
+  // aparecem coloridos por bandeira, os demais em cinza apagado — igual ao
+  // MapaRota.tsx do painel web. Tocar num marcador abre um cartão com o
+  // botão de marcar/desmarcar (onTogglePosto).
+  final List<CandidatoAbastecimento> candidatos;
+  final Set<String> selecionados;
+  final List<ParadaSugerida> paradasAtuais;
   final List<PracaPedagioNaRota> pracasPedagio;
+  final ValueChanged<String> onTogglePosto;
 
-  const _CartaoResultado({required this.resultado, required this.paradas, this.pracasPedagio = const []});
+  const _CartaoResultado({
+    required this.resultado,
+    required this.candidatos,
+    required this.selecionados,
+    required this.paradasAtuais,
+    this.pracasPedagio = const [],
+    required this.onTogglePosto,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -486,12 +603,13 @@ class _CartaoResultado extends StatelessWidget {
     final destino = pontosRota.last;
     final limites = LatLngBounds.fromPoints(pontosRota);
 
-    // Bandeiras distintas entre as paradas sugeridas — vira a legenda de
+    // Bandeiras distintas entre as paradas selecionadas — vira a legenda de
     // cores do mapa (mesma cor calculada por corPorBandeira, igual ao web).
     final legenda = <String, CorMarcador>{};
-    for (final p in paradas) {
-      final label = formatarLabelBandeira(p.posto.bandeira);
-      legenda[label] = corPorBandeira(p.posto.bandeira);
+    for (final c in candidatos) {
+      if (!selecionados.contains(c.cnpj)) continue;
+      final label = formatarLabelBandeira(c.bandeira);
+      legenda[label] = corPorBandeira(c.bandeira);
     }
 
     return Card(
@@ -546,15 +664,21 @@ class _CartaoResultado extends StatelessWidget {
                           height: 36,
                           child: const Icon(Icons.location_on, color: AppTheme.statusInativo, size: 34),
                         ),
-                        for (final parada in paradas)
+                        for (final candidato in candidatos)
                           Marker(
-                            point: LatLng(parada.posto.lat, parada.posto.lon),
-                            width: 30,
-                            height: 30,
-                            child: Icon(
-                              Icons.local_gas_station,
-                              color: coresHexBandeira[corPorBandeira(parada.posto.bandeira)],
-                              size: 26,
+                            point: LatLng(candidato.lat, candidato.lon),
+                            width: selecionados.contains(candidato.cnpj) ? 30 : 20,
+                            height: selecionados.contains(candidato.cnpj) ? 30 : 20,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => _abrirDetalhePosto(context, candidato, selecionados.contains(candidato.cnpj), onTogglePosto),
+                              child: Icon(
+                                Icons.local_gas_station,
+                                color: selecionados.contains(candidato.cnpj)
+                                    ? coresHexBandeira[corPorBandeira(candidato.bandeira)]
+                                    : Colors.grey.shade400,
+                                size: selecionados.contains(candidato.cnpj) ? 26 : 17,
+                              ),
                             ),
                           ),
                         // Fase Motorista-Pedagios — praças de pedágio na
@@ -759,6 +883,194 @@ class _CartaoParada extends StatelessWidget {
                         Text('Toque para ver no Google Maps', style: TextStyle(fontSize: 11, color: Colors.black45)),
                       ],
                     ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Fase Seleção-Manual-de-Postos (28/07/2026) — bottom sheet aberto ao tocar
+// num marcador do mapa: mostra os dados do posto candidato e o botão pra
+// marcar/desmarcar como parada, mesmo padrão do popup do MapaRota.tsx no
+// painel web.
+void _abrirDetalhePosto(
+  BuildContext context,
+  CandidatoAbastecimento candidato,
+  bool selecionado,
+  ValueChanged<String> onToggle,
+) {
+  showModalBottomSheet<void>(
+    context: context,
+    builder: (ctx) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(candidato.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                ),
+                _GradeBadge(grade: candidato.grade),
+              ],
+            ),
+            Text(
+              [formatarLabelBandeira(candidato.bandeira), if (candidato.municipio != null) candidato.municipio!].join(' • '),
+              style: const TextStyle(fontSize: 12.5, color: Colors.black54),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 14,
+              runSpacing: 4,
+              children: [
+                Text('${_formatoKm.format(candidato.km)} km', style: const TextStyle(fontSize: 12.5)),
+                Text('R\$ ${candidato.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12.5)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  onToggle(candidato.cnpj);
+                  Navigator.pop(ctx);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: selecionado ? Colors.grey.shade200 : AppTheme.frota600,
+                  foregroundColor: selecionado ? Colors.black87 : Colors.white,
+                ),
+                child: Text(selecionado ? '− Remover parada' : '+ Selecionar como parada'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// Badge de grade (A/B/C/D) — mesma escala de cor do painel web (GRADE_COR
+// em FormRoteirizacao.tsx).
+class _GradeBadge extends StatelessWidget {
+  final String grade;
+
+  const _GradeBadge({required this.grade});
+
+  @override
+  Widget build(BuildContext context) {
+    final cor = _gradeCor[grade] ?? Colors.grey;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: cor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
+      child: Text(grade, style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12)),
+    );
+  }
+}
+
+// Lista tocável de TODOS os postos do corredor (não só os selecionados) —
+// pedido do Daniel no painel web, agora também aqui: "usuario clicando nos
+// postos desejados e selecionando-os". Ordenada por km pra acompanhar a
+// ordem da viagem.
+class _ListaCandidatos extends StatelessWidget {
+  final List<CandidatoAbastecimento> candidatos;
+  final Set<String> selecionados;
+  final List<ParadaSugerida> paradasAtuais;
+  final ValueChanged<String> onToggle;
+
+  const _ListaCandidatos({
+    required this.candidatos,
+    required this.selecionados,
+    required this.paradasAtuais,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ordenados = [...candidatos]..sort((a, b) => a.km.compareTo(b.km));
+    return Column(
+      children: [
+        for (final c in ordenados)
+          _CartaoCandidato(
+            candidato: c,
+            selecionado: selecionados.contains(c.cnpj),
+            parada: _paradaDoPosto(c.cnpj),
+            onTap: () => onToggle(c.cnpj),
+          ),
+      ],
+    );
+  }
+
+  ParadaSugerida? _paradaDoPosto(String cnpj) {
+    for (final p in paradasAtuais) {
+      if (p.posto.cnpj == cnpj) return p;
+    }
+    return null;
+  }
+}
+
+class _CartaoCandidato extends StatelessWidget {
+  final CandidatoAbastecimento candidato;
+  final bool selecionado;
+  final ParadaSugerida? parada;
+  final VoidCallback onTap;
+
+  const _CartaoCandidato({required this.candidato, required this.selecionado, this.parada, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 6),
+      color: selecionado ? AppTheme.frota50 : null,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                selecionado ? Icons.check_box : Icons.check_box_outline_blank,
+                color: selecionado ? AppTheme.frota600 : Colors.black38,
+                size: 20,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            candidato.label,
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        _GradeBadge(grade: candidato.grade),
+                      ],
+                    ),
+                    Text(
+                      '${_formatoKm.format(candidato.km)} km · R\$ ${candidato.preco.toStringAsFixed(3)}/L',
+                      style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                    ),
+                    if (parada != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${parada!.litrosSugeridos} L · ${_formatoMoeda.format(parada!.custoAbastecimento)} · '
+                        'chega ${parada!.pctChegada.toStringAsFixed(0)}% · sai ${parada!.pctApos.toStringAsFixed(0)}%',
+                        style: const TextStyle(fontSize: 11.5, color: AppTheme.frota700, fontWeight: FontWeight.w600),
+                      ),
+                    ],
                   ],
                 ),
               ),
