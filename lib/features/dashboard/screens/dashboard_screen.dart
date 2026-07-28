@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../core/widgets/app_drawer.dart';
+import '../../../core/widgets/sino_avisos.dart';
 import '../../abastecimentos/providers/abastecimentos_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
 import '../providers/dashboard_provider.dart';
@@ -35,7 +36,7 @@ class DashboardScreen extends ConsumerWidget {
     final homeResumoAsync = ref.watch(homeResumoProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estrada que Cuida')),
+      appBar: AppBar(title: const Text('Estrada que Cuida'), actions: const [SinoAvisos()]),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {

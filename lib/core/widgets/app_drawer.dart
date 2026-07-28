@@ -108,6 +108,17 @@ class AppDrawer extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 children: [
                   _ItemMenu(icone: Icons.home_outlined, label: 'Dashboard', onTap: () => _ir(context, '/')),
+                  // Fase Central-Avisos (28/07/2026) — pedido do Daniel:
+                  // "Central de Avisos é uma funcionalidade do admin da
+                  // aplicação para os clientes, motoristas e postos". O
+                  // sino (com badge) já fica no AppBar do Dashboard; aqui
+                  // no Drawer (reaproveitado em toda tela) garante acesso
+                  // mesmo fora da Home.
+                  _ItemMenu(
+                    icone: Icons.notifications_outlined,
+                    label: 'Avisos',
+                    onTap: () => _ir(context, '/avisos'),
+                  ),
                   _ItemMenu(
                     icone: Icons.local_gas_station_outlined,
                     label: 'Confirmar abastecimentos',
