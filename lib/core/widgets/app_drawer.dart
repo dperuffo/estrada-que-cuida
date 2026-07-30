@@ -124,6 +124,14 @@ class AppDrawer extends ConsumerWidget {
                     label: 'Confirmar abastecimentos',
                     onTap: () => _ir(context, '/pendentes'),
                   ),
+                  // Fase Inspeção-pelo-Motorista (30/07/2026) — pedido do
+                  // Daniel: checklist de segurança do veículo, feito pelo
+                  // próprio motorista, rotineiramente.
+                  _ItemMenu(
+                    icone: Icons.fact_check_outlined,
+                    label: 'Checklist de inspeção',
+                    onTap: () => _ir(context, '/inspecao-veicular'),
+                  ),
                   _ItemMenu(
                     icone: Icons.card_giftcard_outlined,
                     label: 'Catálogo de benefícios',

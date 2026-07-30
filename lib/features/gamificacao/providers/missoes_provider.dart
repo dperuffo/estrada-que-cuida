@@ -70,6 +70,10 @@ const Map<String, IconData> iconesMissao = {
   'payments_outlined': Icons.payments_outlined,
   'military_tech_outlined': Icons.military_tech_outlined,
   'flag_outlined': Icons.flag_outlined,
+  // Fase Inspeção-pelo-Motorista (30/07/2026) — missões "Primeira Inspeção"
+  // e "Hábito de Cuidado" (fidelidade_missoes.tipo_metrica =
+  // 'inspecoes_realizadas').
+  'fact_check_outlined': Icons.fact_check_outlined,
 };
 
 // Chama a RPC que avalia todas as missões ativas (globais + da empresa do

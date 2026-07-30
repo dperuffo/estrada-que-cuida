@@ -26,6 +26,7 @@ import '../../features/avaliacao/screens/avaliar_screen.dart';
 import '../../features/seguranca/screens/seguranca_screen.dart';
 import '../../features/seguranca/screens/mfa_verificar_screen.dart';
 import '../../features/avisos/screens/avisos_screen.dart';
+import '../../features/inspecao_veicular/screens/inspecao_veicular_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -123,5 +124,9 @@ final appRouter = GoRouter(
     // Avisos é uma funcionalidade do admin da aplicação para os clientes,
     // motoristas e postos".
     GoRoute(path: '/avisos', builder: (context, state) => const AvisosScreen()),
+    // Fase Inspeção-pelo-Motorista (30/07/2026) — checklist de segurança
+    // que o motorista preenche rotineiramente, virando engajamento de
+    // fidelidade (RPC registrar_inspecao_motorista).
+    GoRoute(path: '/inspecao-veicular', builder: (context, state) => const InspecaoVeicularScreen()),
   ],
 );
