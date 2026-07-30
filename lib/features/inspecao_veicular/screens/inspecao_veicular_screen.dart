@@ -122,6 +122,11 @@ class _InspecaoVeicularScreenState extends ConsumerState<InspecaoVeicularScreen>
   Widget build(BuildContext context) {
     final veiculosAsync = ref.watch(veiculosInspecaoProvider);
     final historicoAsync = ref.watch(minhasInspecoesProvider);
+    // Ajuste (30/07/2026) — pedido do Daniel: "traer a informação de
+    // hodometro atual para o usuario em tela". Só busca depois que um
+    // veículo é escolhido (a RPC precisa da placa).
+    final placaAtual = _placaSelecionada;
+    final ultimoHodometro = placaAtual == null ? null : ref.watch(ultimoHodometroInspecaoProvider(placaAtual)).valueOrNull;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Checklist de inspeção')),
@@ -143,8 +148,14 @@ class _InspecaoVeicularScreenState extends ConsumerState<InspecaoVeicularScreen>
               }
               return DropdownButtonFormField<String>(
                 initialValue: _placaSelecionada,
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Veículo', border: OutlineInputBorder()),
-                items: veiculos.map((v) => DropdownMenuItem(value: v.placa, child: Text(v.rotulo))).toList(),
+                items: veiculos
+                    .map((v) => DropdownMenuItem(
+                          value: v.placa,
+                          child: Text(v.rotulo, overflow: TextOverflow.ellipsis),
+                        ))
+                    .toList(),
                 onChanged: (v) => setState(() => _placaSelecionada = v),
               );
             },
@@ -161,7 +172,20 @@ class _InspecaoVeicularScreenState extends ConsumerState<InspecaoVeicularScreen>
           TextField(
             controller: _hodometroCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Hodômetro (km)', border: OutlineInputBorder()),
+            decoration: InputDecoration(
+              labelText: 'Hodômetro (km)',
+              border: const OutlineInputBorder(),
+              helperText: (ultimoHodometro != null && ultimoHodometro > 0)
+                  ? 'Último conhecido: ${ultimoHodometro.toStringAsFixed(0)} km'
+                  : null,
+              suffixIcon: (ultimoHodometro != null && ultimoHodometro > 0)
+                  ? IconButton(
+                      icon: const Icon(Icons.speed, size: 20),
+                      tooltip: 'Usar último hodômetro conhecido',
+                      onPressed: () => setState(() => _hodometroCtrl.text = ultimoHodometro.toStringAsFixed(0)),
+                    )
+                  : null,
+            ),
           ),
           const SizedBox(height: 20),
           const Text('Itens do checklist', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),

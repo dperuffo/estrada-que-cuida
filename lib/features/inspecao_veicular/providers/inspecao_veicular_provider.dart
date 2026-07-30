@@ -52,6 +52,16 @@ final veiculosInspecaoProvider = FutureProvider.autoDispose<List<VeiculoInspecao
   }).toList();
 });
 
+// Fase Inspeção-pelo-Motorista — ajuste (30/07/2026) — pedido do Daniel:
+// "traer a informação de hodometro atual para o usuario em tela". Maior
+// hodômetro conhecido pro veículo (último abastecimento OU última
+// inspeção), pra ele saber a partir de onde preencher sem precisar
+// adivinhar ou olhar o painel do carro.
+final ultimoHodometroInspecaoProvider = FutureProvider.autoDispose.family<num?, String>((ref, placa) async {
+  final resp = await SupabaseService.client.rpc('ultimo_hodometro_veiculo', params: {'p_placa': placa});
+  return resp as num?;
+});
+
 // Histórico das inspeções que o próprio motorista já registrou, mais
 // recente primeiro — mostrado no topo da tela pra ele acompanhar o que já
 // fez sem precisar sair do app.
