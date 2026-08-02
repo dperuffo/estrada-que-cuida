@@ -472,15 +472,38 @@ Future<void> registrarEventoFrete(
   // Fase P0.4 — obrigatório (validado no banco) quando tipoEvento ==
   // 'ocorrencia': atraso, avaria, recusa, reentrega ou devolucao.
   String? codigoOcorrencia,
+  // Fase Botao-Panico (02/08/2026) — a RPC já tinha p_lat/p_lon desde
+  // sempre (usados por confirmar_entrega_frete), mas essa função nunca os
+  // repassava. Só o botão de pânico usa hoje (localização fresca no
+  // momento do clique), os outros checkpoints continuam sem lat/lon.
+  double? lat,
+  double? lon,
 }) async {
   await SupabaseService.client.rpc('registrar_evento_frete', params: {
     'p_frete_id': freteId,
     'p_tipo_evento': tipoEvento,
     'p_posto_recomendado_id': postoRecomendadoId,
     'p_observacao': observacao,
+    'p_lat': lat,
+    'p_lon': lon,
     'p_foto_path': fotoPath,
     'p_codigo_ocorrencia': codigoOcorrencia,
   });
+}
+
+// Fase Botao-Panico (02/08/2026, Grupo 1 item 2 do benchmark FNI vs KMM) —
+// avisa a operação por e-mail (Edge Function frete-panico-email, best-effort:
+// nunca lança — o evento 'panico' já foi salvo em fretes_eventos antes desta
+// chamada, então o alerta "existe" no sistema mesmo se o e-mail falhar).
+Future<void> dispararAlertaPanicoFrete(String freteId) async {
+  try {
+    await SupabaseService.client.functions.invoke(
+      'frete-panico-email',
+      body: {'frete_id': freteId},
+    );
+  } catch (_) {
+    // Best-effort — o evento já está registrado, só o e-mail que pode falhar.
+  }
 }
 
 // Fase foto-evidência-checkpoints — sobe a foto ANTES de chamar a RPC

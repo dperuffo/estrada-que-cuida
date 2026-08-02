@@ -384,6 +384,54 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     });
   }
 
+  // Fase Botao-Panico (02/08/2026) — pede confirmação (evita clique
+  // acidental), captura localização fresca (não reaproveita _minhaPosicao,
+  // que só é preenchida antes de aceitar o frete e pode estar bem
+  // desatualizada), registra o evento 'panico' e dispara o e-mail pra
+  // operação. Não usa _executar porque precisa de uma mensagem de sucesso
+  // diferente da padrão (silenciosa) — aqui a confirmação explícita
+  // importa, é uma emergência.
+  Future<void> _registrarPanico() async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('🚨 Alerta de emergência'),
+        content: const Text(
+          'Isso vai avisar a operação imediatamente, com sua localização atual. '
+          'Use só em caso real de emergência.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Confirmar emergência'),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true || !mounted) return;
+
+    setState(() => _processando = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final posicao = await obterLocalizacaoAtual();
+      await registrarEventoFrete(widget.freteId, 'panico', lat: posicao?.latitude, lon: posicao?.longitude);
+      await dispararAlertaPanicoFrete(widget.freteId);
+      await _carregar();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('🚨 Alerta enviado. A operação foi avisada.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text(_mensagemErro(e))));
+    } finally {
+      if (mounted) setState(() => _processando = false);
+    }
+  }
+
   Future<void> _registrarComPosto(String tipoEvento, {required bool fotoObrigatoria}) async {
     String? postoId;
     if (_postos.isNotEmpty) {
@@ -516,6 +564,22 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         ),
         const SizedBox(height: 16),
       ],
+      // Fase Botao-Panico (02/08/2026, Grupo 1 item 2 do benchmark FNI vs
+      // KMM) — botão de emergência, separado dos checkpoints de rotina de
+      // propósito (vermelho, largura total, com confirmação) pra não ter
+      // risco de clique acidental nem se misturar com "Cheguei na origem"
+      // etc. Sempre visível (não some depois de usado — pode acontecer mais
+      // de uma emergência na mesma viagem).
+      SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: _processando ? null : _registrarPanico,
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, foregroundColor: Colors.white),
+          icon: const Icon(Icons.emergency_outlined),
+          label: const Text('Alerta de emergência'),
+        ),
+      ),
+      const SizedBox(height: 16),
       const Text('Acompanhamento da viagem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       const SizedBox(height: 8),
       const Text(
@@ -527,6 +591,17 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         spacing: 8,
         runSpacing: 8,
         children: [
+          // Fase KPIs-Operacionais (02/08/2026) — checkpoint opcional extra,
+          // alimenta o KPI de Tempo de Carga/Descarga na origem (Indicadores
+          // da Frota, web). Sem gate sobre "Saí da origem" de propósito: já
+          // existem fretes em andamento sem esse evento, e não seria certo
+          // travar o botão de saída deles.
+          if (!_jaTemEvento('chegou_origem'))
+            ElevatedButton.icon(
+              onPressed: _processando ? null : () => _registrarEvento('chegou_origem', fotoObrigatoria: false),
+              icon: const Icon(Icons.flag_circle_outlined, size: 18),
+              label: const Text('Cheguei na origem'),
+            ),
           if (!_jaTemEvento('saiu_origem'))
             ElevatedButton.icon(
               onPressed: _processando ? null : () => _registrarEvento('saiu_origem', fotoObrigatoria: false),
@@ -678,6 +753,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
 
   Widget _timeline() {
     const labelEvento = {
+      'chegou_origem': 'Chegou na origem',
       'saiu_origem': 'Saiu da origem',
       'chegou_posto': 'Chegou no posto',
       'abasteceu': 'Abasteceu',
@@ -685,6 +761,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       'chegou_destino': 'Chegou no destino',
       'ocorrencia': 'Ocorrência',
       'concluido': 'Concluiu o frete',
+      'panico': '🚨 Alerta de emergência',
     };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
