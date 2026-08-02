@@ -993,7 +993,18 @@ class _ListaCandidatos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ordenados = [...candidatos]..sort((a, b) => a.km.compareTo(b.km));
+    // Achado real (02/08/2026, pedido do Daniel: "os postos selecionados
+    // aparecem lá no final da fila") — antes ordenava só por km, então os
+    // selecionados ficavam perdidos no meio de dezenas de candidatos ao
+    // longo do corredor. Porta fiel de candidatosOrdenados em
+    // FormRoteirizacao.tsx (web): selecionado primeiro, e dentro de cada
+    // grupo mantém a ordem por km da rota.
+    final ordenados = [...candidatos]..sort((a, b) {
+        final aSel = selecionados.contains(a.cnpj);
+        final bSel = selecionados.contains(b.cnpj);
+        if (aSel != bSel) return aSel ? -1 : 1;
+        return a.km.compareTo(b.km);
+      });
     return Column(
       children: [
         for (final c in ordenados)
