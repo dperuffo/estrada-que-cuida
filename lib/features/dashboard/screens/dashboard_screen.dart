@@ -6,6 +6,7 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/sino_avisos.dart';
 import '../../abastecimentos/providers/abastecimentos_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
+import '../../jornada/providers/jornada_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/home_resumo_provider.dart';
 
@@ -44,6 +45,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(missoesProvider);
           ref.invalidate(abastecimentosPendentesProvider);
           ref.invalidate(homeResumoProvider);
+          ref.invalidate(jornadaEventosProvider);
         },
         child: ListView(
           padding: const EdgeInsets.all(20),
@@ -52,6 +54,12 @@ class DashboardScreen extends ConsumerWidget {
               primeiroNome.isEmpty ? 'Olá!' : 'Olá, $primeiroNome!',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 16),
+
+            // Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) —
+            // controle de jornada simplificado, logo no topo por ser
+            // informação de segurança (quanto tempo dirigindo sem parar).
+            _CartaoJornada(motoristaId: motoristaId),
             const SizedBox(height: 16),
 
             // Cartão do cliente/cota/frete — pedido do Daniel (19/07): quem
@@ -162,6 +170,127 @@ class DashboardScreen extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) — controle de
+// jornada simplificado: mostra o estado atual (dirigindo/descansando/nunca
+// iniciado) calculado a partir do último evento, com botão pra alternar.
+// Lei do Motorista (13.103/2015) exige parada de pelo menos 30 min a cada
+// 5h30 de direção contínua — quando passa disso, mostra um aviso (não
+// bloqueia nada, é só um lembrete de segurança).
+const _limiteDirecaoContinua = Duration(hours: 5, minutes: 30);
+
+class _CartaoJornada extends ConsumerStatefulWidget {
+  final String motoristaId;
+  const _CartaoJornada({required this.motoristaId});
+
+  @override
+  ConsumerState<_CartaoJornada> createState() => _CartaoJornadaState();
+}
+
+class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
+  bool _processando = false;
+
+  Future<void> _alternar(String tipoEvento) async {
+    setState(() => _processando = true);
+    try {
+      await registrarEventoJornada(widget.motoristaId, tipoEvento);
+      ref.invalidate(jornadaEventosProvider);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não consegui registrar agora. Tente de novo.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _processando = false);
+    }
+  }
+
+  String _formatarDuracao(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    if (h == 0) return '${m}min';
+    return '${h}h${m.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final eventosAsync = ref.watch(jornadaEventosProvider);
+
+    return eventosAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (e, _) => const SizedBox.shrink(),
+      data: (eventos) {
+        final ultimo = eventos.isEmpty ? null : eventos.first;
+        final dirigindo = ultimo?.tipoEvento == 'inicio_jornada';
+        final descansando = ultimo?.tipoEvento == 'inicio_descanso';
+        final desde = ultimo?.criadoEm;
+        final duracao = desde != null ? DateTime.now().difference(desde) : null;
+        final excedeuLimite = dirigindo && duracao != null && duracao > _limiteDirecaoContinua;
+
+        final cor = dirigindo
+            ? (excedeuLimite ? Colors.red.shade700 : const Color(0xFF1B7A43))
+            : descansando
+                ? const Color(0xFF1E6FBF)
+                : Colors.black45;
+
+        return Card(
+          color: excedeuLimite ? Colors.red.shade50 : null,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      dirigindo ? Icons.local_shipping_outlined : Icons.bedtime_outlined,
+                      color: cor,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        dirigindo
+                            ? 'Dirigindo há ${_formatarDuracao(duracao!)}'
+                            : descansando
+                                ? 'Descansando há ${_formatarDuracao(duracao!)}'
+                                : 'Jornada não iniciada',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cor),
+                      ),
+                    ),
+                  ],
+                ),
+                if (excedeuLimite) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    '⚠️ Você já passou de 5h30 de direção contínua. Pare com segurança e descanse ao menos 30 minutos.',
+                    style: TextStyle(fontSize: 12, color: Colors.black87),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: dirigindo
+                      ? OutlinedButton.icon(
+                          onPressed: _processando ? null : () => _alternar('inicio_descanso'),
+                          icon: const Icon(Icons.bedtime_outlined, size: 18),
+                          label: Text(_processando ? '...' : 'Iniciar descanso'),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: _processando ? null : () => _alternar('inicio_jornada'),
+                          icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                          label: Text(_processando ? '...' : 'Iniciar jornada'),
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
