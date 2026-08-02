@@ -196,8 +196,18 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
   Future<void> _alternar(String tipoEvento) async {
     setState(() => _processando = true);
     try {
-      await registrarEventoJornada(widget.motoristaId, tipoEvento);
+      final registro = await registrarEventoJornada(tipoEvento);
       ref.invalidate(jornadaEventosProvider);
+      ref.invalidate(missoesProvider);
+      if (mounted && registro.pontos != null) {
+        final label = tipoEvento == 'inicio_jornada' ? 'Jornada iniciada' : 'Descanso iniciado';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$label! Você ganhou ${registro.pontos} pontos.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

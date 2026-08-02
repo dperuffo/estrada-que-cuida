@@ -34,9 +34,30 @@ final jornadaEventosProvider = FutureProvider.autoDispose<List<JornadaEvento>>((
   return (linhas as List).map((l) => JornadaEvento.fromMap(l as Map<String, dynamic>)).toList();
 });
 
-Future<void> registrarEventoJornada(String motoristaId, String tipoEvento) async {
-  await SupabaseService.client.from('motoristas_jornada_eventos').insert({
-    'motorista_id': motoristaId,
-    'tipo_evento': tipoEvento,
-  });
+// Fase Jornada-Gamificacao (02/08/2026, pedido do Daniel) — início de jornada
+// e início de descanso passam a valer pontos de fidelidade e contar pra
+// missões ("Primeira Jornada", "Rotina de Jornada", "Primeira Pausa",
+// "Motorista Consciente"). Por isso o registro deixou de ser um insert
+// direto na tabela (a política de RLS que permitia isso foi removida) e
+// passou a chamar a RPC `registrar_evento_jornada_motorista`, que faz tudo
+// isso atomicamente (grava o evento + credita pontos + loga engajamento) —
+// mesmo padrão da RPC `registrar_inspecao_motorista`.
+class RegistroJornada {
+  final String status; // 'registrado' | 'nao_vinculado'
+  final int? pontos;
+
+  const RegistroJornada({required this.status, this.pontos});
+
+  factory RegistroJornada.fromJson(Map<String, dynamic> json) => RegistroJornada(
+        status: json['status'] as String,
+        pontos: (json['pontos'] as num?)?.round(),
+      );
+}
+
+Future<RegistroJornada> registrarEventoJornada(String tipoEvento) async {
+  final resp = await SupabaseService.client.rpc(
+    'registrar_evento_jornada_motorista',
+    params: {'p_tipo_evento': tipoEvento},
+  );
+  return RegistroJornada.fromJson(resp as Map<String, dynamic>);
 }
