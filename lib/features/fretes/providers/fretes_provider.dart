@@ -552,6 +552,56 @@ Future<String> enviarAssinaturaEntregaFrete({
   return caminho;
 }
 
+// Fase Grupo-1-item-3 (02/08/2026, benchmark FNI vs KMM) — chat simples
+// motorista<->operação por frete. Usa o `.stream()` do supabase_flutter
+// (Realtime por baixo, já com RLS aplicada) em vez de canal manual — é o
+// jeito mais direto de ter atualização ao vivo sem gerenciar subscription
+// à mão na tela. Primeira vez que o app usa Realtime.
+class MensagemFrete {
+  final String id;
+  final String remetenteTipo; // 'motorista' | 'empresa'
+  final String? remetenteEmail;
+  final String mensagem;
+  final DateTime criadoEm;
+
+  const MensagemFrete({
+    required this.id,
+    required this.remetenteTipo,
+    this.remetenteEmail,
+    required this.mensagem,
+    required this.criadoEm,
+  });
+
+  factory MensagemFrete.fromMap(Map<String, dynamic> m) => MensagemFrete(
+        id: m['id'] as String,
+        remetenteTipo: m['remetente_tipo'] as String,
+        remetenteEmail: m['remetente_email'] as String?,
+        mensagem: m['mensagem'] as String,
+        criadoEm: DateTime.parse(m['criado_em'] as String),
+      );
+}
+
+Stream<List<MensagemFrete>> streamMensagensFrete(String freteId) {
+  return SupabaseService.client
+      .from('fretes_mensagens')
+      .stream(primaryKey: ['id'])
+      .eq('frete_id', freteId)
+      .order('criado_em')
+      .map((linhas) => linhas.map((l) => MensagemFrete.fromMap(l)).toList());
+}
+
+// `motoristaId` aqui é o mesmo `frete.motoristaId` já carregado na tela —
+// como essa tela só mostra fretes já atribuídos a mim, é sempre o meu
+// próprio id de motorista. Evita ter que buscar separadamente.
+Future<void> enviarMensagemFrete(String freteId, String motoristaId, String mensagem) async {
+  await SupabaseService.client.from('fretes_mensagens').insert({
+    'frete_id': freteId,
+    'remetente_tipo': 'motorista',
+    'remetente_motorista_id': motoristaId,
+    'mensagem': mensagem,
+  });
+}
+
 Future<void> confirmarEntregaFrete(
   String freteId, {
   required String nomeRecebedor,

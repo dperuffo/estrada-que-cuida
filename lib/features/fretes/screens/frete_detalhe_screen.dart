@@ -644,6 +644,8 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       ),
       const SizedBox(height: 20),
       if (_eventos.isNotEmpty) _timeline(),
+      const SizedBox(height: 20),
+      _ChatFrete(freteId: widget.freteId, motoristaId: _frete!.motoristaId!),
     ];
   }
 
@@ -813,6 +815,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
 
     return [
       if (_eventos.isNotEmpty) ...[_timeline(), const SizedBox(height: 20)],
+      if (_frete!.motoristaId != null) ...[
+        _ChatFrete(freteId: widget.freteId, motoristaId: _frete!.motoristaId!),
+        const SizedBox(height: 20),
+      ],
       const Text('Avaliação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
       const SizedBox(height: 8),
       if (avaliacaoCliente != null)
@@ -1105,6 +1111,148 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                 ],
               ],
             ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Fase Grupo-1-item-3 (02/08/2026, benchmark FNI vs KMM) — chat com a
+// operação, vinculado ao frete. Usa StreamBuilder sobre streamMensagensFrete
+// (Realtime do supabase_flutter) — chega mensagem nova da empresa sem
+// precisar de pull-to-refresh.
+class _ChatFrete extends StatefulWidget {
+  final String freteId;
+  final String motoristaId;
+  const _ChatFrete({required this.freteId, required this.motoristaId});
+
+  @override
+  State<_ChatFrete> createState() => _ChatFreteState();
+}
+
+class _ChatFreteState extends State<_ChatFrete> {
+  final _controller = TextEditingController();
+  final _scrollController = ScrollController();
+  bool _enviando = false;
+  late final Stream<List<MensagemFrete>> _stream;
+
+  @override
+  void initState() {
+    super.initState();
+    _stream = streamMensagensFrete(widget.freteId);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _enviar() async {
+    final texto = _controller.text.trim();
+    if (texto.isEmpty || _enviando) return;
+    setState(() => _enviando = true);
+    try {
+      await enviarMensagemFrete(widget.freteId, widget.motoristaId, texto);
+      _controller.clear();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is PostgrestException ? e.message : 'Não consegui enviar. Tente de novo.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _enviando = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('💬 Chat com a operação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const SizedBox(height: 8),
+            StreamBuilder<List<MensagemFrete>>(
+              stream: _stream,
+              builder: (context, snapshot) {
+                final mensagens = snapshot.data ?? const <MensagemFrete>[];
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (_scrollController.hasClients) {
+                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                  }
+                });
+                return Container(
+                  height: 220,
+                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                  padding: const EdgeInsets.all(8),
+                  child: mensagens.isEmpty
+                      ? const Center(
+                          child: Text('Nenhuma mensagem ainda.', style: TextStyle(fontSize: 12, color: Colors.black45)),
+                        )
+                      : ListView.builder(
+                          controller: _scrollController,
+                          itemCount: mensagens.length,
+                          itemBuilder: (context, i) {
+                            final m = mensagens[i];
+                            final souEu = m.remetenteTipo == 'motorista';
+                            return Align(
+                              alignment: souEu ? Alignment.centerRight : Alignment.centerLeft,
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 3),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+                                decoration: BoxDecoration(
+                                  color: souEu ? AppTheme.frota600 : Colors.white,
+                                  border: souEu ? null : Border.all(color: Colors.black12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(
+                                      m.mensagem,
+                                      style: TextStyle(fontSize: 13, color: souEu ? Colors.white : Colors.black87),
+                                    ),
+                                    Text(
+                                      '${m.criadoEm.hour.toString().padLeft(2, '0')}:${m.criadoEm.minute.toString().padLeft(2, '0')}',
+                                      style: TextStyle(fontSize: 10, color: souEu ? Colors.white70 : Colors.black45),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 3,
+                    decoration: const InputDecoration(hintText: 'Escreva uma mensagem...', isDense: true),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _enviando ? null : _enviar,
+                  icon: _enviando
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.send, color: AppTheme.frota600),
+                ),
+              ],
+            ),
           ],
         ),
       ),
