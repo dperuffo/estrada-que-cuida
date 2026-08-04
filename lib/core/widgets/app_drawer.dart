@@ -106,19 +106,20 @@ class AppDrawer extends ConsumerWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
+                // Fase reorganizacao-menu (04/08/2026, pedido do Daniel:
+                // "propor uma reorganizacao de menu no pwa motorista, com
+                // base no que foi implementado no pwa do cliente") — antes
+                // era uma lista única com 16 itens sem nenhuma divisão,
+                // mesmo problema que motivou o reagrupamento do menu do
+                // cliente/posto (ver home_screen.dart/posto_home_screen.dart
+                // no repo estudo-de-rede e layout.tsx na web). Mesma rota,
+                // ícone, badge e comentário de fase de cada item — só mudou
+                // em qual grupo está.
                 children: [
+                  _grupo('Visão Geral'),
                   _ItemMenu(icone: Icons.home_outlined, label: 'Dashboard', onTap: () => _ir(context, '/')),
-                  // Fase Central-Avisos (28/07/2026) — pedido do Daniel:
-                  // "Central de Avisos é uma funcionalidade do admin da
-                  // aplicação para os clientes, motoristas e postos". O
-                  // sino (com badge) já fica no AppBar do Dashboard; aqui
-                  // no Drawer (reaproveitado em toda tela) garante acesso
-                  // mesmo fora da Home.
-                  _ItemMenu(
-                    icone: Icons.notifications_outlined,
-                    label: 'Avisos',
-                    onTap: () => _ir(context, '/avisos'),
-                  ),
+
+                  _grupo('Minhas Tarefas'),
                   _ItemMenu(
                     icone: Icons.local_gas_station_outlined,
                     label: 'Confirmar abastecimentos',
@@ -132,6 +133,25 @@ class AppDrawer extends ConsumerWidget {
                     label: 'Checklist de inspeção',
                     onTap: () => _ir(context, '/inspecao-veicular'),
                   ),
+                  _ItemMenu(
+                    icone: Icons.alt_route_outlined,
+                    label: 'Roteirização',
+                    onTap: () => _ir(context, '/roteirizacao'),
+                  ),
+                  _ItemMenu(
+                    icone: Icons.local_shipping_outlined,
+                    label: 'Fretes',
+                    onTap: () => _ir(context, '/fretes'),
+                  ),
+
+                  _grupo('Financeiro'),
+                  _ItemMenu(
+                    icone: Icons.account_balance_wallet_outlined,
+                    label: 'Financeiro',
+                    onTap: () => _ir(context, '/financeiro'),
+                  ),
+
+                  _grupo('Recompensas e Engajamento'),
                   _ItemMenu(
                     icone: Icons.card_giftcard_outlined,
                     label: 'Catálogo de benefícios',
@@ -149,20 +169,18 @@ class AppDrawer extends ConsumerWidget {
                   ),
                   _ItemMenu(icone: Icons.flag_outlined, label: 'Missões', onTap: () => _ir(context, '/missoes')),
                   _ItemMenu(icone: Icons.leaderboard_outlined, label: 'Ranking', onTap: () => _ir(context, '/ranking')),
+
+                  _grupo('Conta e Ajuda'),
+                  // Fase Central-Avisos (28/07/2026) — pedido do Daniel:
+                  // "Central de Avisos é uma funcionalidade do admin da
+                  // aplicação para os clientes, motoristas e postos". O
+                  // sino (com badge) já fica no AppBar do Dashboard; aqui
+                  // no Drawer (reaproveitado em toda tela) garante acesso
+                  // mesmo fora da Home.
                   _ItemMenu(
-                    icone: Icons.alt_route_outlined,
-                    label: 'Roteirização',
-                    onTap: () => _ir(context, '/roteirizacao'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.local_shipping_outlined,
-                    label: 'Fretes',
-                    onTap: () => _ir(context, '/fretes'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.account_balance_wallet_outlined,
-                    label: 'Financeiro',
-                    onTap: () => _ir(context, '/financeiro'),
+                    icone: Icons.notifications_outlined,
+                    label: 'Avisos',
+                    onTap: () => _ir(context, '/avisos'),
                   ),
                   Consumer(
                     builder: (context, ref, _) {
@@ -213,6 +231,17 @@ class AppDrawer extends ConsumerWidget {
     context.push(rota, extra: extra);
   }
 }
+
+// Fase reorganizacao-menu — cabeçalho de grupo temático, mesmo padrão visual
+// (texto pequeno, maiúsculo, opaco) usado em home_screen.dart/
+// posto_home_screen.dart (estudo-de-rede) e GrupoMenuLateral.tsx (web).
+Widget _grupo(String label) => Padding(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+      child: Text(
+        label.toUpperCase(),
+        style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+      ),
+    );
 
 class _ItemMenu extends StatelessWidget {
   final IconData icone;
