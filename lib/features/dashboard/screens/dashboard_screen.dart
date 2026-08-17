@@ -175,11 +175,20 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 // Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) — controle de
-// jornada simplificado: mostra o estado atual (dirigindo/descansando/nunca
+// jornada: mostra o estado atual (dirigindo/em pausa/descansando/nunca
 // iniciado) calculado a partir do último evento, com botão pra alternar.
 // Lei do Motorista (13.103/2015) exige parada de pelo menos 30 min a cada
 // 5h30 de direção contínua — quando passa disso, mostra um aviso (não
 // bloqueia nada, é só um lembrete de segurança).
+//
+// Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: painel do
+// gestor com indicadores de jornada) — adicionado o estado "em pausa"
+// (eventos inicio_pausa/fim_pausa): antes só dava pra saber quando o
+// motorista começou/parou de trabalhar, não se ele fez alguma pausa durante
+// o dia — sem isso não dá pra calcular tempo de condução contínua de
+// verdade nem checar aderência à pausa obrigatória. "Dirigindo" agora vale
+// tanto logo após "Iniciar jornada" quanto depois de retomar de uma pausa
+// (fim_pausa) — o relógio de condução contínua reinicia nos dois casos.
 const _limiteDirecaoContinua = Duration(hours: 5, minutes: 30);
 
 class _CartaoJornada extends ConsumerStatefulWidget {
@@ -193,17 +202,36 @@ class _CartaoJornada extends ConsumerStatefulWidget {
 class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
   bool _processando = false;
 
+  // Fase Painel-Jornada-Motorista (17/08/2026) — rótulo por tipo de evento;
+  // pausa não pontua (ver RPC), então a mensagem some o trecho de pontos
+  // quando pontos é 0 em vez de mostrar "ganhou 0 pontos".
+  String _labelEvento(String tipoEvento) {
+    switch (tipoEvento) {
+      case 'inicio_jornada':
+        return 'Jornada iniciada';
+      case 'inicio_descanso':
+        return 'Descanso iniciado';
+      case 'inicio_pausa':
+        return 'Pausa iniciada';
+      case 'fim_pausa':
+        return 'Jornada retomada';
+      default:
+        return 'Registrado';
+    }
+  }
+
   Future<void> _alternar(String tipoEvento) async {
     setState(() => _processando = true);
     try {
       final registro = await registrarEventoJornada(tipoEvento);
       ref.invalidate(jornadaEventosProvider);
       ref.invalidate(missoesProvider);
-      if (mounted && registro.pontos != null) {
-        final label = tipoEvento == 'inicio_jornada' ? 'Jornada iniciada' : 'Descanso iniciado';
+      if (mounted) {
+        final label = _labelEvento(tipoEvento);
+        final pontos = registro.pontos ?? 0;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$label! Você ganhou ${registro.pontos} pontos.'),
+            content: Text(pontos > 0 ? '$label! Você ganhou $pontos pontos.' : '$label!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -235,17 +263,92 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
       error: (e, _) => const SizedBox.shrink(),
       data: (eventos) {
         final ultimo = eventos.isEmpty ? null : eventos.first;
-        final dirigindo = ultimo?.tipoEvento == 'inicio_jornada';
+        // Fase Painel-Jornada-Motorista — "dirigindo" agora cobre os dois
+        // jeitos de estar em condução: acabou de "Iniciar jornada" OU
+        // acabou de retomar de uma pausa (fim_pausa). O relógio de condução
+        // contínua (excedeuLimite) reinicia nos dois casos, porque os dois
+        // marcam "voltei a dirigir agora".
+        final dirigindo = ultimo?.tipoEvento == 'inicio_jornada' || ultimo?.tipoEvento == 'fim_pausa';
+        final emPausa = ultimo?.tipoEvento == 'inicio_pausa';
         final descansando = ultimo?.tipoEvento == 'inicio_descanso';
+        final nuncaIniciado = ultimo == null;
         final desde = ultimo?.criadoEm;
         final duracao = desde != null ? DateTime.now().difference(desde) : null;
         final excedeuLimite = dirigindo && duracao != null && duracao > _limiteDirecaoContinua;
 
         final cor = dirigindo
             ? (excedeuLimite ? Colors.red.shade700 : const Color(0xFF1B7A43))
-            : descansando
-                ? const Color(0xFF1E6FBF)
-                : Colors.black45;
+            : emPausa
+                ? const Color(0xFFB8860B)
+                : descansando
+                    ? const Color(0xFF1E6FBF)
+                    : Colors.black45;
+
+        final icone = dirigindo
+            ? Icons.local_shipping_outlined
+            : emPausa
+                ? Icons.free_breakfast_outlined
+                : Icons.bedtime_outlined;
+
+        final texto = nuncaIniciado
+            ? 'Jornada não iniciada'
+            : dirigindo
+                ? 'Dirigindo há ${_formatarDuracao(duracao!)}'
+                : emPausa
+                    ? 'Em pausa há ${_formatarDuracao(duracao!)}'
+                    : 'Descansando há ${_formatarDuracao(duracao!)}';
+
+        Widget botoes;
+        if (dirigindo) {
+          botoes = Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _processando ? null : () => _alternar('inicio_pausa'),
+                  icon: const Icon(Icons.free_breakfast_outlined, size: 18),
+                  label: Text(_processando ? '...' : 'Iniciar pausa'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _processando ? null : () => _alternar('inicio_descanso'),
+                  icon: const Icon(Icons.bedtime_outlined, size: 18),
+                  label: Text(_processando ? '...' : 'Iniciar descanso'),
+                ),
+              ),
+            ],
+          );
+        } else if (emPausa) {
+          botoes = Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _processando ? null : () => _alternar('fim_pausa'),
+                  icon: const Icon(Icons.local_shipping_outlined, size: 18),
+                  label: Text(_processando ? '...' : 'Retomar jornada'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _processando ? null : () => _alternar('inicio_descanso'),
+                  icon: const Icon(Icons.bedtime_outlined, size: 18),
+                  label: Text(_processando ? '...' : 'Iniciar descanso'),
+                ),
+              ),
+            ],
+          );
+        } else {
+          botoes = SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _processando ? null : () => _alternar('inicio_jornada'),
+              icon: const Icon(Icons.local_shipping_outlined, size: 18),
+              label: Text(_processando ? '...' : 'Iniciar jornada'),
+            ),
+          );
+        }
 
         return Card(
           color: excedeuLimite ? Colors.red.shade50 : null,
@@ -256,19 +359,11 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
               children: [
                 Row(
                   children: [
-                    Icon(
-                      dirigindo ? Icons.local_shipping_outlined : Icons.bedtime_outlined,
-                      color: cor,
-                      size: 22,
-                    ),
+                    Icon(icone, color: cor, size: 22),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        dirigindo
-                            ? 'Dirigindo há ${_formatarDuracao(duracao!)}'
-                            : descansando
-                                ? 'Descansando há ${_formatarDuracao(duracao!)}'
-                                : 'Jornada não iniciada',
+                        texto,
                         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cor),
                       ),
                     ),
@@ -282,20 +377,7 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
                   ),
                 ],
                 const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: dirigindo
-                      ? OutlinedButton.icon(
-                          onPressed: _processando ? null : () => _alternar('inicio_descanso'),
-                          icon: const Icon(Icons.bedtime_outlined, size: 18),
-                          label: Text(_processando ? '...' : 'Iniciar descanso'),
-                        )
-                      : ElevatedButton.icon(
-                          onPressed: _processando ? null : () => _alternar('inicio_jornada'),
-                          icon: const Icon(Icons.local_shipping_outlined, size: 18),
-                          label: Text(_processando ? '...' : 'Iniciar jornada'),
-                        ),
-                ),
+                botoes,
               ],
             ),
           ),

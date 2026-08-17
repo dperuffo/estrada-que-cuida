@@ -10,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../roteirizacao/providers/roteirizacao_provider.dart';
 import '../../roteirizacao/utils/roteirizacao_constantes.dart';
 import '../providers/fretes_provider.dart';
+import '../services/ocr_service.dart';
 
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
@@ -33,6 +34,8 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   // Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa
   // saber se o ponto de coleta está longe dele ANTES de decidir aceitar.
   Position? _minhaPosicao;
+  // Fase ocr-documentos (04/08/2026) — leitura best-effort do canhoto/NF-e.
+  final _ocrService = OcrService();
 
   @override
   void initState() {
@@ -689,11 +692,34 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   }
 
   Future<void> _confirmarEntrega() async {
+    final fotoCanhoto = await _tirarFoto();
+    if (fotoCanhoto == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto do canhoto é obrigatória.')));
+      }
+      return;
+    }
+    if (!mounted) return;
+
+    // Fase ocr-documentos (04/08/2026, benchmark FNI vs KMM, Grupo 2) —
+    // tenta ler o CPF do recebedor impresso no canhoto pra pré-preencher o
+    // campo de documento no dialog abaixo. Best-effort: nunca bloqueia o
+    // fluxo (nome escrito à mão não é confiável pra OCR nenhum, nem os
+    // pagos — por isso só tentamos o documento, que costuma vir impresso).
+    String? documentoSugerido;
+    try {
+      final leitura = await _ocrService.lerDocumento(fotoCanhoto);
+      documentoSugerido = leitura.documentoRecebedor;
+    } catch (_) {
+      // best-effort — segue sem sugestão
+    }
+    if (!mounted) return;
+
     final dadosRecebedor = await showDialog<(String, String)>(
       context: context,
       builder: (ctx) {
         final nomeCtrl = TextEditingController();
-        final docCtrl = TextEditingController();
+        final docCtrl = TextEditingController(text: documentoSugerido ?? '');
         return AlertDialog(
           title: const Text('Confirmar entrega'),
           content: Column(
@@ -701,7 +727,13 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             children: [
               TextField(controller: nomeCtrl, decoration: const InputDecoration(labelText: 'Nome de quem recebeu')),
               const SizedBox(height: 8),
-              TextField(controller: docCtrl, decoration: const InputDecoration(labelText: 'Documento (opcional)')),
+              TextField(
+                controller: docCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Documento (opcional)',
+                  helperText: documentoSugerido != null ? 'Lido da foto — confira antes de continuar.' : null,
+                ),
+              ),
             ],
           ),
           actions: [
@@ -719,15 +751,6 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     );
     if (dadosRecebedor == null || !mounted) return;
     final (nomeRecebedor, documentoRecebedor) = dadosRecebedor;
-
-    final fotoCanhoto = await _tirarFoto();
-    if (fotoCanhoto == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto do canhoto é obrigatória.')));
-      }
-      return;
-    }
-    if (!mounted) return;
 
     final assinatura = await _capturarAssinatura();
     if (assinatura == null) {

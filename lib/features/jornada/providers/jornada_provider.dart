@@ -2,16 +2,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/supabase_service.dart';
 
 // Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) — controle de
-// jornada do motorista, versão simplificada: só dois botões ("Iniciar
-// jornada" / "Iniciar descanso") gravando timestamps pontuais, sem
-// telemetria contínua. Dá pra calcular quanto tempo o motorista está
-// dirigindo sem parar olhando só o último evento — se o mais recente for
-// 'inicio_jornada', ele está dirigindo desde aquele horário; se for
-// 'inicio_descanso', está descansando desde aquele horário.
+// jornada do motorista: eventos pontuais, sem telemetria contínua. Dá pra
+// saber o estado atual olhando só o último evento.
+//
+// Fase Painel-Jornada-Motorista (17/08/2026, pedido do Daniel: painel do
+// gestor com indicadores de jornada) — dois eventos novos além dos
+// originais ('inicio_jornada'/'inicio_descanso'): 'inicio_pausa' e
+// 'fim_pausa', marcando uma parada curta (refeição, espera de carga/
+// descarga, intervalo obrigatório) sem encerrar o dia. Sem isso não dava
+// pra calcular tempo de condução contínua de verdade nem checar aderência
+// à pausa exigida pela Lei do Motorista (13.103/2015) — só dava pra saber
+// quando o motorista começou/parou de trabalhar no dia.
 
 class JornadaEvento {
   final String id;
-  final String tipoEvento; // 'inicio_jornada' | 'inicio_descanso'
+  final String tipoEvento; // 'inicio_jornada' | 'inicio_descanso' | 'inicio_pausa' | 'fim_pausa'
   final DateTime criadoEm;
 
   const JornadaEvento({required this.id, required this.tipoEvento, required this.criadoEm});
