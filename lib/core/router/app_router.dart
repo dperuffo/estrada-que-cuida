@@ -48,14 +48,17 @@ class _GoRouterRefreshStream extends ChangeNotifier {
 
 final appRouter = GoRouter(
   initialLocation: '/',
-  refreshListenable: _GoRouterRefreshStream(SupabaseService.client.auth.onAuthStateChange),
+  refreshListenable: _GoRouterRefreshStream(
+    SupabaseService.client.auth.onAuthStateChange,
+  ),
   redirect: (context, state) {
     final sessao = SupabaseService.client.auth.currentSession;
     // Fase login-por-senha: '/senha' e '/otp-redefinir' também são
     // alcançados SEM sessão ainda (é ali que ela é criada), então entram
     // no mesmo grupo de '/login' e '/otp' pro redirect não expulsar o
     // motorista de volta pro login no meio do fluxo.
-    final indoParaLoginOuOtp = state.matchedLocation == '/login' ||
+    final indoParaLoginOuOtp =
+        state.matchedLocation == '/login' ||
         state.matchedLocation == '/otp' ||
         state.matchedLocation == '/senha' ||
         state.matchedLocation == '/otp-redefinir';
@@ -68,9 +71,11 @@ final appRouter = GoRouter(
     // tela de código antes de liberar qualquer outra rota. Síncrono e
     // barato (getAuthenticatorAssuranceLevel não bate na rede).
     if (sessao != null) {
-      final aal = SupabaseService.client.auth.mfa.getAuthenticatorAssuranceLevel();
+      final aal = SupabaseService.client.auth.mfa
+          .getAuthenticatorAssuranceLevel();
       final precisaVerificarMfa =
-          aal.nextLevel == AuthenticatorAssuranceLevels.aal2 && aal.currentLevel != AuthenticatorAssuranceLevels.aal2;
+          aal.nextLevel == AuthenticatorAssuranceLevels.aal2 &&
+          aal.currentLevel != AuthenticatorAssuranceLevels.aal2;
       final indoParaMfa = state.matchedLocation == '/mfa-verificar';
       if (precisaVerificarMfa && !indoParaMfa) return '/mfa-verificar';
       if (!precisaVerificarMfa && indoParaMfa) return '/';
@@ -82,44 +87,97 @@ final appRouter = GoRouter(
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/otp',
-      builder: (context, state) => OtpScreen(telefoneE164: state.extra as String),
+      builder: (context, state) =>
+          OtpScreen(telefoneE164: state.extra as String),
     ),
     GoRoute(
       path: '/senha',
-      builder: (context, state) => SenhaLoginScreen(telefoneE164: state.extra as String),
+      builder: (context, state) =>
+          SenhaLoginScreen(telefoneE164: state.extra as String),
     ),
     GoRoute(
       path: '/otp-redefinir',
-      builder: (context, state) => OtpScreen(telefoneE164: state.extra as String, forcarNovaSenha: true),
+      builder: (context, state) =>
+          OtpScreen(telefoneE164: state.extra as String, forcarNovaSenha: true),
     ),
     GoRoute(
       path: '/definir-senha',
-      builder: (context, state) => CriarSenhaScreen(onSalvo: () => context.go('/'), redefinicao: true),
+      builder: (context, state) =>
+          CriarSenhaScreen(onSalvo: () => context.go('/'), redefinicao: true),
     ),
-    GoRoute(path: '/', builder: (context, state) => const PortaoEntradaScreen()),
-    GoRoute(path: '/pendentes', builder: (context, state) => const AbastecimentosPendentesScreen()),
-    GoRoute(path: '/extrato', builder: (context, state) => const ExtratoScreen()),
-    GoRoute(path: '/ranking', builder: (context, state) => const RankingScreen()),
-    GoRoute(path: '/missoes', builder: (context, state) => const MissoesScreen()),
-    GoRoute(path: '/catalogo', builder: (context, state) => CatalogoScreen(categoriaInicial: state.extra as String?)),
-    GoRoute(path: '/meus-resgates', builder: (context, state) => const MeusResgatesScreen()),
-    GoRoute(path: '/dependentes', builder: (context, state) => DependentesScreen(motoristaId: state.extra as String)),
-    GoRoute(path: '/roteirizacao', builder: (context, state) => const RoteirizacaoScreen()),
+    GoRoute(
+      path: '/',
+      builder: (context, state) => const PortaoEntradaScreen(),
+    ),
+    GoRoute(
+      path: '/pendentes',
+      builder: (context, state) => const AbastecimentosPendentesScreen(),
+    ),
+    GoRoute(
+      path: '/extrato',
+      builder: (context, state) => const ExtratoScreen(),
+    ),
+    GoRoute(
+      path: '/ranking',
+      builder: (context, state) => const RankingScreen(),
+    ),
+    GoRoute(
+      path: '/missoes',
+      builder: (context, state) => const MissoesScreen(),
+    ),
+    GoRoute(
+      path: '/catalogo',
+      builder: (context, state) =>
+          CatalogoScreen(categoriaInicial: state.extra as String?),
+    ),
+    GoRoute(
+      path: '/meus-resgates',
+      builder: (context, state) => const MeusResgatesScreen(),
+    ),
+    GoRoute(
+      path: '/dependentes',
+      builder: (context, state) =>
+          DependentesScreen(motoristaId: state.extra as String),
+    ),
+    GoRoute(
+      path: '/roteirizacao',
+      builder: (context, state) => const RoteirizacaoScreen(),
+    ),
     GoRoute(path: '/fretes', builder: (context, state) => const FretesScreen()),
     GoRoute(
       path: '/fretes/:id',
-      builder: (context, state) => FreteDetalheScreen(freteId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          FreteDetalheScreen(freteId: state.pathParameters['id']!),
     ),
-    GoRoute(path: '/financeiro', builder: (context, state) => const FinanceiroScreen()),
-    GoRoute(path: '/chamados', builder: (context, state) => const ChamadosScreen()),
-    GoRoute(path: '/chamados/novo', builder: (context, state) => const ChamadoNovoScreen()),
+    GoRoute(
+      path: '/financeiro',
+      builder: (context, state) => const FinanceiroScreen(),
+    ),
+    GoRoute(
+      path: '/chamados',
+      builder: (context, state) => const ChamadosScreen(),
+    ),
+    GoRoute(
+      path: '/chamados/novo',
+      builder: (context, state) => const ChamadoNovoScreen(),
+    ),
     GoRoute(
       path: '/chamados/:id',
-      builder: (context, state) => ChamadoDetalheScreen(ticketId: state.pathParameters['id']!),
+      builder: (context, state) =>
+          ChamadoDetalheScreen(ticketId: state.pathParameters['id']!),
     ),
-    GoRoute(path: '/avaliar', builder: (context, state) => const AvaliarScreen()),
-    GoRoute(path: '/seguranca', builder: (context, state) => const SegurancaScreen()),
-    GoRoute(path: '/mfa-verificar', builder: (context, state) => const MfaVerificarScreen()),
+    GoRoute(
+      path: '/avaliar',
+      builder: (context, state) => const AvaliarScreen(),
+    ),
+    GoRoute(
+      path: '/seguranca',
+      builder: (context, state) => const SegurancaScreen(),
+    ),
+    GoRoute(
+      path: '/mfa-verificar',
+      builder: (context, state) => const MfaVerificarScreen(),
+    ),
     // Fase Central-Avisos (28/07/2026) — pedido do Daniel: "Central de
     // Avisos é uma funcionalidade do admin da aplicação para os clientes,
     // motoristas e postos".
@@ -127,6 +185,9 @@ final appRouter = GoRouter(
     // Fase Inspeção-pelo-Motorista (30/07/2026) — checklist de segurança
     // que o motorista preenche rotineiramente, virando engajamento de
     // fidelidade (RPC registrar_inspecao_motorista).
-    GoRoute(path: '/inspecao-veicular', builder: (context, state) => const InspecaoVeicularScreen()),
+    GoRoute(
+      path: '/inspecao-veicular',
+      builder: (context, state) => const InspecaoVeicularScreen(),
+    ),
   ],
 );

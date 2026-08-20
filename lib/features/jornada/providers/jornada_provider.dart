@@ -16,27 +16,36 @@ import '../../../core/services/supabase_service.dart';
 
 class JornadaEvento {
   final String id;
-  final String tipoEvento; // 'inicio_jornada' | 'inicio_descanso' | 'inicio_pausa' | 'fim_pausa'
+  final String
+  tipoEvento; // 'inicio_jornada' | 'inicio_descanso' | 'inicio_pausa' | 'fim_pausa'
   final DateTime criadoEm;
 
-  const JornadaEvento({required this.id, required this.tipoEvento, required this.criadoEm});
+  const JornadaEvento({
+    required this.id,
+    required this.tipoEvento,
+    required this.criadoEm,
+  });
 
   factory JornadaEvento.fromMap(Map<String, dynamic> m) => JornadaEvento(
-        id: m['id'] as String,
-        tipoEvento: m['tipo_evento'] as String,
-        criadoEm: DateTime.parse(m['criado_em'] as String),
-      );
+    id: m['id'] as String,
+    tipoEvento: m['tipo_evento'] as String,
+    criadoEm: DateTime.parse(m['criado_em'] as String),
+  );
 }
 
 // Só os últimos eventos bastam pra saber o estado atual — não precisa do
 // histórico inteiro aqui (isso poderia virar uma tela de histórico depois).
-final jornadaEventosProvider = FutureProvider.autoDispose<List<JornadaEvento>>((ref) async {
+final jornadaEventosProvider = FutureProvider.autoDispose<List<JornadaEvento>>((
+  ref,
+) async {
   final linhas = await SupabaseService.client
       .from('motoristas_jornada_eventos')
       .select()
       .order('criado_em', ascending: false)
       .limit(5);
-  return (linhas as List).map((l) => JornadaEvento.fromMap(l as Map<String, dynamic>)).toList();
+  return (linhas as List)
+      .map((l) => JornadaEvento.fromMap(l as Map<String, dynamic>))
+      .toList();
 });
 
 // Fase Jornada-Gamificacao (02/08/2026, pedido do Daniel) — início de jornada
@@ -53,7 +62,8 @@ class RegistroJornada {
 
   const RegistroJornada({required this.status, this.pontos});
 
-  factory RegistroJornada.fromJson(Map<String, dynamic> json) => RegistroJornada(
+  factory RegistroJornada.fromJson(Map<String, dynamic> json) =>
+      RegistroJornada(
         status: json['status'] as String,
         pontos: (json['pontos'] as num?)?.round(),
       );

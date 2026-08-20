@@ -21,7 +21,12 @@ class VinculoResultado {
   // de ir pra adesão/dashboard.
   final bool senhaDefinida;
 
-  VinculoResultado({required this.status, this.motoristaId, this.nome, this.senhaDefinida = false});
+  VinculoResultado({
+    required this.status,
+    this.motoristaId,
+    this.nome,
+    this.senhaDefinida = false,
+  });
 
   factory VinculoResultado.fromJson(Map<String, dynamic> json) {
     return VinculoResultado(
@@ -35,12 +40,16 @@ class VinculoResultado {
 
 /// Chama a RPC de vínculo. `cpf` só é necessário quando o resultado
 /// anterior veio `ambiguo_requer_cpf` ou `nao_encontrado`.
-final vinculoProvider = FutureProvider.autoDispose.family<VinculoResultado, String?>((ref, cpf) async {
-  // Passar null explícito equivale a omitir o parâmetro — a função no
-  // banco já tem `p_cpf text default null`.
-  final resp = await SupabaseService.client.rpc('vincular_motorista_auth', params: {'p_cpf': cpf});
-  return VinculoResultado.fromJson(resp as Map<String, dynamic>);
-});
+final vinculoProvider = FutureProvider.autoDispose
+    .family<VinculoResultado, String?>((ref, cpf) async {
+      // Passar null explícito equivale a omitir o parâmetro — a função no
+      // banco já tem `p_cpf text default null`.
+      final resp = await SupabaseService.client.rpc(
+        'vincular_motorista_auth',
+        params: {'p_cpf': cpf},
+      );
+      return VinculoResultado.fromJson(resp as Map<String, dynamic>);
+    });
 
 /// true se o motorista já aderiu ao programa (linha `ativo` em
 /// fidelidade_adesoes) — RLS já restringe a leitura só à linha dele.
@@ -62,7 +71,12 @@ class PerfilMotorista {
   // bater com o empresa_id do próprio motorista).
   final String? empresaId;
 
-  PerfilMotorista({required this.id, required this.nomeCompleto, this.telefone, this.empresaId});
+  PerfilMotorista({
+    required this.id,
+    required this.nomeCompleto,
+    this.telefone,
+    this.empresaId,
+  });
 
   factory PerfilMotorista.fromJson(Map<String, dynamic> json) {
     return PerfilMotorista(
@@ -78,7 +92,9 @@ class PerfilMotorista {
 // pra mostrar nome/telefone sem cada tela precisar replicar esses dados via
 // construtor. RPC SECURITY DEFINER (meu_perfil_motorista) filtra por
 // auth_user_id = auth.uid() internamente.
-final meuPerfilProvider = FutureProvider.autoDispose<PerfilMotorista?>((ref) async {
+final meuPerfilProvider = FutureProvider.autoDispose<PerfilMotorista?>((
+  ref,
+) async {
   final resp = await SupabaseService.client.rpc('meu_perfil_motorista');
   final lista = resp as List;
   if (lista.isEmpty) return null;

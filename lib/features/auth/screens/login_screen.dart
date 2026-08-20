@@ -72,18 +72,26 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               // Logo FNI em destaque (Fase 17/07, pedido do Daniel: "logo
               // FNI imponente" no lugar do ícone de caminhão provisório).
-              Image.asset('assets/images/logo-fni.png', height: 110, fit: BoxFit.contain),
+              Image.asset(
+                'assets/images/logo-fni.png',
+                height: 110,
+                fit: BoxFit.contain,
+              ),
               const SizedBox(height: 24),
               Text(
                 'Estrada que Cuida',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
                 'Mais do que abastecer. Cuidar de quem move o Brasil.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
               ),
               const SizedBox(height: 32),
               TextField(
@@ -103,7 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ElevatedButton(
                 onPressed: _enviando ? null : _continuar,
                 child: _enviando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Continuar'),
               ),
             ],

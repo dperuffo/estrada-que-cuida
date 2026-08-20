@@ -17,7 +17,9 @@ import '../utils/roteirizacao_constantes.dart';
 // abrindo o app nativo, se instalado, quanto o navegador) — mesmo padrão
 // já usado no motor de testes de outras telas do projeto.
 Future<void> _abrirNoGoogleMaps(double lat, double lon) async {
-  final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+  final uri = Uri.parse(
+    'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
+  );
   await launchUrl(uri, mode: LaunchMode.externalApplication);
 }
 
@@ -94,7 +96,8 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       _veiculoSelecionado = veiculos.isNotEmpty ? veiculos.first : null;
       _carregandoVeiculos = false;
       if (_veiculoSelecionado != null && _veiculoSelecionado!.tanque > 0) {
-        _combustivelInicialCtrl.text = _veiculoSelecionado!.tanque.toStringAsFixed(0);
+        _combustivelInicialCtrl.text = _veiculoSelecionado!.tanque
+            .toStringAsFixed(0);
       }
     });
   }
@@ -123,7 +126,11 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
 
     if (sugestoes.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nenhum local encontrado. Tente outro termo (cidade + estado).')),
+        const SnackBar(
+          content: Text(
+            'Nenhum local encontrado. Tente outro termo (cidade + estado).',
+          ),
+        ),
       );
       return;
     }
@@ -134,11 +141,16 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
         child: ListView(
           shrinkWrap: true,
           children: sugestoes
-              .map((s) => ListTile(
-                    leading: const Icon(Icons.location_on_outlined, color: AppTheme.frota600),
-                    title: Text(s.label),
-                    onTap: () => Navigator.pop(ctx, s),
-                  ))
+              .map(
+                (s) => ListTile(
+                  leading: const Icon(
+                    Icons.location_on_outlined,
+                    color: AppTheme.frota600,
+                  ),
+                  title: Text(s.label),
+                  onTap: () => Navigator.pop(ctx, s),
+                ),
+              )
               .toList(),
         ),
       ),
@@ -163,12 +175,18 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       setState(() => _erro = 'Selecione a placa do veículo antes de calcular.');
       return;
     }
-    if (_veiculoSelecionado!.tanque <= 0 || _veiculoSelecionado!.autonomia <= 0) {
-      setState(() => _erro = 'O cadastro dessa placa não tem tanque/autonomia — fale com sua empresa.');
+    if (_veiculoSelecionado!.tanque <= 0 ||
+        _veiculoSelecionado!.autonomia <= 0) {
+      setState(
+        () => _erro =
+            'O cadastro dessa placa não tem tanque/autonomia — fale com sua empresa.',
+      );
       return;
     }
     if (_combustivel == null) {
-      setState(() => _erro = 'Selecione o combustível dessa viagem antes de calcular.');
+      setState(
+        () => _erro = 'Selecione o combustível dessa viagem antes de calcular.',
+      );
       return;
     }
     setState(() {
@@ -188,7 +206,8 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
     if (resultado == null) {
       setState(() {
         _carregando = false;
-        _erro = 'Não consegui calcular a rota agora. Tente de novo em instantes.';
+        _erro =
+            'Não consegui calcular a rota agora. Tente de novo em instantes.';
       });
       return;
     }
@@ -197,9 +216,13 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       coordenadas: resultado.coordenadas,
       combustivel: _combustivel!,
     );
-    final pracasPedagio = await buscarPracasPedagioNaRota(resultado.coordenadas);
+    final pracasPedagio = await buscarPracasPedagioNaRota(
+      resultado.coordenadas,
+    );
 
-    final combustivelInicial = double.tryParse(_combustivelInicialCtrl.text.replaceAll(',', '.'));
+    final combustivelInicial = double.tryParse(
+      _combustivelInicialCtrl.text.replaceAll(',', '.'),
+    );
 
     final paradas = otimizarAbastecimento(
       candidatos: candidatos,
@@ -236,9 +259,13 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
     if (_resultado == null || _veiculoSelecionado == null) {
       return const ResultadoSelecaoManual(paradas: [], alertas: []);
     }
-    final combustivelInicial = double.tryParse(_combustivelInicialCtrl.text.replaceAll(',', '.'));
+    final combustivelInicial = double.tryParse(
+      _combustivelInicialCtrl.text.replaceAll(',', '.'),
+    );
     return calcularAbastecimentoParaSelecao(
-      candidatosSelecionados: _candidatos.where((c) => _selecionados.contains(c.cnpj)).toList(),
+      candidatosSelecionados: _candidatos
+          .where((c) => _selecionados.contains(c.cnpj))
+          .toList(),
       capacidadeTanqueL: _veiculoSelecionado!.tanque,
       autonomiaKmPorL: _veiculoSelecionado!.autonomia,
       distanciaTotalRotaKm: _resultado!.distanciaKm,
@@ -260,12 +287,29 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
   Widget build(BuildContext context) {
     final selecao = _selecao;
     final paradasAtuais = selecao.paradas;
-    final litrosTotal = paradasAtuais.fold<int>(0, (s, p) => s + p.litrosSugeridos);
-    final custoTotal = paradasAtuais.fold<double>(0, (s, p) => s + p.custoAbastecimento);
-    final custoPedagio = custoPedagioTotal(_pracasPedagio, categoriaPedagioDoVeiculo(_veiculoSelecionado));
+    final litrosTotal = paradasAtuais.fold<int>(
+      0,
+      (s, p) => s + p.litrosSugeridos,
+    );
+    final custoTotal = paradasAtuais.fold<double>(
+      0,
+      (s, p) => s + p.custoAbastecimento,
+    );
+    final custoPedagio = custoPedagioTotal(
+      _pracasPedagio,
+      categoriaPedagioDoVeiculo(_veiculoSelecionado),
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Roteirização')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Roteirização'),
+      ),
       drawer: const AppDrawer(),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -281,13 +325,22 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
             selecionado: _veiculoSelecionado,
             onSelecionar: (v) => setState(() {
               _veiculoSelecionado = v;
-              if (v != null && v.tanque > 0) _combustivelInicialCtrl.text = v.tanque.toStringAsFixed(0);
+              if (v != null && v.tanque > 0)
+                _combustivelInicialCtrl.text = v.tanque.toStringAsFixed(0);
             }),
           ),
           const SizedBox(height: 16),
-          _CampoLocal(label: 'Origem', controller: _origemCtrl, onBuscar: () => _buscarLocal(origem: true)),
+          _CampoLocal(
+            label: 'Origem',
+            controller: _origemCtrl,
+            onBuscar: () => _buscarLocal(origem: true),
+          ),
           const SizedBox(height: 12),
-          _CampoLocal(label: 'Destino', controller: _destinoCtrl, onBuscar: () => _buscarLocal(origem: false)),
+          _CampoLocal(
+            label: 'Destino',
+            controller: _destinoCtrl,
+            onBuscar: () => _buscarLocal(origem: false),
+          ),
           const SizedBox(height: 16),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -298,7 +351,12 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
                   isExpanded: true,
                   decoration: const InputDecoration(labelText: 'Combustível'),
                   items: produtosPosto
-                      .map((p) => DropdownMenuItem(value: p, child: Text(p, overflow: TextOverflow.ellipsis)))
+                      .map(
+                        (p) => DropdownMenuItem(
+                          value: p,
+                          child: Text(p, overflow: TextOverflow.ellipsis),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setState(() => _combustivel = v),
                 ),
@@ -307,7 +365,9 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
               Expanded(
                 child: TextField(
                   controller: _combustivelInicialCtrl,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   // Recalcula litros/custo ao vivo se o motorista ajustar o
                   // combustível já no tanque depois de já ter um resultado.
                   onChanged: (_) => setState(() {}),
@@ -365,13 +425,22 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('⚠️ Verifique as paradas escolhidas:',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: Colors.red)),
+                  const Text(
+                    '⚠️ Verifique as paradas escolhidas:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5,
+                      color: Colors.red,
+                    ),
+                  ),
                   const SizedBox(height: 4),
                   for (final alerta in selecao.alertas)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
-                      child: Text('• $alerta', style: const TextStyle(fontSize: 12, color: Colors.red)),
+                      child: Text(
+                        '• $alerta',
+                        style: const TextStyle(fontSize: 12, color: Colors.red),
+                      ),
                     ),
                 ],
               ),
@@ -379,8 +448,10 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ],
           if (_pracasPedagio.isNotEmpty) ...[
             const SizedBox(height: 20),
-            Text('Pedágios na rota (${_pracasPedagio.length})',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            Text(
+              'Pedágios na rota (${_pracasPedagio.length})',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
             const SizedBox(height: 8),
             for (final praca in _pracasPedagio) _CartaoPedagio(praca: praca),
           ],
@@ -400,7 +471,10 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ],
           if (_candidatos.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const Text('Postos no corredor da rota', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Text(
+              'Postos no corredor da rota',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
             const SizedBox(height: 4),
             const Text(
               'Toque num posto (aqui ou no mapa) pra marcar ou desmarcar como parada de abastecimento. '
@@ -417,14 +491,18 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
           ],
           if (paradasAtuais.isNotEmpty) ...[
             const SizedBox(height: 20),
-            const Text('Suas paradas, na ordem da viagem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const Text(
+              'Suas paradas, na ordem da viagem',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+            ),
             const SizedBox(height: 4),
             const Text(
               'Toque num cartão pra ver o posto no Google Maps.',
               style: TextStyle(fontSize: 11.5, color: Colors.black54),
             ),
             const SizedBox(height: 8),
-            for (var i = 0; i < paradasAtuais.length; i++) _CartaoParada(numero: i + 1, parada: paradasAtuais[i]),
+            for (var i = 0; i < paradasAtuais.length; i++)
+              _CartaoParada(numero: i + 1, parada: paradasAtuais[i]),
           ],
         ],
       ),
@@ -457,9 +535,16 @@ class _SeletorVeiculo extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Row(
           children: [
-            SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+            SizedBox(
+              height: 16,
+              width: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
             SizedBox(width: 12),
-            Text('Carregando seu veículo...', style: TextStyle(color: Colors.black54)),
+            Text(
+              'Carregando seu veículo...',
+              style: TextStyle(color: Colors.black54),
+            ),
           ],
         ),
       );
@@ -492,11 +577,20 @@ class _SeletorVeiculo extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.local_shipping_outlined, color: AppTheme.frota600, size: 20),
+                const Icon(
+                  Icons.local_shipping_outlined,
+                  color: AppTheme.frota600,
+                  size: 20,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  vinculoAtivo ? 'Sua placa (vínculo ativo)' : 'Selecione sua placa',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                  vinculoAtivo
+                      ? 'Sua placa (vínculo ativo)'
+                      : 'Selecione sua placa',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -507,12 +601,22 @@ class _SeletorVeiculo extends StatelessWidget {
               DropdownButtonFormField<VeiculoRoteirizacao>(
                 initialValue: selecionado,
                 isExpanded: true,
-                decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8)),
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                ),
                 items: veiculos
-                    .map((v) => DropdownMenuItem(
-                          value: v,
-                          child: Text('${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}'),
-                        ))
+                    .map(
+                      (v) => DropdownMenuItem(
+                        value: v,
+                        child: Text(
+                          '${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}',
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: onSelecionar,
               ),
@@ -540,9 +644,21 @@ class _InfoVeiculo extends StatelessWidget {
       runSpacing: 4,
       children: [
         Text('Placa: ${veiculo.placa}', style: const TextStyle(fontSize: 12.5)),
-        if (veiculo.tanque > 0) Text('Tanque: ${veiculo.tanque.toStringAsFixed(0)} L', style: const TextStyle(fontSize: 12.5)),
-        if (veiculo.autonomia > 0) Text('Autonomia: ${veiculo.autonomia.toStringAsFixed(1)} km/l', style: const TextStyle(fontSize: 12.5)),
-        if (autonomiaKm > 0) Text('Alcance: ~${autonomiaKm.toStringAsFixed(0)} km', style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+        if (veiculo.tanque > 0)
+          Text(
+            'Tanque: ${veiculo.tanque.toStringAsFixed(0)} L',
+            style: const TextStyle(fontSize: 12.5),
+          ),
+        if (veiculo.autonomia > 0)
+          Text(
+            'Autonomia: ${veiculo.autonomia.toStringAsFixed(1)} km/l',
+            style: const TextStyle(fontSize: 12.5),
+          ),
+        if (autonomiaKm > 0)
+          Text(
+            'Alcance: ~${autonomiaKm.toStringAsFixed(0)} km',
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+          ),
       ],
     );
   }
@@ -553,7 +669,11 @@ class _CampoLocal extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onBuscar;
 
-  const _CampoLocal({required this.label, required this.controller, required this.onBuscar});
+  const _CampoLocal({
+    required this.label,
+    required this.controller,
+    required this.onBuscar,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -564,7 +684,10 @@ class _CampoLocal extends StatelessWidget {
       decoration: InputDecoration(
         labelText: label,
         hintText: 'Digite a cidade e busque...',
-        suffixIcon: IconButton(icon: const Icon(Icons.search), onPressed: onBuscar),
+        suffixIcon: IconButton(
+          icon: const Icon(Icons.search),
+          onPressed: onBuscar,
+        ),
       ),
     );
   }
@@ -598,7 +721,9 @@ class _CartaoResultado extends StatelessWidget {
     final minutos = (resultado.duracaoMin % 60).round();
     final tempoTexto = horas > 0 ? '${horas}h ${minutos}min' : '${minutos}min';
 
-    final pontosRota = resultado.coordenadas.map((p) => LatLng(p.lat, p.lon)).toList();
+    final pontosRota = resultado.coordenadas
+        .map((p) => LatLng(p.lat, p.lon))
+        .toList();
     final origem = pontosRota.first;
     final destino = pontosRota.last;
     final limites = LatLngBounds.fromPoints(pontosRota);
@@ -621,10 +746,18 @@ class _CartaoResultado extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _Metrica(icone: Icons.straighten, valor: '${_formatoKm.format(resultado.distanciaKm)} km', label: 'Distância'),
+                  child: _Metrica(
+                    icone: Icons.straighten,
+                    valor: '${_formatoKm.format(resultado.distanciaKm)} km',
+                    label: 'Distância',
+                  ),
                 ),
                 Expanded(
-                  child: _Metrica(icone: Icons.schedule, valor: tempoTexto, label: 'Tempo estimado'),
+                  child: _Metrica(
+                    icone: Icons.schedule,
+                    valor: tempoTexto,
+                    label: 'Tempo estimado',
+                  ),
                 ),
               ],
             ),
@@ -639,16 +772,28 @@ class _CartaoResultado extends StatelessWidget {
                 height: 320,
                 child: FlutterMap(
                   options: MapOptions(
-                    initialCameraFit: CameraFit.bounds(bounds: limites, padding: const EdgeInsets.all(32)),
-                    interactionOptions: const InteractionOptions(flags: InteractiveFlag.all),
+                    initialCameraFit: CameraFit.bounds(
+                      bounds: limites,
+                      padding: const EdgeInsets.all(32),
+                    ),
+                    interactionOptions: const InteractionOptions(
+                      flags: InteractiveFlag.all,
+                    ),
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.fni.estradaquecuida',
                     ),
                     PolylineLayer(
-                      polylines: [Polyline(points: pontosRota, color: AppTheme.frota500, strokeWidth: 4)],
+                      polylines: [
+                        Polyline(
+                          points: pontosRota,
+                          color: AppTheme.frota500,
+                          strokeWidth: 4,
+                        ),
+                      ],
                     ),
                     MarkerLayer(
                       markers: [
@@ -656,28 +801,49 @@ class _CartaoResultado extends StatelessWidget {
                           point: origem,
                           width: 36,
                           height: 36,
-                          child: const Icon(Icons.trip_origin, color: AppTheme.statusAtivo, size: 28),
+                          child: const Icon(
+                            Icons.trip_origin,
+                            color: AppTheme.statusAtivo,
+                            size: 28,
+                          ),
                         ),
                         Marker(
                           point: destino,
                           width: 36,
                           height: 36,
-                          child: const Icon(Icons.location_on, color: AppTheme.statusInativo, size: 34),
+                          child: const Icon(
+                            Icons.location_on,
+                            color: AppTheme.statusInativo,
+                            size: 34,
+                          ),
                         ),
                         for (final candidato in candidatos)
                           Marker(
                             point: LatLng(candidato.lat, candidato.lon),
-                            width: selecionados.contains(candidato.cnpj) ? 30 : 20,
-                            height: selecionados.contains(candidato.cnpj) ? 30 : 20,
+                            width: selecionados.contains(candidato.cnpj)
+                                ? 30
+                                : 20,
+                            height: selecionados.contains(candidato.cnpj)
+                                ? 30
+                                : 20,
                             child: GestureDetector(
                               behavior: HitTestBehavior.opaque,
-                              onTap: () => _abrirDetalhePosto(context, candidato, selecionados.contains(candidato.cnpj), onTogglePosto),
+                              onTap: () => _abrirDetalhePosto(
+                                context,
+                                candidato,
+                                selecionados.contains(candidato.cnpj),
+                                onTogglePosto,
+                              ),
                               child: Icon(
                                 Icons.local_gas_station,
                                 color: selecionados.contains(candidato.cnpj)
-                                    ? coresHexBandeira[corPorBandeira(candidato.bandeira)]
+                                    ? coresHexBandeira[corPorBandeira(
+                                        candidato.bandeira,
+                                      )]
                                     : Colors.grey.shade400,
-                                size: selecionados.contains(candidato.cnpj) ? 26 : 17,
+                                size: selecionados.contains(candidato.cnpj)
+                                    ? 26
+                                    : 17,
                               ),
                             ),
                           ),
@@ -688,7 +854,10 @@ class _CartaoResultado extends StatelessWidget {
                             point: LatLng(praca.lat, praca.lon),
                             width: 26,
                             height: 26,
-                            child: const Text('🎫', style: TextStyle(fontSize: 20)),
+                            child: const Text(
+                              '🎫',
+                              style: TextStyle(fontSize: 20),
+                            ),
                           ),
                       ],
                     ),
@@ -707,18 +876,23 @@ class _CartaoResultado extends StatelessWidget {
                 spacing: 12,
                 runSpacing: 6,
                 children: legenda.entries
-                    .map((e) => Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(color: coresHexBandeira[e.value], shape: BoxShape.circle),
+                    .map(
+                      (e) => Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: coresHexBandeira[e.value],
+                              shape: BoxShape.circle,
                             ),
-                            const SizedBox(width: 4),
-                            Text(e.key, style: const TextStyle(fontSize: 11.5)),
-                          ],
-                        ))
+                          ),
+                          const SizedBox(width: 4),
+                          Text(e.key, style: const TextStyle(fontSize: 11.5)),
+                        ],
+                      ),
+                    )
                     .toList(),
               ),
             ],
@@ -749,21 +923,37 @@ class _CartaoCustoTotal extends StatelessWidget {
       children: [
         SizedBox(
           width: 160,
-          child: _Metrica(icone: Icons.local_gas_station_outlined, valor: '$litrosTotal L', label: 'Litros totais'),
+          child: _Metrica(
+            icone: Icons.local_gas_station_outlined,
+            valor: '$litrosTotal L',
+            label: 'Litros totais',
+          ),
         ),
         SizedBox(
           width: 160,
-          child: _Metrica(icone: Icons.payments_outlined, valor: _formatoMoeda.format(custoTotal), label: 'Custo estimado'),
+          child: _Metrica(
+            icone: Icons.payments_outlined,
+            valor: _formatoMoeda.format(custoTotal),
+            label: 'Custo estimado',
+          ),
         ),
         SizedBox(
           width: 160,
-          child: _Metrica(icone: Icons.alt_route, valor: '$numParadas', label: 'Paradas'),
+          child: _Metrica(
+            icone: Icons.alt_route,
+            valor: '$numParadas',
+            label: 'Paradas',
+          ),
         ),
         // Fase Motorista-Pedagios — pedido do Daniel: "no resumo de custo
         // total, colocar o valor total de pedágio também".
         SizedBox(
           width: 160,
-          child: _Metrica(icone: Icons.confirmation_number_outlined, valor: _formatoMoeda.format(custoPedagio), label: '🎫 Pedágio'),
+          child: _Metrica(
+            icone: Icons.confirmation_number_outlined,
+            valor: _formatoMoeda.format(custoPedagio),
+            label: '🎫 Pedágio',
+          ),
         ),
       ],
     );
@@ -782,13 +972,18 @@ class _CartaoPedagio extends StatelessWidget {
       child: ListTile(
         dense: true,
         leading: const Text('🎫', style: TextStyle(fontSize: 18)),
-        title: Text(praca.nome, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+        title: Text(
+          praca.nome,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        ),
         subtitle: Text(
           '${praca.rodovia ?? praca.concessionaria ?? '—'} · km ${_formatoKm.format(praca.kmNaRota)}',
           style: const TextStyle(fontSize: 11.5),
         ),
         trailing: Text(
-          praca.valorCarro != null ? _formatoMoeda.format(praca.valorCarro!) : '—',
+          praca.valorCarro != null
+              ? _formatoMoeda.format(praca.valorCarro!)
+              : '—',
           style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         ),
       ),
@@ -801,7 +996,11 @@ class _Metrica extends StatelessWidget {
   final String valor;
   final String label;
 
-  const _Metrica({required this.icone, required this.valor, required this.label});
+  const _Metrica({
+    required this.icone,
+    required this.valor,
+    required this.label,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -813,8 +1012,18 @@ class _Metrica extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(valor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), overflow: TextOverflow.ellipsis),
-              Text(label, style: const TextStyle(color: Colors.black54, fontSize: 11)),
+              Text(
+                valor,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                label,
+                style: const TextStyle(color: Colors.black54, fontSize: 11),
+              ),
             ],
           ),
         ),
@@ -843,44 +1052,96 @@ class _CartaoParada extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(radius: 14, backgroundColor: cor, child: Text('$numero', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold))),
+              CircleAvatar(
+                radius: 14,
+                backgroundColor: cor,
+                child: Text(
+                  '$numero',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(posto.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                     Text(
-                      [formatarLabelBandeira(posto.bandeira), if (posto.municipio != null) posto.municipio!].join(' • '),
-                      style: const TextStyle(fontSize: 12, color: Colors.black54),
+                      posto.label,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      [
+                        formatarLabelBandeira(posto.bandeira),
+                        if (posto.municipio != null) posto.municipio!,
+                      ].join(' • '),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.black54,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       _motivoLabel[parada.motivo] ?? parada.motivo,
-                      style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontStyle: FontStyle.italic),
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.black54,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Wrap(
                       spacing: 14,
                       runSpacing: 4,
                       children: [
-                        Text('${_formatoKm.format(posto.km)} km', style: const TextStyle(fontSize: 12)),
-                        Text('${parada.litrosSugeridos} L', style: const TextStyle(fontSize: 12)),
-                        Text('${posto.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12)),
-                        Text(_formatoMoeda.format(parada.custoAbastecimento), style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          '${_formatoKm.format(posto.km)} km',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '${parada.litrosSugeridos} L',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          '${posto.preco.toStringAsFixed(3)}/L',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        Text(
+                          _formatoMoeda.format(parada.custoAbastecimento),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Chega com ${parada.pctChegada.toStringAsFixed(0)}% do tanque · sai com ${parada.pctApos.toStringAsFixed(0)}%',
-                      style: const TextStyle(fontSize: 11, color: Colors.black45),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black45,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: const [
-                        Icon(Icons.map_outlined, size: 13, color: Colors.black45),
+                        Icon(
+                          Icons.map_outlined,
+                          size: 13,
+                          color: Colors.black45,
+                        ),
                         SizedBox(width: 4),
-                        Text('Toque para ver no Google Maps', style: TextStyle(fontSize: 11, color: Colors.black45)),
+                        Text(
+                          'Toque para ver no Google Maps',
+                          style: TextStyle(fontSize: 11, color: Colors.black45),
+                        ),
                       ],
                     ),
                   ],
@@ -916,13 +1177,22 @@ void _abrirDetalhePosto(
             Row(
               children: [
                 Expanded(
-                  child: Text(candidato.label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                  child: Text(
+                    candidato.label,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
                 ),
                 _GradeBadge(grade: candidato.grade),
               ],
             ),
             Text(
-              [formatarLabelBandeira(candidato.bandeira), if (candidato.municipio != null) candidato.municipio!].join(' • '),
+              [
+                formatarLabelBandeira(candidato.bandeira),
+                if (candidato.municipio != null) candidato.municipio!,
+              ].join(' • '),
               style: const TextStyle(fontSize: 12.5, color: Colors.black54),
             ),
             const SizedBox(height: 8),
@@ -930,8 +1200,14 @@ void _abrirDetalhePosto(
               spacing: 14,
               runSpacing: 4,
               children: [
-                Text('${_formatoKm.format(candidato.km)} km', style: const TextStyle(fontSize: 12.5)),
-                Text('R\$ ${candidato.preco.toStringAsFixed(3)}/L', style: const TextStyle(fontSize: 12.5)),
+                Text(
+                  '${_formatoKm.format(candidato.km)} km',
+                  style: const TextStyle(fontSize: 12.5),
+                ),
+                Text(
+                  'R\$ ${candidato.preco.toStringAsFixed(3)}/L',
+                  style: const TextStyle(fontSize: 12.5),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -943,10 +1219,14 @@ void _abrirDetalhePosto(
                   Navigator.pop(ctx);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: selecionado ? Colors.grey.shade200 : AppTheme.frota600,
+                  backgroundColor: selecionado
+                      ? Colors.grey.shade200
+                      : AppTheme.frota600,
                   foregroundColor: selecionado ? Colors.black87 : Colors.white,
                 ),
-                child: Text(selecionado ? '− Remover parada' : '+ Selecionar como parada'),
+                child: Text(
+                  selecionado ? '− Remover parada' : '+ Selecionar como parada',
+                ),
               ),
             ),
           ],
@@ -968,8 +1248,14 @@ class _GradeBadge extends StatelessWidget {
     final cor = _gradeCor[grade] ?? Colors.grey;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.14), borderRadius: BorderRadius.circular(20)),
-      child: Text(grade, style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12)),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        grade,
+        style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12),
+      ),
     );
   }
 }
@@ -999,7 +1285,8 @@ class _ListaCandidatos extends StatelessWidget {
     // longo do corredor. Porta fiel de candidatosOrdenados em
     // FormRoteirizacao.tsx (web): selecionado primeiro, e dentro de cada
     // grupo mantém a ordem por km da rota.
-    final ordenados = [...candidatos]..sort((a, b) {
+    final ordenados = [...candidatos]
+      ..sort((a, b) {
         final aSel = selecionados.contains(a.cnpj);
         final bSel = selecionados.contains(b.cnpj);
         if (aSel != bSel) return aSel ? -1 : 1;
@@ -1032,7 +1319,12 @@ class _CartaoCandidato extends StatelessWidget {
   final ParadaSugerida? parada;
   final VoidCallback onTap;
 
-  const _CartaoCandidato({required this.candidato, required this.selecionado, this.parada, required this.onTap});
+  const _CartaoCandidato({
+    required this.candidato,
+    required this.selecionado,
+    this.parada,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1062,7 +1354,10 @@ class _CartaoCandidato extends StatelessWidget {
                         Expanded(
                           child: Text(
                             candidato.label,
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -1072,14 +1367,21 @@ class _CartaoCandidato extends StatelessWidget {
                     ),
                     Text(
                       '${_formatoKm.format(candidato.km)} km · R\$ ${candidato.preco.toStringAsFixed(3)}/L',
-                      style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.black54,
+                      ),
                     ),
                     if (parada != null) ...[
                       const SizedBox(height: 2),
                       Text(
                         '${parada!.litrosSugeridos} L · ${_formatoMoeda.format(parada!.custoAbastecimento)} · '
                         'chega ${parada!.pctChegada.toStringAsFixed(0)}% · sai ${parada!.pctApos.toStringAsFixed(0)}%',
-                        style: const TextStyle(fontSize: 11.5, color: AppTheme.frota700, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppTheme.frota700,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ],

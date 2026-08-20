@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // Tela 2 do login — motorista digita o código de 6 dígitos recebido por
 // SMS. Ao confirmar, o Supabase cria a sessão (auth.uid()); dali em
 // diante a RLS e a RPC de vínculo já enxergam esse usuário.
@@ -15,7 +17,11 @@ class OtpScreen extends StatefulWidget {
   final String telefoneE164;
   final bool forcarNovaSenha;
 
-  const OtpScreen({super.key, required this.telefoneE164, this.forcarNovaSenha = false});
+  const OtpScreen({
+    super.key,
+    required this.telefoneE164,
+    this.forcarNovaSenha = false,
+  });
 
   @override
   State<OtpScreen> createState() => _OtpScreenState();
@@ -38,7 +44,10 @@ class _OtpScreenState extends State<OtpScreen> {
       _erro = null;
     });
     try {
-      await AuthService.confirmarCodigo(telefoneE164: widget.telefoneE164, codigo: codigo);
+      await AuthService.confirmarCodigo(
+        telefoneE164: widget.telefoneE164,
+        codigo: codigo,
+      );
       if (!mounted) return;
       if (widget.forcarNovaSenha) {
         // Fluxo "esqueci minha senha": SMS confirmado só prova que o
@@ -52,9 +61,11 @@ class _OtpScreenState extends State<OtpScreen> {
     } on AuthException catch (e) {
       // otp_expired etc. ganham mensagem própria; código só errado continua
       // com a mensagem padrão de "confira e tente de novo".
-      setState(() => _erro = e.code == 'otp_expired'
-          ? AuthService.mensagemDeErro(e, contexto: 'otp')
-          : 'Código incorreto ou expirado. Confira e tente de novo.');
+      setState(
+        () => _erro = e.code == 'otp_expired'
+            ? AuthService.mensagemDeErro(e, contexto: 'otp')
+            : 'Código incorreto ou expirado. Confira e tente de novo.',
+      );
     } catch (e) {
       setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'otp'));
     } finally {
@@ -67,12 +78,16 @@ class _OtpScreenState extends State<OtpScreen> {
     try {
       await AuthService.enviarCodigo(widget.telefoneE164);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código reenviado.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Código reenviado.')));
     } catch (e) {
       // Antes o reenvio não tinha catch — falha do Twilio estourava sem
       // aviso nenhum pro motorista.
       if (!mounted) return;
-      setState(() => _erro = AuthService.mensagemDeErro(e, contexto: 'otp-reenvio'));
+      setState(
+        () => _erro = AuthService.mensagemDeErro(e, contexto: 'otp-reenvio'),
+      );
     } finally {
       if (mounted) setState(() => _reenviando = false);
     }
@@ -81,7 +96,15 @@ class _OtpScreenState extends State<OtpScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirme o código')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Confirme o código'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -105,7 +128,14 @@ class _OtpScreenState extends State<OtpScreen> {
               ElevatedButton(
                 onPressed: _confirmando ? null : _confirmar,
                 child: _confirmando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Confirmar'),
               ),
               const SizedBox(height: 8),

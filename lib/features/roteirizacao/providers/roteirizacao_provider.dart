@@ -34,7 +34,11 @@ class SugestaoLocal {
   final double lat;
   final double lon;
 
-  const SugestaoLocal({required this.label, required this.lat, required this.lon});
+  const SugestaoLocal({
+    required this.label,
+    required this.lat,
+    required this.lon,
+  });
 }
 
 /// Busca de local por texto livre via Nominatim (OpenStreetMap) — mesmo
@@ -53,7 +57,13 @@ Future<List<SugestaoLocal>> geocodificar(String texto) async {
 
   try {
     final resp = await http
-        .get(url, headers: {'User-Agent': 'EstradaQueCuida-Flutter/1.0 (contato: d.peruffo@gmail.com)'})
+        .get(
+          url,
+          headers: {
+            'User-Agent':
+                'EstradaQueCuida-Flutter/1.0 (contato: d.peruffo@gmail.com)',
+          },
+        )
         .timeout(const Duration(seconds: 10));
     if (resp.statusCode != 200) return [];
     final itens = jsonDecode(resp.body) as List;
@@ -62,20 +72,33 @@ Future<List<SugestaoLocal>> geocodificar(String texto) async {
     for (final item in itens) {
       final mapa = item as Map<String, dynamic>;
       final addr = (mapa['address'] as Map<String, dynamic>?) ?? {};
-      final cidade = (addr['city'] ?? addr['town'] ?? addr['village'] ?? addr['municipality'] ?? addr['county'] ?? '')
-          .toString();
+      final cidade =
+          (addr['city'] ??
+                  addr['town'] ??
+                  addr['village'] ??
+                  addr['municipality'] ??
+                  addr['county'] ??
+                  '')
+              .toString();
       final estado = (addr['state'] ?? '').toString();
       final label = cidade.isNotEmpty && estado.isNotEmpty
           ? '$cidade – $estado'
           : (estado.isNotEmpty
-              ? estado
-              : (mapa['display_name']?.toString().split(', ').take(2).join(', ') ?? termo));
+                ? estado
+                : (mapa['display_name']
+                          ?.toString()
+                          .split(', ')
+                          .take(2)
+                          .join(', ') ??
+                      termo));
       if (vistos.add(label)) {
-        opcoes.add(SugestaoLocal(
-          label: label,
-          lat: double.parse(mapa['lat'] as String),
-          lon: double.parse(mapa['lon'] as String),
-        ));
+        opcoes.add(
+          SugestaoLocal(
+            label: label,
+            lat: double.parse(mapa['lat'] as String),
+            lon: double.parse(mapa['lon'] as String),
+          ),
+        );
       }
     }
     return opcoes;
@@ -122,7 +145,9 @@ class VeiculoRoteirizacao {
 /// autonomia sempre vêm do cadastro do veículo, nunca digitados.
 Future<List<VeiculoRoteirizacao>> buscarMeusVeiculos() async {
   try {
-    final linhas = await SupabaseService.client.rpc('meus_veiculos_roteirizacao');
+    final linhas = await SupabaseService.client.rpc(
+      'meus_veiculos_roteirizacao',
+    );
     return (linhas as List).map((l) {
       final mapa = l as Map<String, dynamic>;
       return VeiculoRoteirizacao(
@@ -148,7 +173,10 @@ Future<List<VeiculoRoteirizacao>> buscarMeusVeiculos() async {
 /// precisar de outro de-para: normaliza o texto e casa direto com os
 /// valores de `ufParaEstadoAnp` (já em maiúsculas sem acento). Cai pro nível
 /// Brasil se não achar preço daquele estado especificamente.
-Future<double?> buscarPrecoMedioCombustivelPorEstado(String categoriaAnp, String? nomeEstado) async {
+Future<double?> buscarPrecoMedioCombustivelPorEstado(
+  String categoriaAnp,
+  String? nomeEstado,
+) async {
   try {
     if (nomeEstado != null && nomeEstado.trim().isNotEmpty) {
       final estadoNormalizado = normalizarTexto(nomeEstado).toUpperCase();
@@ -194,9 +222,10 @@ Future<void> registrarRotaCalculada() async {
         .maybeSingle();
     final id = motoristaId?['id'] as String?;
     if (id == null) return;
-    await SupabaseService.client
-        .from('fidelidade_eventos_engajamento')
-        .insert({'motorista_id': id, 'tipo_evento': 'rota_calculada'});
+    await SupabaseService.client.from('fidelidade_eventos_engajamento').insert({
+      'motorista_id': id,
+      'tipo_evento': 'rota_calculada',
+    });
   } catch (_) {
     // silencioso — não impacta o fluxo principal da roteirização
   }
@@ -207,7 +236,11 @@ class ResultadoRota {
   final double distanciaKm;
   final double duracaoMin;
 
-  const ResultadoRota({required this.coordenadas, required this.distanciaKm, required this.duracaoMin});
+  const ResultadoRota({
+    required this.coordenadas,
+    required this.distanciaKm,
+    required this.duracaoMin,
+  });
 }
 
 const _servidoresOsrm = [
@@ -222,7 +255,9 @@ Future<ResultadoRota?> calcularRota(PontoRota origem, PontoRota destino) async {
 
   for (final servidor in _servidoresOsrm) {
     try {
-      final url = Uri.parse('$servidor/$coordsStr?overview=full&geometries=geojson');
+      final url = Uri.parse(
+        '$servidor/$coordsStr?overview=full&geometries=geojson',
+      );
       final resp = await http.get(url).timeout(const Duration(seconds: 10));
       if (resp.statusCode != 200) continue;
       final json = jsonDecode(resp.body) as Map<String, dynamic>;
@@ -231,7 +266,10 @@ Future<ResultadoRota?> calcularRota(PontoRota origem, PontoRota destino) async {
       final rota = rotas.first as Map<String, dynamic>;
       final geometria = rota['geometry'] as Map<String, dynamic>;
       final coords = (geometria['coordinates'] as List)
-          .map((c) => PontoRota(lat: (c as List)[1] as double, lon: c[0] as double))
+          .map(
+            (c) =>
+                PontoRota(lat: (c as List)[1] as double, lon: c[0] as double),
+          )
           .toList();
       return ResultadoRota(
         coordenadas: coords,
@@ -251,7 +289,9 @@ double _haversineKm(PontoRota a, PontoRota b) {
   final dLon = (b.lon - a.lon) * math.pi / 180;
   final lat1 = a.lat * math.pi / 180;
   final lat2 = b.lat * math.pi / 180;
-  final h = math.sin(dLat / 2) * math.sin(dLat / 2) + math.cos(lat1) * math.cos(lat2) * math.sin(dLon / 2) * math.sin(dLon / 2);
+  final h =
+      math.sin(dLat / 2) * math.sin(dLat / 2) +
+      math.cos(lat1) * math.cos(lat2) * math.sin(dLon / 2) * math.sin(dLon / 2);
   return raioTerraKm * 2 * math.atan2(math.sqrt(h), math.sqrt(1 - h));
 }
 
@@ -283,8 +323,13 @@ class _PosicaoNaRota {
 /// mais próximo da rota — usado pra saber "em que km da viagem" cada posto
 /// candidato fica e se ele está perto o bastante do trajeto. Port fiel de
 /// posicaoNaRotaKm() em geo.ts.
-_PosicaoNaRota _posicaoNaRotaKm(PontoRota ponto, List<PontoRota> rota, List<double> distanciasAcumuladasKm) {
-  if (rota.isEmpty) return const _PosicaoNaRota(km: 0, desvioKm: double.infinity);
+_PosicaoNaRota _posicaoNaRotaKm(
+  PontoRota ponto,
+  List<PontoRota> rota,
+  List<double> distanciasAcumuladasKm,
+) {
+  if (rota.isEmpty)
+    return const _PosicaoNaRota(km: 0, desvioKm: double.infinity);
   var melhorDist = double.infinity;
   var melhorKm = 0.0;
   for (var i = 0; i < rota.length - 1; i++) {
@@ -297,7 +342,9 @@ _PosicaoNaRota _posicaoNaRotaKm(PontoRota ponto, List<PontoRota> rota, List<doub
       final distSegmento = _haversineKm(a, b);
       final distAteProjecao = _haversineKm(a, proj);
       final fracao = distSegmento > 0 ? distAteProjecao / distSegmento : 0;
-      melhorKm = distanciasAcumuladasKm[i] + fracao * (distanciasAcumuladasKm[i + 1] - distanciasAcumuladasKm[i]);
+      melhorKm =
+          distanciasAcumuladasKm[i] +
+          fracao * (distanciasAcumuladasKm[i + 1] - distanciasAcumuladasKm[i]);
     }
   }
   return _PosicaoNaRota(km: melhorKm, desvioKm: melhorDist);
@@ -305,7 +352,12 @@ _PosicaoNaRota _posicaoNaRotaKm(PontoRota ponto, List<PontoRota> rota, List<doub
 
 class _BoundingBox {
   final double minLat, maxLat, minLon, maxLon;
-  const _BoundingBox({required this.minLat, required this.maxLat, required this.minLon, required this.maxLon});
+  const _BoundingBox({
+    required this.minLat,
+    required this.maxLat,
+    required this.minLon,
+    required this.maxLon,
+  });
 }
 
 /// Divide a rota em pedaços de até `passoKm` (capado a `maxSegmentos`) e
@@ -333,12 +385,14 @@ List<_BoundingBox> _construirBoundingBoxes(
       final fatia = rota.sublist(inicioIdx, i + 1);
       final lats = fatia.map((p) => p.lat);
       final lons = fatia.map((p) => p.lon);
-      boxes.add(_BoundingBox(
-        minLat: lats.reduce(math.min) - margemGraus,
-        maxLat: lats.reduce(math.max) + margemGraus,
-        minLon: lons.reduce(math.min) - margemGraus,
-        maxLon: lons.reduce(math.max) + margemGraus,
-      ));
+      boxes.add(
+        _BoundingBox(
+          minLat: lats.reduce(math.min) - margemGraus,
+          maxLat: lats.reduce(math.max) + margemGraus,
+          minLon: lons.reduce(math.min) - margemGraus,
+          maxLon: lons.reduce(math.max) + margemGraus,
+        ),
+      );
       inicioIdx = i;
       inicioKm = distanciasAcumuladasKm[i];
     }
@@ -370,7 +424,9 @@ Future<List<CandidatoAbastecimento>> buscarCandidatosAbastecimento({
     try {
       final linhas = await SupabaseService.client
           .from('anp_postos')
-          .select('cnpj, razao_social, municipio, uf, bandeira, latitude, longitude')
+          .select(
+            'cnpj, razao_social, municipio, uf, bandeira, latitude, longitude',
+          )
           .eq('ativo', true)
           .not('latitude', 'is', null)
           .not('longitude', 'is', null)
@@ -397,7 +453,11 @@ Future<List<CandidatoAbastecimento>> buscarCandidatosAbastecimento({
     final lat = (m['latitude'] as num?)?.toDouble();
     final lon = (m['longitude'] as num?)?.toDouble();
     if (lat == null || lon == null) continue;
-    final pos = _posicaoNaRotaKm(PontoRota(lat: lat, lon: lon), coordenadas, acumuladas);
+    final pos = _posicaoNaRotaKm(
+      PontoRota(lat: lat, lon: lon),
+      coordenadas,
+      acumuladas,
+    );
     if (pos.desvioKm <= raioCorredorKm) {
       candidatosBrutos.add({...m, '_km': pos.km, '_desvioKm': pos.desvioKm});
     }
@@ -467,28 +527,40 @@ Future<List<CandidatoAbastecimento>> buscarCandidatosAbastecimento({
   for (final m in candidatosBrutos) {
     final uf = m['uf'] as String?;
     final estadoAnp = uf != null ? ufParaEstadoAnp[uf.toUpperCase()] : null;
-    final municipioNorm = m['municipio'] != null ? normalizarTexto(m['municipio'] as String) : '';
-    final preco = (estadoAnp != null ? precoPorMunicipio['${municipioNorm}__$estadoAnp'] : null) ??
+    final municipioNorm = m['municipio'] != null
+        ? normalizarTexto(m['municipio'] as String)
+        : '';
+    final preco =
+        (estadoAnp != null
+            ? precoPorMunicipio['${municipioNorm}__$estadoAnp']
+            : null) ??
         (estadoAnp != null ? precoPorEstado[estadoAnp] : null) ??
         precoBrasil;
     final cnpj = m['cnpj'] as String?;
     if (preco == null || cnpj == null) continue;
 
-    final score = calcularScorePosto(precoPosto: preco, precoReferenciaAnp: null, servicosAtivos: 0, servicosTotal: 10);
+    final score = calcularScorePosto(
+      precoPosto: preco,
+      precoReferenciaAnp: null,
+      servicosAtivos: 0,
+      servicosTotal: 10,
+    );
 
-    candidatos.add(CandidatoAbastecimento(
-      cnpj: cnpj,
-      km: m['_km'] as double,
-      desvioKm: m['_desvioKm'] as double,
-      preco: preco,
-      grade: score.grade,
-      label: (m['razao_social'] as String?) ?? cnpj,
-      lat: (m['latitude'] as num).toDouble(),
-      lon: (m['longitude'] as num).toDouble(),
-      bandeira: m['bandeira'] as String?,
-      uf: uf,
-      municipio: m['municipio'] as String?,
-    ));
+    candidatos.add(
+      CandidatoAbastecimento(
+        cnpj: cnpj,
+        km: m['_km'] as double,
+        desvioKm: m['_desvioKm'] as double,
+        preco: preco,
+        grade: score.grade,
+        label: (m['razao_social'] as String?) ?? cnpj,
+        lat: (m['latitude'] as num).toDouble(),
+        lon: (m['longitude'] as num).toDouble(),
+        bandeira: m['bandeira'] as String?,
+        uf: uf,
+        municipio: m['municipio'] as String?,
+      ),
+    );
   }
 
   return candidatos;
@@ -528,17 +600,17 @@ class PracaPedagio {
   });
 
   factory PracaPedagio.fromMap(Map<String, dynamic> m) => PracaPedagio(
-        id: m['id'] as int,
-        nome: m['nome'] as String,
-        concessionaria: m['concessionaria'] as String?,
-        rodovia: m['rodovia'] as String?,
-        uf: m['uf'] as String?,
-        lat: (m['lat'] as num).toDouble(),
-        lon: (m['lon'] as num).toDouble(),
-        valorCarro: (m['valor_carro'] as num?)?.toDouble(),
-        valorMoto: (m['valor_moto'] as num?)?.toDouble(),
-        valorCaminhaoEixo: (m['valor_caminhao_eixo'] as num?)?.toDouble(),
-      );
+    id: m['id'] as int,
+    nome: m['nome'] as String,
+    concessionaria: m['concessionaria'] as String?,
+    rodovia: m['rodovia'] as String?,
+    uf: m['uf'] as String?,
+    lat: (m['lat'] as num).toDouble(),
+    lon: (m['lon'] as num).toDouble(),
+    valorCarro: (m['valor_carro'] as num?)?.toDouble(),
+    valorMoto: (m['valor_moto'] as num?)?.toDouble(),
+    valorCaminhaoEixo: (m['valor_caminhao_eixo'] as num?)?.toDouble(),
+  );
 }
 
 class PracaPedagioNaRota extends PracaPedagio {
@@ -581,7 +653,9 @@ Future<List<PracaPedagioNaRota>> buscarPracasPedagioNaRota(
     try {
       final rows = await SupabaseService.client
           .from('pracas_pedagio')
-          .select('id, nome, concessionaria, rodovia, uf, lat, lon, valor_carro, valor_moto, valor_caminhao_eixo')
+          .select(
+            'id, nome, concessionaria, rodovia, uf, lat, lon, valor_carro, valor_moto, valor_caminhao_eixo',
+          )
           .gte('lat', box.minLat)
           .lte('lat', box.maxLat)
           .gte('lon', box.minLon)
@@ -600,39 +674,55 @@ Future<List<PracaPedagioNaRota>> buscarPracasPedagioNaRota(
   final resultado = <PracaPedagioNaRota>[];
   for (final m in porId.values) {
     final praca = PracaPedagio.fromMap(m);
-    final pos = _posicaoNaRotaKm(PontoRota(lat: praca.lat, lon: praca.lon), rota, acumuladas);
+    final pos = _posicaoNaRotaKm(
+      PontoRota(lat: praca.lat, lon: praca.lon),
+      rota,
+      acumuladas,
+    );
     if (pos.desvioKm > raioKm) continue;
-    resultado.add(PracaPedagioNaRota(
-      id: praca.id,
-      nome: praca.nome,
-      concessionaria: praca.concessionaria,
-      rodovia: praca.rodovia,
-      uf: praca.uf,
-      lat: praca.lat,
-      lon: praca.lon,
-      valorCarro: praca.valorCarro,
-      valorMoto: praca.valorMoto,
-      valorCaminhaoEixo: praca.valorCaminhaoEixo,
-      kmNaRota: pos.km,
-      desvioKm: pos.desvioKm,
-    ));
+    resultado.add(
+      PracaPedagioNaRota(
+        id: praca.id,
+        nome: praca.nome,
+        concessionaria: praca.concessionaria,
+        rodovia: praca.rodovia,
+        uf: praca.uf,
+        lat: praca.lat,
+        lon: praca.lon,
+        valorCarro: praca.valorCarro,
+        valorMoto: praca.valorMoto,
+        valorCaminhaoEixo: praca.valorCaminhaoEixo,
+        kmNaRota: pos.km,
+        desvioKm: pos.desvioKm,
+      ),
+    );
   }
   resultado.sort((a, b) => a.kmNaRota.compareTo(b.kmNaRota));
   return resultado;
 }
 
-double? valorPedagio(PracaPedagio praca, CategoriaVeiculoPedagio categoria, {int numEixos = 2}) {
+double? valorPedagio(
+  PracaPedagio praca,
+  CategoriaVeiculoPedagio categoria, {
+  int numEixos = 2,
+}) {
   switch (categoria) {
     case CategoriaVeiculoPedagio.moto:
       return praca.valorMoto;
     case CategoriaVeiculoPedagio.caminhao:
-      return praca.valorCaminhaoEixo != null ? praca.valorCaminhaoEixo! * numEixos : null;
+      return praca.valorCaminhaoEixo != null
+          ? praca.valorCaminhaoEixo! * numEixos
+          : null;
     case CategoriaVeiculoPedagio.carro:
       return praca.valorCarro;
   }
 }
 
-double custoPedagioTotal(List<PracaPedagio> pracas, CategoriaVeiculoPedagio categoria, {int numEixos = 2}) {
+double custoPedagioTotal(
+  List<PracaPedagio> pracas,
+  CategoriaVeiculoPedagio categoria, {
+  int numEixos = 2,
+}) {
   var soma = 0.0;
   for (final p in pracas) {
     soma += valorPedagio(p, categoria, numEixos: numEixos) ?? 0;
@@ -643,6 +733,10 @@ double custoPedagioTotal(List<PracaPedagio> pracas, CategoriaVeiculoPedagio cate
 // Deriva a categoria de pedágio a partir do tipo do veículo do motorista
 // (cadastro_veiculos.tipo, 'Leve'/'Pesado') — sem um campo de eixos
 // cadastrado aqui, assume 2 eixos como padrão pros veículos Pesado.
-CategoriaVeiculoPedagio categoriaPedagioDoVeiculo(VeiculoRoteirizacao? veiculo) {
-  return veiculo?.tipo == 'Pesado' ? CategoriaVeiculoPedagio.caminhao : CategoriaVeiculoPedagio.carro;
+CategoriaVeiculoPedagio categoriaPedagioDoVeiculo(
+  VeiculoRoteirizacao? veiculo,
+) {
+  return veiculo?.tipo == 'Pesado'
+      ? CategoriaVeiculoPedagio.caminhao
+      : CategoriaVeiculoPedagio.carro;
 }

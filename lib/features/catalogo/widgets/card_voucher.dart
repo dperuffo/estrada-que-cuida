@@ -47,7 +47,10 @@ class CardVoucher extends StatelessWidget {
       decoration: BoxDecoration(
         color: estilo.cor.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: estilo.cor.withValues(alpha: 0.35), width: 1.5),
+        border: Border.all(
+          color: estilo.cor.withValues(alpha: 0.35),
+          width: 1.5,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -70,11 +73,21 @@ class CardVoucher extends StatelessWidget {
                 right: 8,
                 top: 8,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: estilo.cor, borderRadius: BorderRadius.circular(20)),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: estilo.cor,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Text(
                     '${_formatoPontosCard.format(pontos)} pts',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
@@ -87,32 +100,59 @@ class CardVoucher extends StatelessWidget {
               children: [
                 Text(
                   estilo.label.toUpperCase(),
-                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: estilo.cor, letterSpacing: 0.4),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: estilo.cor,
+                    letterSpacing: 0.4,
+                  ),
                 ),
                 const SizedBox(height: 2),
-                Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                if (parceiroNome != null) Text(parceiroNome!, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                Text(
+                  titulo,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
+                if (parceiroNome != null)
+                  Text(
+                    parceiroNome!,
+                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
                 if (descricao != null) ...[
                   const SizedBox(height: 4),
-                  Text(descricao!, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                  Text(
+                    descricao!,
+                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
                 ],
                 if (numeroVoucher != null || validoAte != null) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.only(top: 8),
-                    decoration: const BoxDecoration(border: Border(top: BorderSide(color: Colors.black12))),
+                    decoration: const BoxDecoration(
+                      border: Border(top: BorderSide(color: Colors.black12)),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         if (numeroVoucher != null)
                           Text(
                             'Voucher: $numeroVoucher',
-                            style: const TextStyle(fontSize: 11, fontFamily: 'monospace', color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontFamily: 'monospace',
+                              color: Colors.black54,
+                            ),
                           ),
                         if (validoAte != null)
                           Text(
                             'Válido até ${_formatoDataCard.format(validoAte!)}',
-                            style: const TextStyle(fontSize: 11, color: Colors.black54),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: Colors.black54,
+                            ),
                           ),
                       ],
                     ),
@@ -138,7 +178,13 @@ class _Placeholder extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: estilo.cor.withValues(alpha: 0.15),
-      child: Center(child: Icon(Icons.confirmation_number_outlined, size: 36, color: estilo.cor)),
+      child: Center(
+        child: Icon(
+          Icons.confirmation_number_outlined,
+          size: 36,
+          color: estilo.cor,
+        ),
+      ),
     );
   }
 }

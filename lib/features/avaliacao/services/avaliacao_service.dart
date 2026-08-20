@@ -20,7 +20,9 @@ class AvaliacoesService {
         'motorista_id': motoristaId,
         'empresa_id': empresaId,
         'estrelas': estrelas,
-        'comentario': (comentario == null || comentario.trim().isEmpty) ? null : comentario.trim(),
+        'comentario': (comentario == null || comentario.trim().isEmpty)
+            ? null
+            : comentario.trim(),
       });
       return null;
     } on PostgrestException catch (e) {

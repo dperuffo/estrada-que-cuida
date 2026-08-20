@@ -89,35 +89,51 @@ class _FretesScreenState extends State<FretesScreen> {
   bool _compativelComMeuVeiculo(Frete f) {
     if (f.veiculosAceitos.isEmpty) return true;
     final tipo = _tipoVeiculo;
-    if (tipo == null) return true; // sem vínculo/dado — não bloqueia por falta de info
+    if (tipo == null)
+      return true; // sem vínculo/dado — não bloqueia por falta de info
     final aceitos = _nomesCompativeisPorTipo[tipo] ?? const {};
     return f.veiculosAceitos.any(aceitos.contains);
   }
 
-  List<Frete> get _mercadoCompativel => _mercado.where(_compativelComMeuVeiculo).toList();
+  List<Frete> get _mercadoCompativel =>
+      _mercado.where(_compativelComMeuVeiculo).toList();
 
   List<Frete> get _mercadoFiltrado => _mercadoCompativel.where((f) {
-        final combinaVeiculo = f.veiculosAceitos.isEmpty ||
-            _filtroVeiculos.isEmpty ||
-            f.veiculosAceitos.any(_filtroVeiculos.contains);
-        final combinaCarroceria = f.carroceriasAceitas.isEmpty ||
-            _filtroCarrocerias.isEmpty ||
-            f.carroceriasAceitas.any(_filtroCarrocerias.contains);
-        return combinaVeiculo && combinaCarroceria;
-      }).toList();
+    final combinaVeiculo =
+        f.veiculosAceitos.isEmpty ||
+        _filtroVeiculos.isEmpty ||
+        f.veiculosAceitos.any(_filtroVeiculos.contains);
+    final combinaCarroceria =
+        f.carroceriasAceitas.isEmpty ||
+        _filtroCarrocerias.isEmpty ||
+        f.carroceriasAceitas.any(_filtroCarrocerias.contains);
+    return combinaVeiculo && combinaCarroceria;
+  }).toList();
 
   // Fase Fretes-Home-3-Abas — os 3 grupos que viram as 3 abas.
-  List<Frete> get _aguardandoConfirmacao => _atribuidos.where((f) => f.status == 'aguardando_confirmacao').toList();
-  List<Frete> get _emAndamento => _atribuidos.where((f) => f.status == 'em_andamento').toList();
-  List<Frete> get _aceitos => _atribuidos.where((f) => f.status == 'aceito').toList();
-  List<Frete> get _finalizados =>
-      _atribuidos.where((f) => f.status == 'concluido' || f.status == 'cancelado' || f.status == 'recusado').toList();
+  List<Frete> get _aguardandoConfirmacao =>
+      _atribuidos.where((f) => f.status == 'aguardando_confirmacao').toList();
+  List<Frete> get _emAndamento =>
+      _atribuidos.where((f) => f.status == 'em_andamento').toList();
+  List<Frete> get _aceitos =>
+      _atribuidos.where((f) => f.status == 'aceito').toList();
+  List<Frete> get _finalizados => _atribuidos
+      .where(
+        (f) =>
+            f.status == 'concluido' ||
+            f.status == 'cancelado' ||
+            f.status == 'recusado',
+      )
+      .toList();
 
   Future<void> _abrirFiltros() async {
     final selecionados = await showModalBottomSheet<(Set<String>, Set<String>)>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _PainelFiltros(veiculosIniciais: _filtroVeiculos, carroceriasIniciais: _filtroCarrocerias),
+      builder: (ctx) => _PainelFiltros(
+        veiculosIniciais: _filtroVeiculos,
+        carroceriasIniciais: _filtroCarrocerias,
+      ),
     );
     if (selecionados == null) return;
     setState(() {
@@ -168,7 +184,9 @@ class _FretesScreenState extends State<FretesScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _erro = e is PostgrestException ? e.message : 'Não consegui carregar os fretes agora.';
+        _erro = e is PostgrestException
+            ? e.message
+            : 'Não consegui carregar os fretes agora.';
         _carregando = false;
       });
     }
@@ -178,7 +196,10 @@ class _FretesScreenState extends State<FretesScreen> {
   Widget build(BuildContext context) {
     // Contagens nas abas — ajuda o motorista a saber onde tem algo novo
     // sem precisar entrar em cada uma.
-    final totalNegociacao = _aguardandoConfirmacao.length + _negociando.length + _mercadoFiltrado.length;
+    final totalNegociacao =
+        _aguardandoConfirmacao.length +
+        _negociando.length +
+        _mercadoFiltrado.length;
     final totalAndamento = _emAndamento.length + _aceitos.length;
     final totalFinalizados = _finalizados.length;
 
@@ -186,21 +207,41 @@ class _FretesScreenState extends State<FretesScreen> {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.glassNavGradient,
+            ),
+          ),
+          foregroundColor: AppTheme.glassTexto,
+          iconTheme: const IconThemeData(color: AppTheme.glassIcone),
           title: const Text('Fretes'),
           bottom: _carregando || _erro != null
               ? null
               : TabBar(
-                  // Pedido do Daniel (19/07): texto branco na barra azul
-                  // escura do AppBar, pra ficar legível de verdade.
-                  labelColor: Colors.white,
-                  unselectedLabelColor: Colors.white70,
-                  indicatorColor: Colors.white,
-                  labelStyle: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold),
+                  // Fase Liquid-Glass-PWA (20/08/2026) — texto claro sobre a
+                  // barra bronze/champanhe (antes era branco sobre navy).
+                  labelColor: AppTheme.glassTexto,
+                  unselectedLabelColor: AppTheme.glassTextoMuted,
+                  indicatorColor: AppTheme.glassAcento,
+                  labelStyle: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
                   unselectedLabelStyle: const TextStyle(fontSize: 12.5),
                   tabs: [
-                    Tab(text: 'Em Negociação${totalNegociacao > 0 ? ' ($totalNegociacao)' : ''}'),
-                    Tab(text: 'Aceitos/Em Andamento${totalAndamento > 0 ? ' ($totalAndamento)' : ''}'),
-                    Tab(text: 'Concluídos${totalFinalizados > 0 ? ' ($totalFinalizados)' : ''}'),
+                    Tab(
+                      text:
+                          'Em Negociação${totalNegociacao > 0 ? ' ($totalNegociacao)' : ''}',
+                    ),
+                    Tab(
+                      text:
+                          'Aceitos/Em Andamento${totalAndamento > 0 ? ' ($totalAndamento)' : ''}',
+                    ),
+                    Tab(
+                      text:
+                          'Concluídos${totalFinalizados > 0 ? ' ($totalFinalizados)' : ''}',
+                    ),
                   ],
                 ),
         ),
@@ -208,26 +249,33 @@ class _FretesScreenState extends State<FretesScreen> {
         body: _carregando
             ? const Center(child: CircularProgressIndicator())
             : _erro != null
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                          const SizedBox(height: 12),
-                          ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
-                        ],
-                      ),
-                    ),
-                  )
-                : TabBarView(
+            ? Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      _abaNegociacao(),
-                      _abaAndamento(),
-                      _abaFinalizados(),
+                      Text(
+                        _erro!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: _carregar,
+                        child: const Text('Tentar de novo'),
+                      ),
                     ],
                   ),
+                ),
+              )
+            : TabBarView(
+                children: [
+                  _abaNegociacao(),
+                  _abaAndamento(),
+                  _abaFinalizados(),
+                ],
+              ),
       ),
     );
   }
@@ -240,7 +288,13 @@ class _FretesScreenState extends State<FretesScreen> {
         children: [
           if (_aguardandoConfirmacao.isNotEmpty) ...[
             const _TituloSecao('Aguardando sua confirmação'),
-            ..._aguardandoConfirmacao.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+            ..._aguardandoConfirmacao.map(
+              (f) => _CardFrete(
+                frete: f,
+                minhaPosicao: _minhaPosicao,
+                onTap: () => _abrir(f.id),
+              ),
+            ),
             const SizedBox(height: 20),
           ],
           if (_negociando.isNotEmpty) ...[
@@ -249,7 +303,8 @@ class _FretesScreenState extends State<FretesScreen> {
               (par) => _CardFrete(
                 frete: par.$2,
                 minhaPosicao: _minhaPosicao,
-                subtitulo: 'Rodada ${par.$1.rodadaAtual} · ${_labelNegociacao(par.$1.status)}',
+                subtitulo:
+                    'Rodada ${par.$1.rodadaAtual} · ${_labelNegociacao(par.$1.status)}',
                 onTap: () => _abrir(par.$2.id),
               ),
             ),
@@ -267,7 +322,10 @@ class _FretesScreenState extends State<FretesScreen> {
                       ? 'Filtros'
                       : 'Filtros (${_filtroVeiculos.length + _filtroCarrocerias.length})',
                 ),
-                style: OutlinedButton.styleFrom(visualDensity: VisualDensity.compact, textStyle: const TextStyle(fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  textStyle: const TextStyle(fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -278,13 +336,22 @@ class _FretesScreenState extends State<FretesScreen> {
                 _mercado.isEmpty
                     ? 'Nenhum frete disponível no momento.'
                     : _mercadoCompativel.isEmpty
-                        ? 'Nenhum frete disponível aceita o tipo do seu veículo cadastrado.'
-                        : 'Nenhum frete combina com o filtro selecionado.',
+                    ? 'Nenhum frete disponível aceita o tipo do seu veículo cadastrado.'
+                    : 'Nenhum frete combina com o filtro selecionado.',
                 style: const TextStyle(color: Colors.black54),
               ),
             ),
-          ..._mercadoFiltrado.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
-          if (_aguardandoConfirmacao.isEmpty && _negociando.isEmpty && _mercadoFiltrado.isEmpty && _mercado.isNotEmpty)
+          ..._mercadoFiltrado.map(
+            (f) => _CardFrete(
+              frete: f,
+              minhaPosicao: _minhaPosicao,
+              onTap: () => _abrir(f.id),
+            ),
+          ),
+          if (_aguardandoConfirmacao.isEmpty &&
+              _negociando.isEmpty &&
+              _mercadoFiltrado.isEmpty &&
+              _mercado.isNotEmpty)
             const SizedBox.shrink(),
         ],
       ),
@@ -298,7 +365,12 @@ class _FretesScreenState extends State<FretesScreen> {
         child: ListView(
           children: const [
             SizedBox(height: 80),
-            Center(child: Text('Nenhum frete aceito ou em andamento agora.', style: TextStyle(color: Colors.black45))),
+            Center(
+              child: Text(
+                'Nenhum frete aceito ou em andamento agora.',
+                style: TextStyle(color: Colors.black45),
+              ),
+            ),
           ],
         ),
       );
@@ -312,12 +384,24 @@ class _FretesScreenState extends State<FretesScreen> {
           // agora, o resto é só "aceito, ainda não começou".
           if (_emAndamento.isNotEmpty) ...[
             const _TituloSecao('Em andamento'),
-            ..._emAndamento.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+            ..._emAndamento.map(
+              (f) => _CardFrete(
+                frete: f,
+                minhaPosicao: _minhaPosicao,
+                onTap: () => _abrir(f.id),
+              ),
+            ),
             const SizedBox(height: 20),
           ],
           if (_aceitos.isNotEmpty) ...[
             const _TituloSecao('Aceitos, aguardando início'),
-            ..._aceitos.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))),
+            ..._aceitos.map(
+              (f) => _CardFrete(
+                frete: f,
+                minhaPosicao: _minhaPosicao,
+                onTap: () => _abrir(f.id),
+              ),
+            ),
           ],
         ],
       ),
@@ -331,7 +415,12 @@ class _FretesScreenState extends State<FretesScreen> {
         child: ListView(
           children: const [
             SizedBox(height: 80),
-            Center(child: Text('Nenhum frete concluído ainda.', style: TextStyle(color: Colors.black45))),
+            Center(
+              child: Text(
+                'Nenhum frete concluído ainda.',
+                style: TextStyle(color: Colors.black45),
+              ),
+            ),
           ],
         ),
       );
@@ -340,7 +429,15 @@ class _FretesScreenState extends State<FretesScreen> {
       onRefresh: _carregar,
       child: ListView(
         padding: const EdgeInsets.all(16),
-        children: _finalizados.map((f) => _CardFrete(frete: f, minhaPosicao: _minhaPosicao, onTap: () => _abrir(f.id))).toList(),
+        children: _finalizados
+            .map(
+              (f) => _CardFrete(
+                frete: f,
+                minhaPosicao: _minhaPosicao,
+                onTap: () => _abrir(f.id),
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -376,7 +473,10 @@ class _TituloSecao extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Text(texto, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+      child: Text(
+        texto,
+        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+      ),
     );
   }
 }
@@ -400,7 +500,11 @@ class _ChipStatusFrete extends StatelessWidget {
       ),
       child: Text(
         _labelStatus[status] ?? status,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: destaque ? Colors.white : cor),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: destaque ? Colors.white : cor,
+        ),
       ),
     );
   }
@@ -412,13 +516,24 @@ class _CardFrete extends StatelessWidget {
   final Position? minhaPosicao;
   final VoidCallback onTap;
 
-  const _CardFrete({required this.frete, this.subtitulo, this.minhaPosicao, required this.onTap});
+  const _CardFrete({
+    required this.frete,
+    this.subtitulo,
+    this.minhaPosicao,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final posicao = minhaPosicao;
-    final distanciaAteColeta =
-        posicao == null ? null : distanciaKm(posicao.latitude, posicao.longitude, frete.origemLat, frete.origemLon);
+    final distanciaAteColeta = posicao == null
+        ? null
+        : distanciaKm(
+            posicao.latitude,
+            posicao.longitude,
+            frete.origemLat,
+            frete.origemLon,
+          );
     final destaque = frete.status == 'em_andamento';
 
     return Card(
@@ -428,7 +543,10 @@ class _CardFrete extends StatelessWidget {
       shape: destaque
           ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: AppTheme.statusAtivo.withValues(alpha: 0.5), width: 1.5),
+              side: BorderSide(
+                color: AppTheme.statusAtivo.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
             )
           : null,
       child: InkWell(
@@ -442,21 +560,38 @@ class _CardFrete extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Text(frete.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    child: Text(
+                      frete.titulo,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
                   ),
                   Text(
                     _formatoMoeda.format(frete.valorOferecido),
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.frota700, fontSize: 14),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.frota700,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 4),
-              Text('${frete.origemLabel} → ${frete.destinoLabel}', style: const TextStyle(fontSize: 12.5, color: Colors.black87)),
+              Text(
+                '${frete.origemLabel} → ${frete.destinoLabel}',
+                style: const TextStyle(fontSize: 12.5, color: Colors.black87),
+              ),
               if (distanciaAteColeta != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até a coleta',
-                  style: const TextStyle(fontSize: 11.5, color: AppTheme.frota700, fontWeight: FontWeight.w600),
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppTheme.frota700,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
               if (frete.coleta.data != null) ...[
@@ -466,14 +601,19 @@ class _CardFrete extends StatelessWidget {
                   style: const TextStyle(fontSize: 11.5, color: Colors.black54),
                 ),
               ],
-              if (frete.veiculosAceitos.isNotEmpty || frete.carroceriasAceitas.isNotEmpty) ...[
+              if (frete.veiculosAceitos.isNotEmpty ||
+                  frete.carroceriasAceitas.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Wrap(
                   spacing: 4,
                   runSpacing: 4,
                   children: [
-                    ...frete.veiculosAceitos.map((v) => _tagFrete(v, Colors.blue)),
-                    ...frete.carroceriasAceitas.map((c) => _tagFrete(c, Colors.black54)),
+                    ...frete.veiculosAceitos.map(
+                      (v) => _tagFrete(v, Colors.blue),
+                    ),
+                    ...frete.carroceriasAceitas.map(
+                      (c) => _tagFrete(c, Colors.black54),
+                    ),
                   ],
                 ),
               ],
@@ -487,10 +627,18 @@ class _CardFrete extends StatelessWidget {
                   // Fase Fretes-Público-Alvo (23/07/26) — quando o cliente
                   // enviou a solicitação só pra base dele, o motorista vê
                   // que o frete é exclusivo da frota (menos concorrência).
-                  if (frete.status == 'disponivel' && frete.publicoAlvo == 'base')
+                  if (frete.status == 'disponivel' &&
+                      frete.publicoAlvo == 'base')
                     _tagFrete('⭐ Exclusivo da sua frota', AppTheme.frota700),
                   if (subtitulo != null)
-                    Text(subtitulo!, style: const TextStyle(fontSize: 11.5, color: Colors.black54, fontWeight: FontWeight.w500)),
+                    Text(
+                      subtitulo!,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: Colors.black54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                 ],
               ),
             ],
@@ -502,10 +650,13 @@ class _CardFrete extends StatelessWidget {
 }
 
 Widget _tagFrete(String texto, Color cor) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-      child: Text(texto, style: TextStyle(fontSize: 10, color: cor)),
-    );
+  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+  decoration: BoxDecoration(
+    color: cor.withValues(alpha: 0.12),
+    borderRadius: BorderRadius.circular(10),
+  ),
+  child: Text(texto, style: TextStyle(fontSize: 10, color: cor)),
+);
 
 // Fase Fretes-Dados-Completos-2 — bottom sheet de filtro por veículo/
 // carroceria: estado só de tela (o motorista escolhe toda vez que abre,
@@ -513,7 +664,10 @@ Widget _tagFrete(String texto, Color cor) => Container(
 class _PainelFiltros extends StatefulWidget {
   final Set<String> veiculosIniciais;
   final Set<String> carroceriasIniciais;
-  const _PainelFiltros({required this.veiculosIniciais, required this.carroceriasIniciais});
+  const _PainelFiltros({
+    required this.veiculosIniciais,
+    required this.carroceriasIniciais,
+  });
 
   @override
   State<_PainelFiltros> createState() => _PainelFiltrosState();
@@ -541,7 +695,10 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Filtrar fretes', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Filtrar fretes',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   TextButton(
                     onPressed: () => setState(() {
                       _veiculos.clear();
@@ -562,17 +719,32 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(e.key, style: const TextStyle(fontSize: 11, color: Colors.black45)),
+                      Text(
+                        e.key,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
+                      ),
                       const SizedBox(height: 4),
                       Wrap(
                         spacing: 6,
                         runSpacing: 6,
                         children: e.value
-                            .map((v) => FilterChip(
-                                  label: Text(v, style: const TextStyle(fontSize: 12)),
-                                  selected: _veiculos.contains(v),
-                                  onSelected: (sel) => setState(() => sel ? _veiculos.add(v) : _veiculos.remove(v)),
-                                ))
+                            .map(
+                              (v) => FilterChip(
+                                label: Text(
+                                  v,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
+                                selected: _veiculos.contains(v),
+                                onSelected: (sel) => setState(
+                                  () => sel
+                                      ? _veiculos.add(v)
+                                      : _veiculos.remove(v),
+                                ),
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -580,22 +752,32 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text('Carroceria', style: TextStyle(fontSize: 11, color: Colors.black45)),
+              const Text(
+                'Carroceria',
+                style: TextStyle(fontSize: 11, color: Colors.black45),
+              ),
               const SizedBox(height: 4),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: carroceriasFrete
-                    .map((c) => FilterChip(
-                          label: Text(c, style: const TextStyle(fontSize: 12)),
-                          selected: _carrocerias.contains(c),
-                          onSelected: (sel) => setState(() => sel ? _carrocerias.add(c) : _carrocerias.remove(c)),
-                        ))
+                    .map(
+                      (c) => FilterChip(
+                        label: Text(c, style: const TextStyle(fontSize: 12)),
+                        selected: _carrocerias.contains(c),
+                        onSelected: (sel) => setState(
+                          () => sel
+                              ? _carrocerias.add(c)
+                              : _carrocerias.remove(c),
+                        ),
+                      ),
+                    )
                     .toList(),
               ),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => Navigator.pop(context, (_veiculos, _carrocerias)),
+                onPressed: () =>
+                    Navigator.pop(context, (_veiculos, _carrocerias)),
                 child: const Text('Aplicar filtro'),
               ),
             ],

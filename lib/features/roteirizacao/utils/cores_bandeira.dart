@@ -6,7 +6,18 @@ import 'package:flutter/material.dart';
 // hash estável do nome, então a mesma bandeira sempre vira a mesma cor
 // (igual no painel web e aqui no PWA motorista).
 
-enum CorMarcador { amarelo, vermelho, verde, azul, roxo, rosa, marrom, ciano, laranja, cinza }
+enum CorMarcador {
+  amarelo,
+  vermelho,
+  verde,
+  azul,
+  roxo,
+  rosa,
+  marrom,
+  ciano,
+  laranja,
+  cinza,
+}
 
 const Map<CorMarcador, Color> coresHexBandeira = {
   CorMarcador.amarelo: Color(0xFFEAB308),
@@ -49,8 +60,11 @@ CorMarcador corPorBandeira(String? bandeira) {
   if (nome.isEmpty) return CorMarcador.cinza;
 
   if (nome.contains('IPIRANGA')) return CorMarcador.amarelo;
-  if (nome.contains('SHELL') || nome.contains('RAIZEN')) return CorMarcador.vermelho;
-  if (nome.contains('PETROBRAS') || nome.contains('VIBRA') || RegExp(r'\bBR\b').hasMatch(nome)) {
+  if (nome.contains('SHELL') || nome.contains('RAIZEN'))
+    return CorMarcador.vermelho;
+  if (nome.contains('PETROBRAS') ||
+      nome.contains('VIBRA') ||
+      RegExp(r'\bBR\b').hasMatch(nome)) {
     return CorMarcador.verde;
   }
 

@@ -20,12 +20,14 @@ class ResultadoOcrDocumento {
   final String? documentoRecebedor;
   final String? erro;
 
-  const ResultadoOcrDocumento.ok({this.chaveAcesso, this.documentoRecebedor}) : erro = null;
+  const ResultadoOcrDocumento.ok({this.chaveAcesso, this.documentoRecebedor})
+    : erro = null;
   const ResultadoOcrDocumento.erro(this.erro)
-      : chaveAcesso = null,
-        documentoRecebedor = null;
+    : chaveAcesso = null,
+      documentoRecebedor = null;
 
-  bool get temAlgumaLeitura => chaveAcesso != null || documentoRecebedor != null;
+  bool get temAlgumaLeitura =>
+      chaveAcesso != null || documentoRecebedor != null;
 }
 
 class OcrService {
@@ -34,26 +36,45 @@ class OcrService {
   // nome escrito à mão não é confiável pra nenhum OCR, nem os pagos.
   Future<ResultadoOcrDocumento> lerDocumento(Uint8List bytes) async {
     final token = SupabaseService.client.auth.currentSession?.accessToken;
-    if (token == null) return const ResultadoOcrDocumento.erro('Sessão expirada, faça login novamente.');
+    if (token == null)
+      return const ResultadoOcrDocumento.erro(
+        'Sessão expirada, faça login novamente.',
+      );
 
     try {
-      final request = http.MultipartRequest('POST', Uri.parse('$_baseUrlSite/api/ocr/documento'))
-        ..headers['Authorization'] = 'Bearer $token'
-        ..files.add(http.MultipartFile.fromBytes('arquivo', bytes, filename: 'documento.jpg'));
+      final request =
+          http.MultipartRequest(
+              'POST',
+              Uri.parse('$_baseUrlSite/api/ocr/documento'),
+            )
+            ..headers['Authorization'] = 'Bearer $token'
+            ..files.add(
+              http.MultipartFile.fromBytes(
+                'arquivo',
+                bytes,
+                filename: 'documento.jpg',
+              ),
+            );
 
-      final resposta = await request.send().timeout(const Duration(seconds: 30));
+      final resposta = await request.send().timeout(
+        const Duration(seconds: 30),
+      );
       final corpoTexto = await resposta.stream.bytesToString();
       final corpo = jsonDecode(corpoTexto) as Map<String, dynamic>;
 
       if (resposta.statusCode != 200) {
-        return ResultadoOcrDocumento.erro(corpo['erro'] as String? ?? 'Não consegui ler a foto agora.');
+        return ResultadoOcrDocumento.erro(
+          corpo['erro'] as String? ?? 'Não consegui ler a foto agora.',
+        );
       }
       return ResultadoOcrDocumento.ok(
         chaveAcesso: corpo['chaveAcesso'] as String?,
         documentoRecebedor: corpo['documentoRecebedor'] as String?,
       );
     } catch (_) {
-      return const ResultadoOcrDocumento.erro('Não consegui ler a foto agora. Tente de novo ou digite manualmente.');
+      return const ResultadoOcrDocumento.erro(
+        'Não consegui ler a foto agora. Tente de novo ou digite manualmente.',
+      );
     }
   }
 }

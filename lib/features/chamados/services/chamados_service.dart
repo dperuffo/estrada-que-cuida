@@ -34,7 +34,11 @@ class ChamadosService {
     return inserido['id'].toString();
   }
 
-  Future<void> comentar({required String ticketId, required String telefone, required String texto}) async {
+  Future<void> comentar({
+    required String ticketId,
+    required String telefone,
+    required String texto,
+  }) async {
     final textoLimpo = texto.trim();
     if (textoLimpo.isEmpty) throw Exception('Escreva uma mensagem.');
 
@@ -51,6 +55,7 @@ class ChamadosService {
   Future<void> marcarVisto(String ticketId) async {
     await _supabase
         .from('tickets')
-        .update({'usuario_visto_em': DateTime.now().toIso8601String()}).eq('id', ticketId);
+        .update({'usuario_visto_em': DateTime.now().toIso8601String()})
+        .eq('id', ticketId);
   }
 }

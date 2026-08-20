@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
 import '../../../core/widgets/app_drawer.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // Fase MFA-opcional — tela de "Segurança": mostra se já existe um fator
 // TOTP verificado e deixa ativar/desativar. Sem estado global (Riverpod)
 // de propósito: essa tela é a única que precisa dessa informação, então
@@ -64,7 +66,9 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       return;
     }
     if (nova.length != 6) {
-      setState(() => _erroSenha = 'A nova senha precisa ter exatamente 6 números.');
+      setState(
+        () => _erroSenha = 'A nova senha precisa ter exatamente 6 números.',
+      );
       return;
     }
     if (nova != confirmar) {
@@ -72,7 +76,9 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       return;
     }
     if (nova == atual) {
-      setState(() => _erroSenha = 'A nova senha precisa ser diferente da atual.');
+      setState(
+        () => _erroSenha = 'A nova senha precisa ser diferente da atual.',
+      );
       return;
     }
 
@@ -98,11 +104,14 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
         _novaSenhaCtrl.clear();
         _confirmarNovaSenhaCtrl.clear();
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Senha alterada com sucesso!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senha alterada com sucesso!')),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _erroSenha = 'Não consegui alterar sua senha agora. Tente de novo em instantes.';
+        _erroSenha =
+            'Não consegui alterar sua senha agora. Tente de novo em instantes.';
         _alterandoSenha = false;
       });
     }
@@ -115,7 +124,9 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
     });
     try {
       final fatores = await AuthService.mfaListarFatores();
-      final verificado = fatores.totp.where((f) => f.status == FactorStatus.verified);
+      final verificado = fatores.totp.where(
+        (f) => f.status == FactorStatus.verified,
+      );
       setState(() {
         _fatorAtivo = verificado.isEmpty ? null : verificado.first;
         _carregando = false;
@@ -149,7 +160,10 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
     if (cadastro == null) return;
     final codigo = _codigoCtrl.text.trim();
     if (codigo.length != 6) {
-      setState(() => _erroCadastro = 'Digite o código de 6 dígitos do app autenticador.');
+      setState(
+        () =>
+            _erroCadastro = 'Digite o código de 6 dígitos do app autenticador.',
+      );
       return;
     }
     setState(() {
@@ -157,7 +171,10 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       _erroCadastro = null;
     });
     try {
-      await AuthService.mfaVerificarCodigo(factorId: cadastro.id, codigo: codigo);
+      await AuthService.mfaVerificarCodigo(
+        factorId: cadastro.id,
+        codigo: codigo,
+      );
       if (!mounted) return;
       setState(() {
         _cadastrando = false;
@@ -167,11 +184,13 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       });
       await _carregar();
       if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Verificação em duas etapas ativada!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Verificação em duas etapas ativada!')),
+      );
     } catch (e) {
       setState(() {
-        _erroCadastro = 'Código incorreto. Confira no app autenticador e tente de novo.';
+        _erroCadastro =
+            'Código incorreto. Confira no app autenticador e tente de novo.';
         _confirmando = false;
       });
     }
@@ -201,10 +220,18 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Desativar verificação em duas etapas?'),
-        content: const Text('Você vai voltar a entrar só com telefone e senha.'),
+        content: const Text(
+          'Você vai voltar a entrar só com telefone e senha.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Desativar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Desativar'),
+          ),
         ],
       ),
     );
@@ -214,7 +241,9 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
       await _carregar();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não consegui desativar agora.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não consegui desativar agora.')),
+        );
       }
     }
   }
@@ -222,32 +251,48 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Segurança')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Segurança'),
+      ),
       drawer: const AppDrawer(),
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
-              ? Center(child: Text(_erro!))
-              : ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    const Text('Alterar senha', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text('Digite sua senha atual e a nova senha numérica de 6 dígitos.'),
-                    const SizedBox(height: 20),
-                    _blocoAlterarSenha(),
-                    const SizedBox(height: 28),
-                    const Divider(),
-                    const SizedBox(height: 12),
-                    const Text('Verificação em duas etapas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Opcional. Além da senha, um app autenticador (Google Authenticator, Authy) gera um código de 6 dígitos que muda a cada 30 segundos, exigido a cada login.',
-                    ),
-                    const SizedBox(height: 20),
-                    if (_fatorAtivo != null) _blocoAtivo() else _blocoCadastro(),
-                  ],
+          ? Center(child: Text(_erro!))
+          : ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                const Text(
+                  'Alterar senha',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Digite sua senha atual e a nova senha numérica de 6 dígitos.',
+                ),
+                const SizedBox(height: 20),
+                _blocoAlterarSenha(),
+                const SizedBox(height: 28),
+                const Divider(),
+                const SizedBox(height: 12),
+                const Text(
+                  'Verificação em duas etapas',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Opcional. Além da senha, um app autenticador (Google Authenticator, Authy) gera um código de 6 dígitos que muda a cada 30 segundos, exigido a cada login.',
+                ),
+                const SizedBox(height: 20),
+                if (_fatorAtivo != null) _blocoAtivo() else _blocoCadastro(),
+              ],
+            ),
     );
   }
 
@@ -262,16 +307,31 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
             const SizedBox(height: 12),
             _CampoSenha(controller: _novaSenhaCtrl, label: 'Nova senha'),
             const SizedBox(height: 12),
-            _CampoSenha(controller: _confirmarNovaSenhaCtrl, label: 'Confirme a nova senha', onSubmitted: _alterarSenha),
+            _CampoSenha(
+              controller: _confirmarNovaSenhaCtrl,
+              label: 'Confirme a nova senha',
+              onSubmitted: _alterarSenha,
+            ),
             if (_erroSenha != null) ...[
               const SizedBox(height: 8),
-              Text(_erroSenha!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+              Text(
+                _erroSenha!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
             ],
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: _alterandoSenha ? null : _alterarSenha,
               child: _alterandoSenha
-                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                   : const Text('Salvar nova senha'),
             ),
           ],
@@ -289,7 +349,10 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
             const Icon(Icons.verified_user, color: Colors.green, size: 32),
             const SizedBox(width: 12),
             const Expanded(
-              child: Text('Verificação em duas etapas está ativada.', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Text(
+                'Verificação em duas etapas está ativada.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
             TextButton(onPressed: _desativar, child: const Text('Desativar')),
           ],
@@ -309,7 +372,11 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
           ),
           if (_erroCadastro != null) ...[
             const SizedBox(height: 8),
-            Text(_erroCadastro!, style: const TextStyle(color: Colors.red), textAlign: TextAlign.center),
+            Text(
+              _erroCadastro!,
+              style: const TextStyle(color: Colors.red),
+              textAlign: TextAlign.center,
+            ),
           ],
         ],
       );
@@ -327,7 +394,10 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('1. Escaneie o QR code com o app autenticador', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              '1. Escaneie o QR code com o app autenticador',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             Center(
               child: Container(
@@ -341,14 +411,21 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
               child: TextButton.icon(
                 onPressed: () {
                   Clipboard.setData(ClipboardData(text: totp.secret));
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Código copiado.')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Código copiado.')),
+                  );
                 },
                 icon: const Icon(Icons.copy, size: 16),
-                label: const Text('Não consigo escanear — copiar código manual'),
+                label: const Text(
+                  'Não consigo escanear — copiar código manual',
+                ),
               ),
             ),
             const Divider(height: 32),
-            const Text('2. Digite o código de 6 dígitos gerado pelo app', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              '2. Digite o código de 6 dígitos gerado pelo app',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             TextField(
               controller: _codigoCtrl,
@@ -356,7 +433,10 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
               textAlign: TextAlign.center,
               maxLength: 6,
               style: const TextStyle(fontSize: 22, letterSpacing: 6),
-              decoration: const InputDecoration(hintText: '000000', counterText: ''),
+              decoration: const InputDecoration(
+                hintText: '000000',
+                counterText: '',
+              ),
             ),
             if (_erroCadastro != null) ...[
               const SizedBox(height: 8),
@@ -376,7 +456,14 @@ class _SegurancaScreenState extends State<SegurancaScreen> {
                   child: ElevatedButton(
                     onPressed: _confirmando ? null : _confirmarCadastro,
                     child: _confirmando
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text('Confirmar'),
                   ),
                 ),
@@ -394,7 +481,11 @@ class _CampoSenha extends StatelessWidget {
   final String label;
   final VoidCallback? onSubmitted;
 
-  const _CampoSenha({required this.controller, required this.label, this.onSubmitted});
+  const _CampoSenha({
+    required this.controller,
+    required this.label,
+    this.onSubmitted,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -406,7 +497,11 @@ class _CampoSenha extends StatelessWidget {
       textAlign: TextAlign.center,
       style: const TextStyle(fontSize: 22, letterSpacing: 6),
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: InputDecoration(labelText: label, hintText: '••••••', counterText: ''),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: '••••••',
+        counterText: '',
+      ),
       onSubmitted: onSubmitted == null ? null : (_) => onSubmitted!(),
     );
   }

@@ -21,12 +21,12 @@ class Avaliacao {
   });
 
   factory Avaliacao.fromMap(Map<String, dynamic> m) => Avaliacao(
-        id: m['id'] as String,
-        estrelas: (m['estrelas'] as num).toInt(),
-        comentario: m['comentario'] as String?,
-        respostaAdmin: m['resposta_admin'] as String?,
-        criadoEm: m['criado_em'] as String?,
-      );
+    id: m['id'] as String,
+    estrelas: (m['estrelas'] as num).toInt(),
+    comentario: m['comentario'] as String?,
+    respostaAdmin: m['resposta_admin'] as String?,
+    criadoEm: m['criado_em'] as String?,
+  );
 }
 
 String rotuloNota(int estrelas) {
@@ -37,7 +37,9 @@ String rotuloNota(int estrelas) {
   return 'Muito ruim';
 }
 
-final minhasAvaliacoesProvider = FutureProvider.autoDispose<List<Avaliacao>>((ref) async {
+final minhasAvaliacoesProvider = FutureProvider.autoDispose<List<Avaliacao>>((
+  ref,
+) async {
   final perfil = await ref.watch(meuPerfilProvider.future);
   if (perfil == null) return [];
   final rows = await SupabaseService.client
@@ -45,5 +47,7 @@ final minhasAvaliacoesProvider = FutureProvider.autoDispose<List<Avaliacao>>((re
       .select('id, estrelas, comentario, resposta_admin, criado_em')
       .eq('motorista_id', perfil.id)
       .order('criado_em', ascending: false);
-  return (rows as List).map((m) => Avaliacao.fromMap(m as Map<String, dynamic>)).toList();
+  return (rows as List)
+      .map((m) => Avaliacao.fromMap(m as Map<String, dynamic>))
+      .toList();
 });

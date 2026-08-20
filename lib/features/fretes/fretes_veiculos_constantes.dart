@@ -10,7 +10,8 @@ const Map<String, List<String>> gruposVeiculoFrete = {
   'Pesados': ['Carreta', 'Carreta LS', 'Bitrem', 'Rodotrem'],
 };
 
-List<String> get veiculosFrete => gruposVeiculoFrete.values.expand((v) => v).toList();
+List<String> get veiculosFrete =>
+    gruposVeiculoFrete.values.expand((v) => v).toList();
 
 const List<String> carroceriasFrete = [
   'Baú',

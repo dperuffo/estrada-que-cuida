@@ -4,6 +4,8 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/motorista_provider.dart';
 import '../../../core/services/supabase_service.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // "Tela de confirmação de cadastro" — aparece quando o celular verificado
 // não bate (ou bate com mais de um) com nenhum motorista cadastrado por
 // nenhuma empresa. Pede o CPF pra localizar o cadastro certo (chave mais
@@ -33,19 +35,32 @@ class _VinculoScreenState extends ConsumerState<VinculoScreen> {
       _erro = null;
     });
     try {
-      final resp = await SupabaseService.client.rpc('vincular_motorista_auth', params: {'p_cpf': cpf});
+      final resp = await SupabaseService.client.rpc(
+        'vincular_motorista_auth',
+        params: {'p_cpf': cpf},
+      );
       final resultado = VinculoResultado.fromJson(resp as Map<String, dynamic>);
-      if (resultado.status == 'vinculado' || resultado.status == 'ja_vinculado') {
+      if (resultado.status == 'vinculado' ||
+          resultado.status == 'ja_vinculado') {
         // Refaz a checagem sem CPF lá em cima (Gate) — agora vem
         // 'ja_vinculado' porque o vínculo já foi gravado.
         ref.invalidate(vinculoProvider(null));
       } else if (resultado.status == 'ambiguo_requer_cpf') {
-        setState(() => _erro = 'Esse CPF e celular não formam uma combinação única. Confira os dados ou fale com sua empresa.');
+        setState(
+          () => _erro =
+              'Esse CPF e celular não formam uma combinação única. Confira os dados ou fale com sua empresa.',
+        );
       } else {
-        setState(() => _erro = 'Não encontrei nenhum cadastro com esse celular e CPF. Confira com a empresa se você já foi cadastrado como motorista.');
+        setState(
+          () => _erro =
+              'Não encontrei nenhum cadastro com esse celular e CPF. Confira com a empresa se você já foi cadastrado como motorista.',
+        );
       }
     } catch (e) {
-      setState(() => _erro = 'Não consegui verificar agora. Tente de novo em instantes.');
+      setState(
+        () =>
+            _erro = 'Não consegui verificar agora. Tente de novo em instantes.',
+      );
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -58,7 +73,15 @@ class _VinculoScreenState extends ConsumerState<VinculoScreen> {
         : 'Não achamos seu cadastro só pelo celular. Digite seu CPF pra localizarmos — ele precisa ser o mesmo que sua empresa usou ao te cadastrar.';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Confirme seu cadastro')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Confirme seu cadastro'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -70,7 +93,10 @@ class _VinculoScreenState extends ConsumerState<VinculoScreen> {
               TextField(
                 controller: _cpfController,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'CPF', hintText: '000.000.000-00'),
+                decoration: const InputDecoration(
+                  labelText: 'CPF',
+                  hintText: '000.000.000-00',
+                ),
               ),
               if (_erro != null) ...[
                 const SizedBox(height: 8),
@@ -80,7 +106,14 @@ class _VinculoScreenState extends ConsumerState<VinculoScreen> {
               ElevatedButton(
                 onPressed: _enviando ? null : _confirmar,
                 child: _enviando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Confirmar'),
               ),
               const SizedBox(height: 8),

@@ -46,10 +46,15 @@ class AbastecimentoPendente {
   }
 }
 
-final abastecimentosPendentesProvider = FutureProvider.autoDispose<List<AbastecimentoPendente>>((ref) async {
-  final resp = await SupabaseService.client.rpc('motorista_abastecimentos_pendentes');
-  return (resp as List).map((e) => AbastecimentoPendente.fromJson(e as Map<String, dynamic>)).toList();
-});
+final abastecimentosPendentesProvider =
+    FutureProvider.autoDispose<List<AbastecimentoPendente>>((ref) async {
+      final resp = await SupabaseService.client.rpc(
+        'motorista_abastecimentos_pendentes',
+      );
+      return (resp as List)
+          .map((e) => AbastecimentoPendente.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
 
 class AbastecimentoConfirmacaoResultado {
   final String status;
@@ -57,7 +62,9 @@ class AbastecimentoConfirmacaoResultado {
 
   AbastecimentoConfirmacaoResultado({required this.status, this.pontos});
 
-  factory AbastecimentoConfirmacaoResultado.fromJson(Map<String, dynamic> json) {
+  factory AbastecimentoConfirmacaoResultado.fromJson(
+    Map<String, dynamic> json,
+  ) {
     return AbastecimentoConfirmacaoResultado(
       status: json['status'] as String,
       pontos: json['pontos'] as int?,
@@ -66,18 +73,28 @@ class AbastecimentoConfirmacaoResultado {
 }
 
 class AbastecimentoFidelidadeService {
-  static Future<AbastecimentoConfirmacaoResultado> confirmar(AbastecimentoPendente item) async {
-    final resp = await SupabaseService.client.rpc('confirmar_abastecimento_fidelidade', params: {
-      'p_provedor': item.provedor,
-      'p_abastecimento_id': item.abastecimentoId,
-    });
-    return AbastecimentoConfirmacaoResultado.fromJson(resp as Map<String, dynamic>);
+  static Future<AbastecimentoConfirmacaoResultado> confirmar(
+    AbastecimentoPendente item,
+  ) async {
+    final resp = await SupabaseService.client.rpc(
+      'confirmar_abastecimento_fidelidade',
+      params: {
+        'p_provedor': item.provedor,
+        'p_abastecimento_id': item.abastecimentoId,
+      },
+    );
+    return AbastecimentoConfirmacaoResultado.fromJson(
+      resp as Map<String, dynamic>,
+    );
   }
 
   static Future<void> rejeitar(AbastecimentoPendente item) async {
-    await SupabaseService.client.rpc('rejeitar_abastecimento_fidelidade', params: {
-      'p_provedor': item.provedor,
-      'p_abastecimento_id': item.abastecimentoId,
-    });
+    await SupabaseService.client.rpc(
+      'rejeitar_abastecimento_fidelidade',
+      params: {
+        'p_provedor': item.provedor,
+        'p_abastecimento_id': item.abastecimentoId,
+      },
+    );
   }
 }

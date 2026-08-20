@@ -62,172 +62,222 @@ class AppDrawer extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // O logo FNI é escuro sobre fundo branco — "some" se
-                  // colocado direto no frota-950, por isso o cartão branco
-                  // (mesma solução usada no painel web).
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                    child: Image.asset('assets/images/logo-fni.png', height: 32, fit: BoxFit.contain),
-                  ),
-                  const SizedBox(height: 16),
-                  perfilAsync.when(
-                    data: (perfil) => Text(
-                      perfil?.nomeCompleto ?? 'Motorista',
-                      style: const TextStyle(color: AppTheme.glassTexto, fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    loading: () => const Text('Carregando...', style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 14)),
-                    error: (e, _) => const Text('Motorista', style: TextStyle(color: AppTheme.glassTexto, fontSize: 16)),
-                  ),
-                  perfilAsync.maybeWhen(
-                    data: (perfil) => perfil?.telefone != null
-                        ? Padding(
-                            padding: const EdgeInsets.only(top: 2),
-                            child: Text(_formatarTelefone(perfil!.telefone!), style: const TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12)),
-                          )
-                        : const SizedBox.shrink(),
-                    orElse: () => const SizedBox.shrink(),
-                  ),
-                  const SizedBox(height: 4),
-                  saldoAsync.when(
-                    data: (saldo) => Text(
-                      'Nível ${nivelParaSaldo(saldo).nome} • ${_formatoPontosDrawer.format(saldo)} pontos',
-                      style: const TextStyle(
-                        color: AppTheme.glassAcento,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // O logo FNI é escuro sobre fundo branco — "some" se
+                    // colocado direto no frota-950, por isso o cartão branco
+                    // (mesma solução usada no painel web).
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Image.asset(
+                        'assets/images/logo-fni.png',
+                        height: 32,
+                        fit: BoxFit.contain,
                       ),
                     ),
-                    loading: () => const SizedBox.shrink(),
-                    error: (e, _) => const SizedBox.shrink(),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    perfilAsync.when(
+                      data: (perfil) => Text(
+                        perfil?.nomeCompleto ?? 'Motorista',
+                        style: const TextStyle(
+                          color: AppTheme.glassTexto,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      loading: () => const Text(
+                        'Carregando...',
+                        style: TextStyle(
+                          color: AppTheme.glassTextoMuted,
+                          fontSize: 14,
+                        ),
+                      ),
+                      error: (e, _) => const Text(
+                        'Motorista',
+                        style: TextStyle(
+                          color: AppTheme.glassTexto,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    perfilAsync.maybeWhen(
+                      data: (perfil) => perfil?.telefone != null
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                _formatarTelefone(perfil!.telefone!),
+                                style: const TextStyle(
+                                  color: AppTheme.glassTextoMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                      orElse: () => const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 4),
+                    saldoAsync.when(
+                      data: (saldo) => Text(
+                        'Nível ${nivelParaSaldo(saldo).nome} • ${_formatoPontosDrawer.format(saldo)} pontos',
+                        style: const TextStyle(
+                          color: AppTheme.glassAcento,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      loading: () => const SizedBox.shrink(),
+                      error: (e, _) => const SizedBox.shrink(),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Divider(color: Colors.white24, height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                // Fase reorganizacao-menu (04/08/2026, pedido do Daniel:
-                // "propor uma reorganizacao de menu no pwa motorista, com
-                // base no que foi implementado no pwa do cliente") — antes
-                // era uma lista única com 16 itens sem nenhuma divisão,
-                // mesmo problema que motivou o reagrupamento do menu do
-                // cliente/posto (ver home_screen.dart/posto_home_screen.dart
-                // no repo estudo-de-rede e layout.tsx na web). Mesma rota,
-                // ícone, badge e comentário de fase de cada item — só mudou
-                // em qual grupo está.
-                children: [
-                  _grupo('Visão Geral'),
-                  _ItemMenu(icone: Icons.home_outlined, label: 'Dashboard', onTap: () => _ir(context, '/')),
+              const Divider(color: Colors.white24, height: 1),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  // Fase reorganizacao-menu (04/08/2026, pedido do Daniel:
+                  // "propor uma reorganizacao de menu no pwa motorista, com
+                  // base no que foi implementado no pwa do cliente") — antes
+                  // era uma lista única com 16 itens sem nenhuma divisão,
+                  // mesmo problema que motivou o reagrupamento do menu do
+                  // cliente/posto (ver home_screen.dart/posto_home_screen.dart
+                  // no repo estudo-de-rede e layout.tsx na web). Mesma rota,
+                  // ícone, badge e comentário de fase de cada item — só mudou
+                  // em qual grupo está.
+                  children: [
+                    _grupo('Visão Geral'),
+                    _ItemMenu(
+                      icone: Icons.home_outlined,
+                      label: 'Dashboard',
+                      onTap: () => _ir(context, '/'),
+                    ),
 
-                  _grupo('Minhas Tarefas'),
-                  _ItemMenu(
-                    icone: Icons.local_gas_station_outlined,
-                    label: 'Confirmar abastecimentos',
-                    onTap: () => _ir(context, '/pendentes'),
-                  ),
-                  // Fase Inspeção-pelo-Motorista (30/07/2026) — pedido do
-                  // Daniel: checklist de segurança do veículo, feito pelo
-                  // próprio motorista, rotineiramente.
-                  _ItemMenu(
-                    icone: Icons.fact_check_outlined,
-                    label: 'Checklist de inspeção',
-                    onTap: () => _ir(context, '/inspecao-veicular'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.alt_route_outlined,
-                    label: 'Roteirização',
-                    onTap: () => _ir(context, '/roteirizacao'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.local_shipping_outlined,
-                    label: 'Fretes',
-                    onTap: () => _ir(context, '/fretes'),
-                  ),
+                    _grupo('Minhas Tarefas'),
+                    _ItemMenu(
+                      icone: Icons.local_gas_station_outlined,
+                      label: 'Confirmar abastecimentos',
+                      onTap: () => _ir(context, '/pendentes'),
+                    ),
+                    // Fase Inspeção-pelo-Motorista (30/07/2026) — pedido do
+                    // Daniel: checklist de segurança do veículo, feito pelo
+                    // próprio motorista, rotineiramente.
+                    _ItemMenu(
+                      icone: Icons.fact_check_outlined,
+                      label: 'Checklist de inspeção',
+                      onTap: () => _ir(context, '/inspecao-veicular'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.alt_route_outlined,
+                      label: 'Roteirização',
+                      onTap: () => _ir(context, '/roteirizacao'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.local_shipping_outlined,
+                      label: 'Fretes',
+                      onTap: () => _ir(context, '/fretes'),
+                    ),
 
-                  _grupo('Financeiro'),
-                  _ItemMenu(
-                    icone: Icons.account_balance_wallet_outlined,
-                    label: 'Financeiro',
-                    onTap: () => _ir(context, '/financeiro'),
-                  ),
+                    _grupo('Financeiro'),
+                    _ItemMenu(
+                      icone: Icons.account_balance_wallet_outlined,
+                      label: 'Financeiro',
+                      onTap: () => _ir(context, '/financeiro'),
+                    ),
 
-                  _grupo('Recompensas e Engajamento'),
-                  _ItemMenu(
-                    icone: Icons.card_giftcard_outlined,
-                    label: 'Catálogo de benefícios',
-                    onTap: () => _ir(context, '/catalogo'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.confirmation_number_outlined,
-                    label: 'Meus resgates',
-                    onTap: () => _ir(context, '/meus-resgates'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.receipt_long_outlined,
-                    label: 'Extrato de pontos',
-                    onTap: () => _ir(context, '/extrato'),
-                  ),
-                  _ItemMenu(icone: Icons.flag_outlined, label: 'Missões', onTap: () => _ir(context, '/missoes')),
-                  _ItemMenu(icone: Icons.leaderboard_outlined, label: 'Ranking', onTap: () => _ir(context, '/ranking')),
+                    _grupo('Recompensas e Engajamento'),
+                    _ItemMenu(
+                      icone: Icons.card_giftcard_outlined,
+                      label: 'Catálogo de benefícios',
+                      onTap: () => _ir(context, '/catalogo'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.confirmation_number_outlined,
+                      label: 'Meus resgates',
+                      onTap: () => _ir(context, '/meus-resgates'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.receipt_long_outlined,
+                      label: 'Extrato de pontos',
+                      onTap: () => _ir(context, '/extrato'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.flag_outlined,
+                      label: 'Missões',
+                      onTap: () => _ir(context, '/missoes'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.leaderboard_outlined,
+                      label: 'Ranking',
+                      onTap: () => _ir(context, '/ranking'),
+                    ),
 
-                  _grupo('Conta e Ajuda'),
-                  // Fase Central-Avisos (28/07/2026) — pedido do Daniel:
-                  // "Central de Avisos é uma funcionalidade do admin da
-                  // aplicação para os clientes, motoristas e postos". O
-                  // sino (com badge) já fica no AppBar do Dashboard; aqui
-                  // no Drawer (reaproveitado em toda tela) garante acesso
-                  // mesmo fora da Home.
-                  _ItemMenu(
-                    icone: Icons.notifications_outlined,
-                    label: 'Avisos',
-                    onTap: () => _ir(context, '/avisos'),
-                  ),
-                  Consumer(
-                    builder: (context, ref, _) {
-                      final perfil = ref.watch(meuPerfilProvider).valueOrNull;
-                      return _ItemMenu(
-                        icone: Icons.family_restroom_outlined,
-                        label: 'Conta Família',
-                        onTap: perfil == null ? () {} : () => _ir(context, '/dependentes', extra: perfil.id),
-                      );
-                    },
-                  ),
-                  _ItemMenu(
-                    icone: Icons.confirmation_number_outlined,
-                    label: 'Chamados',
-                    onTap: () => _ir(context, '/chamados'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.star_outline,
-                    label: 'Avaliar o app',
-                    onTap: () => _ir(context, '/avaliar'),
-                  ),
-                  _ItemMenu(
-                    icone: Icons.shield_outlined,
-                    label: 'Segurança',
-                    onTap: () => _ir(context, '/seguranca'),
-                  ),
-                ],
+                    _grupo('Conta e Ajuda'),
+                    // Fase Central-Avisos (28/07/2026) — pedido do Daniel:
+                    // "Central de Avisos é uma funcionalidade do admin da
+                    // aplicação para os clientes, motoristas e postos". O
+                    // sino (com badge) já fica no AppBar do Dashboard; aqui
+                    // no Drawer (reaproveitado em toda tela) garante acesso
+                    // mesmo fora da Home.
+                    _ItemMenu(
+                      icone: Icons.notifications_outlined,
+                      label: 'Avisos',
+                      onTap: () => _ir(context, '/avisos'),
+                    ),
+                    Consumer(
+                      builder: (context, ref, _) {
+                        final perfil = ref.watch(meuPerfilProvider).valueOrNull;
+                        return _ItemMenu(
+                          icone: Icons.family_restroom_outlined,
+                          label: 'Conta Família',
+                          onTap: perfil == null
+                              ? () {}
+                              : () => _ir(
+                                  context,
+                                  '/dependentes',
+                                  extra: perfil.id,
+                                ),
+                        );
+                      },
+                    ),
+                    _ItemMenu(
+                      icone: Icons.confirmation_number_outlined,
+                      label: 'Chamados',
+                      onTap: () => _ir(context, '/chamados'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.star_outline,
+                      label: 'Avaliar o app',
+                      onTap: () => _ir(context, '/avaliar'),
+                    ),
+                    _ItemMenu(
+                      icone: Icons.shield_outlined,
+                      label: 'Segurança',
+                      onTap: () => _ir(context, '/seguranca'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const Divider(color: Colors.white24, height: 1),
-            _ItemMenu(
-              icone: Icons.logout,
-              label: 'Sair',
-              onTap: () {
-                Navigator.of(context).pop();
-                AuthService.sair();
-              },
-            ),
-            const SizedBox(height: 8),
+              const Divider(color: Colors.white24, height: 1),
+              _ItemMenu(
+                icone: Icons.logout,
+                label: 'Sair',
+                onTap: () {
+                  Navigator.of(context).pop();
+                  AuthService.sair();
+                },
+              ),
+              const SizedBox(height: 8),
             ],
           ),
         ),
@@ -245,25 +295,37 @@ class AppDrawer extends ConsumerWidget {
 // (texto pequeno, maiúsculo, opaco) usado em home_screen.dart/
 // posto_home_screen.dart (estudo-de-rede) e GrupoMenuLateral.tsx (web).
 Widget _grupo(String label) => Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
-      child: Text(
-        label.toUpperCase(),
-        style: const TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
-      ),
-    );
+  padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+  child: Text(
+    label.toUpperCase(),
+    style: const TextStyle(
+      color: AppTheme.glassTextoMuted,
+      fontSize: 11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.5,
+    ),
+  ),
+);
 
 class _ItemMenu extends StatelessWidget {
   final IconData icone;
   final String label;
   final VoidCallback onTap;
 
-  const _ItemMenu({required this.icone, required this.label, required this.onTap});
+  const _ItemMenu({
+    required this.icone,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       leading: Icon(icone, color: AppTheme.glassIcone, size: 22),
-      title: Text(label, style: const TextStyle(color: AppTheme.glassTexto, fontSize: 14)),
+      title: Text(
+        label,
+        style: const TextStyle(color: AppTheme.glassTexto, fontSize: 14),
+      ),
       onTap: onTap,
       dense: true,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

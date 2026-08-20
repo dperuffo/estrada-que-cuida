@@ -9,7 +9,9 @@ import 'package:url_launcher/url_launcher.dart';
 // idêntica da versão em estudo-de-rede/flutter (mesmo formato de dado vindo
 // do banco, sem diferença nenhuma entre os dois apps aqui).
 List<Widget> renderMarkdownSimples(String texto, {TextStyle? baseStyle}) {
-  final estiloBase = baseStyle ?? const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4);
+  final estiloBase =
+      baseStyle ??
+      const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4);
   final linhas = texto.split('\n');
   final blocos = <Widget>[];
   var paragrafoAtual = <String>[];
@@ -20,7 +22,12 @@ List<Widget> renderMarkdownSimples(String texto, {TextStyle? baseStyle}) {
     blocos.add(
       Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: RichText(text: TextSpan(style: estiloBase, children: _inlineComQuebras(paragrafoAtual, estiloBase))),
+        child: RichText(
+          text: TextSpan(
+            style: estiloBase,
+            children: _inlineComQuebras(paragrafoAtual, estiloBase),
+          ),
+        ),
       ),
     );
     paragrafoAtual = [];
@@ -34,16 +41,25 @@ List<Widget> renderMarkdownSimples(String texto, {TextStyle? baseStyle}) {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: listaAtual
-              .map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('•  ', style: estiloBase),
-                        Expanded(child: RichText(text: TextSpan(style: estiloBase, children: _inline(item, estiloBase)))),
-                      ],
-                    ),
-                  ))
+              .map(
+                (item) => Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('•  ', style: estiloBase),
+                      Expanded(
+                        child: RichText(
+                          text: TextSpan(
+                            style: estiloBase,
+                            children: _inline(item, estiloBase),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
         ),
       ),
@@ -61,10 +77,18 @@ List<Widget> renderMarkdownSimples(String texto, {TextStyle? baseStyle}) {
     if (linha.startsWith('# ')) {
       fecharParagrafo();
       fecharLista();
-      blocos.add(Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(linha.substring(2), style: estiloBase.copyWith(fontSize: 15, fontWeight: FontWeight.w700)),
-      ));
+      blocos.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(
+            linha.substring(2),
+            style: estiloBase.copyWith(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      );
       continue;
     }
     if (linha.startsWith('- ')) {
@@ -100,14 +124,26 @@ List<InlineSpan> _inline(String linha, TextStyle base) {
       spans.add(TextSpan(text: linha.substring(ultimoIndice, match.start)));
     }
     if (match.group(1) != null) {
-      spans.add(TextSpan(text: match.group(1), style: const TextStyle(fontWeight: FontWeight.w700)));
+      spans.add(
+        TextSpan(
+          text: match.group(1),
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      );
     } else if (match.group(2) != null && match.group(3) != null) {
       final url = match.group(3)!;
-      spans.add(TextSpan(
-        text: match.group(2),
-        style: const TextStyle(color: Color(0xFF1D4ED8), decoration: TextDecoration.underline),
-        recognizer: TapGestureRecognizer()..onTap = () => launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
-      ));
+      spans.add(
+        TextSpan(
+          text: match.group(2),
+          style: const TextStyle(
+            color: Color(0xFF1D4ED8),
+            decoration: TextDecoration.underline,
+          ),
+          recognizer: TapGestureRecognizer()
+            ..onTap = () =>
+                launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication),
+        ),
+      );
     }
     ultimoIndice = match.end;
   }

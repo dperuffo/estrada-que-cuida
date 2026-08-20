@@ -5,6 +5,8 @@ import '../../../core/providers/motorista_provider.dart';
 import '../providers/chamados_provider.dart';
 import '../services/chamados_service.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class ChamadoNovoScreen extends ConsumerStatefulWidget {
   const ChamadoNovoScreen({super.key});
 
@@ -37,7 +39,9 @@ class _ChamadoNovoScreenState extends ConsumerState<ChamadoNovoScreen> {
       return;
     }
     if (perfil.empresaId == null) {
-      setState(() => _erro = 'Não encontrei sua empresa. Tente sair e entrar de novo.');
+      setState(
+        () => _erro = 'Não encontrei sua empresa. Tente sair e entrar de novo.',
+      );
       return;
     }
     setState(() {
@@ -58,7 +62,10 @@ class _ChamadoNovoScreenState extends ConsumerState<ChamadoNovoScreen> {
       if (!mounted) return;
       context.pushReplacement('/chamados/$id');
     } catch (e) {
-      setState(() => _erro = 'Não consegui abrir o chamado agora. Tente de novo em instantes.');
+      setState(
+        () => _erro =
+            'Não consegui abrir o chamado agora. Tente de novo em instantes.',
+      );
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -69,37 +76,69 @@ class _ChamadoNovoScreenState extends ConsumerState<ChamadoNovoScreen> {
     final perfilAsync = ref.watch(meuPerfilProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Novo chamado')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Novo chamado'),
+      ),
       body: perfilAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Erro: $e')),
         data: (perfil) {
-          if (perfil == null) return const Center(child: Text('Perfil não encontrado.'));
+          if (perfil == null)
+            return const Center(child: Text('Perfil não encontrado.'));
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
               DropdownButtonFormField<String>(
                 initialValue: _tipo,
-                decoration: const InputDecoration(labelText: 'Tipo', border: OutlineInputBorder()),
-                items: tiposTicket.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
+                decoration: const InputDecoration(
+                  labelText: 'Tipo',
+                  border: OutlineInputBorder(),
+                ),
+                items: tiposTicket.entries
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
+                    .toList(),
                 onChanged: (v) => setState(() => _tipo = v ?? _tipo),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: _prioridade,
-                decoration: const InputDecoration(labelText: 'Prioridade', border: OutlineInputBorder()),
-                items: prioridadesTicket.entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value))).toList(),
-                onChanged: (v) => setState(() => _prioridade = v ?? _prioridade),
+                decoration: const InputDecoration(
+                  labelText: 'Prioridade',
+                  border: OutlineInputBorder(),
+                ),
+                items: prioridadesTicket.entries
+                    .map(
+                      (e) =>
+                          DropdownMenuItem(value: e.key, child: Text(e.value)),
+                    )
+                    .toList(),
+                onChanged: (v) =>
+                    setState(() => _prioridade = v ?? _prioridade),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _tituloCtrl,
-                decoration: const InputDecoration(labelText: 'Título', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Título',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _descricaoCtrl,
-                decoration: const InputDecoration(labelText: 'Descreva o que aconteceu', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Descreva o que aconteceu',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 5,
               ),
               if (_erro != null) ...[
@@ -110,7 +149,14 @@ class _ChamadoNovoScreenState extends ConsumerState<ChamadoNovoScreen> {
               ElevatedButton(
                 onPressed: _enviando ? null : () => _enviar(perfil),
                 child: _enviando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Abrir chamado'),
               ),
             ],

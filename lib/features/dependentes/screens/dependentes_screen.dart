@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/dependentes_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoData = DateFormat('dd/MM/yyyy');
 
 class DependentesScreen extends ConsumerWidget {
@@ -16,7 +18,15 @@ class DependentesScreen extends ConsumerWidget {
     final dependentesAsync = ref.watch(dependentesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Conta Família')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Conta Família'),
+      ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _abrirFormularioNovo(context, ref),
@@ -33,7 +43,10 @@ class DependentesScreen extends ConsumerWidget {
               children: [
                 const Text('Não consegui carregar seus dependentes agora.'),
                 const SizedBox(height: 12),
-                ElevatedButton(onPressed: () => ref.invalidate(dependentesProvider), child: const Text('Tentar de novo')),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(dependentesProvider),
+                  child: const Text('Tentar de novo'),
+                ),
               ],
             ),
           ),
@@ -58,22 +71,36 @@ class DependentesScreen extends ConsumerWidget {
               final d = dependentes[i];
               return Card(
                 child: ListTile(
-                  leading: const CircleAvatar(child: Icon(Icons.person_outline)),
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.person_outline),
+                  ),
                   title: Text(d.nome),
-                  subtitle: Text([
-                    if (d.parentesco != null) d.parentesco!,
-                    if (d.dataNascimento != null) _formatoData.format(d.dataNascimento!),
-                  ].join(' • ')),
+                  subtitle: Text(
+                    [
+                      if (d.parentesco != null) d.parentesco!,
+                      if (d.dataNascimento != null)
+                        _formatoData.format(d.dataNascimento!),
+                    ].join(' • '),
+                  ),
                   trailing: IconButton(
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.redAccent,
+                    ),
                     onPressed: () async {
                       final confirmar = await showDialog<bool>(
                         context: context,
                         builder: (ctx) => AlertDialog(
                           title: Text('Remover ${d.nome}?'),
                           actions: [
-                            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-                            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Remover')),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Cancelar'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Remover'),
+                            ),
                           ],
                         ),
                       );
@@ -114,18 +141,30 @@ class DependentesScreen extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Novo familiar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text(
+                    'Novo familiar',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
                   const SizedBox(height: 16),
-                  TextField(controller: nomeController, decoration: const InputDecoration(labelText: 'Nome')),
+                  TextField(
+                    controller: nomeController,
+                    decoration: const InputDecoration(labelText: 'Nome'),
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: parentescoController,
-                    decoration: const InputDecoration(labelText: 'Parentesco (ex.: cônjuge, filho(a))'),
+                    decoration: const InputDecoration(
+                      labelText: 'Parentesco (ex.: cônjuge, filho(a))',
+                    ),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton.icon(
                     icon: const Icon(Icons.calendar_today, size: 18),
-                    label: Text(dataNascimento == null ? 'Data de nascimento (opcional)' : _formatoData.format(dataNascimento!)),
+                    label: Text(
+                      dataNascimento == null
+                          ? 'Data de nascimento (opcional)'
+                          : _formatoData.format(dataNascimento!),
+                    ),
                     onPressed: () async {
                       final escolhida = await showDatePicker(
                         context: ctx,
@@ -133,7 +172,8 @@ class DependentesScreen extends ConsumerWidget {
                         firstDate: DateTime(1930),
                         lastDate: DateTime.now(),
                       );
-                      if (escolhida != null) setState(() => dataNascimento = escolhida);
+                      if (escolhida != null)
+                        setState(() => dataNascimento = escolhida);
                     },
                   ),
                   const SizedBox(height: 16),
@@ -143,7 +183,9 @@ class DependentesScreen extends ConsumerWidget {
                       await DependentesService.adicionar(
                         motoristaId: motoristaId,
                         nome: nomeController.text.trim(),
-                        parentesco: parentescoController.text.trim().isEmpty ? null : parentescoController.text.trim(),
+                        parentesco: parentescoController.text.trim().isEmpty
+                            ? null
+                            : parentescoController.text.trim(),
                         dataNascimento: dataNascimento,
                       );
                       ref.invalidate(dependentesProvider);

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/missoes_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class MissoesScreen extends ConsumerWidget {
   const MissoesScreen({super.key});
 
@@ -11,7 +13,15 @@ class MissoesScreen extends ConsumerWidget {
     final missoesAsync = ref.watch(missoesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Missões')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Missões'),
+      ),
       drawer: const AppDrawer(),
       body: missoesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -40,7 +50,9 @@ class MissoesScreen extends ConsumerWidget {
               separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final missao = missoes[i];
-                final progresso = missao.meta == 0 ? 0.0 : missao.progresso / missao.meta;
+                final progresso = missao.meta == 0
+                    ? 0.0
+                    : missao.progresso / missao.meta;
                 return Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
@@ -48,7 +60,9 @@ class MissoesScreen extends ConsumerWidget {
                       children: [
                         Icon(
                           missao.iconeData,
-                          color: missao.concluida ? const Color(0xFF1B7A43) : Colors.black38,
+                          color: missao.concluida
+                              ? const Color(0xFF1B7A43)
+                              : Colors.black38,
                           size: 32,
                         ),
                         const SizedBox(width: 16),
@@ -56,8 +70,16 @@ class MissoesScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(missao.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Text(missao.descricao, style: const TextStyle(color: Colors.black54)),
+                              Text(
+                                missao.titulo,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                missao.descricao,
+                                style: const TextStyle(color: Colors.black54),
+                              ),
                               const SizedBox(height: 8),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
@@ -65,15 +87,25 @@ class MissoesScreen extends ConsumerWidget {
                                   value: progresso.clamp(0.0, 1.0),
                                   minHeight: 8,
                                   backgroundColor: const Color(0xFFE5E5E0),
-                                  valueColor: AlwaysStoppedAnimation(missao.concluida ? const Color(0xFF1B7A43) : Colors.black38),
+                                  valueColor: AlwaysStoppedAnimation(
+                                    missao.concluida
+                                        ? const Color(0xFF1B7A43)
+                                        : Colors.black38,
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                missao.concluida ? 'Concluída — +${missao.bonus} pontos' : '${missao.progresso}/${missao.meta}',
+                                missao.concluida
+                                    ? 'Concluída — +${missao.bonus} pontos'
+                                    : '${missao.progresso}/${missao.meta}',
                                 style: TextStyle(
-                                  color: missao.concluida ? const Color(0xFF1B7A43) : Colors.black54,
-                                  fontWeight: missao.concluida ? FontWeight.bold : FontWeight.normal,
+                                  color: missao.concluida
+                                      ? const Color(0xFF1B7A43)
+                                      : Colors.black54,
+                                  fontWeight: missao.concluida
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
                                 ),
                               ),
                             ],

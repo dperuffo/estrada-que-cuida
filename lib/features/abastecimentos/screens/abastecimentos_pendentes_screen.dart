@@ -6,6 +6,8 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../dashboard/providers/dashboard_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -16,33 +18,61 @@ final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 class AbastecimentosPendentesScreen extends ConsumerWidget {
   const AbastecimentosPendentesScreen({super.key});
 
-  Future<void> _confirmar(BuildContext context, WidgetRef ref, AbastecimentoPendente item) async {
+  Future<void> _confirmar(
+    BuildContext context,
+    WidgetRef ref,
+    AbastecimentoPendente item,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final resultado = await AbastecimentoFidelidadeService.confirmar(item);
       if (resultado.status == 'confirmado') {
-        messenger.showSnackBar(SnackBar(content: Text('Confirmado! +${resultado.pontos} pontos.')));
+        messenger.showSnackBar(
+          SnackBar(content: Text('Confirmado! +${resultado.pontos} pontos.')),
+        );
         // Confirmar pode ter destravado uma missão (ex.: "primeira
         // confirmação") — reavalia na hora pra creditar o bônus já.
         await AsyncValue.guard(() => ref.read(missoesProvider.future));
       } else {
-        messenger.showSnackBar(const SnackBar(content: Text('Esse abastecimento não pôde ser confirmado (já foi confirmado ou não é mais seu).')));
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Esse abastecimento não pôde ser confirmado (já foi confirmado ou não é mais seu).',
+            ),
+          ),
+        );
       }
       ref.invalidate(abastecimentosPendentesProvider);
       ref.invalidate(saldoPontosProvider);
       ref.invalidate(missoesProvider);
     } catch (e) {
-      messenger.showSnackBar(const SnackBar(content: Text('Não consegui confirmar agora. Tente de novo em instantes.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não consegui confirmar agora. Tente de novo em instantes.',
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _rejeitar(BuildContext context, WidgetRef ref, AbastecimentoPendente item) async {
+  Future<void> _rejeitar(
+    BuildContext context,
+    WidgetRef ref,
+    AbastecimentoPendente item,
+  ) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await AbastecimentoFidelidadeService.rejeitar(item);
       ref.invalidate(abastecimentosPendentesProvider);
     } catch (e) {
-      messenger.showSnackBar(const SnackBar(content: Text('Não consegui registrar agora. Tente de novo em instantes.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não consegui registrar agora. Tente de novo em instantes.',
+          ),
+        ),
+      );
     }
   }
 
@@ -51,7 +81,15 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
     final pendentesAsync = ref.watch(abastecimentosPendentesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Abastecimentos pendentes')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Abastecimentos pendentes'),
+      ),
       drawer: const AppDrawer(),
       body: pendentesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -64,7 +102,8 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
                 const Text('Não consegui carregar seus abastecimentos agora.'),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () => ref.invalidate(abastecimentosPendentesProvider),
+                  onPressed: () =>
+                      ref.invalidate(abastecimentosPendentesProvider),
                   child: const Text('Tentar de novo'),
                 ),
               ],
@@ -84,7 +123,8 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
             );
           }
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(abastecimentosPendentesProvider),
+            onRefresh: () async =>
+                ref.invalidate(abastecimentosPendentesProvider),
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: itens.length,
@@ -100,20 +140,35 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(item.placa, style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              item.placa,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             Text(_formatoData.format(item.dataAbastecimento)),
                           ],
                         ),
                         const SizedBox(height: 4),
                         if (item.postoNome != null) Text(item.postoNome!),
-                        if (item.municipio != null) Text('${item.municipio}${item.uf != null ? '/${item.uf}' : ''}', style: const TextStyle(color: Colors.black54)),
+                        if (item.municipio != null)
+                          Text(
+                            '${item.municipio}${item.uf != null ? '/${item.uf}' : ''}',
+                            style: const TextStyle(color: Colors.black54),
+                          ),
                         const SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            if (item.litros != null) Text('${item.litros!.toStringAsFixed(2)} L'),
+                            if (item.litros != null)
+                              Text('${item.litros!.toStringAsFixed(2)} L'),
                             if (item.valorTotal != null)
-                              Text(_formatoMoeda.format(item.valorTotal), style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                _formatoMoeda.format(item.valorTotal),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                           ],
                         ),
                         const SizedBox(height: 12),

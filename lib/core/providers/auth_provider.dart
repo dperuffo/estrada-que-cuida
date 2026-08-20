@@ -47,7 +47,10 @@ class AuthService {
   /// (SECURITY DEFINER, grant pra `anon`) porque ainda não existe sessão
   /// aqui — só olha a tabela `motoristas` por telefone.
   static Future<bool> temSenha(String telefoneE164) async {
-    final resp = await _client.rpc('motorista_tem_senha', params: {'p_telefone': telefoneE164});
+    final resp = await _client.rpc(
+      'motorista_tem_senha',
+      params: {'p_telefone': telefoneE164},
+    );
     return resp as bool? ?? false;
   }
 
@@ -56,7 +59,10 @@ class AuthService {
     required String telefoneE164,
     required String senha,
   }) {
-    return _client.auth.signInWithPassword(phone: telefoneE164, password: senha);
+    return _client.auth.signInWithPassword(
+      phone: telefoneE164,
+      password: senha,
+    );
   }
 
   /// Confirma a senha ATUAL sem criar uma sessão nova — achado real: usar
@@ -69,7 +75,10 @@ class AuthService {
   /// `motorista_verificar_senha_atual` compara o hash bcrypt direto (mesmo
   /// mecanismo do GoTrue) sem mexer na sessão.
   static Future<bool> verificarSenhaAtual(String senha) async {
-    final resp = await _client.rpc('motorista_verificar_senha_atual', params: {'p_senha': senha});
+    final resp = await _client.rpc(
+      'motorista_verificar_senha_atual',
+      params: {'p_senha': senha},
+    );
     return resp as bool? ?? false;
   }
 
@@ -94,8 +103,10 @@ class AuthService {
   /// Também registra o erro real no console (`debugPrint`) pra diagnóstico.
   static String mensagemDeErro(Object e, {String? contexto}) {
     if (e is AuthException) {
-      debugPrint('[auth${contexto != null ? '/$contexto' : ''}] '
-          'code=${e.code} status=${e.statusCode} msg=${e.message}');
+      debugPrint(
+        '[auth${contexto != null ? '/$contexto' : ''}] '
+        'code=${e.code} status=${e.statusCode} msg=${e.message}',
+      );
       switch (e.code) {
         case 'sms_send_failed':
           return 'Não conseguimos enviar o SMS para este número. '
@@ -116,7 +127,9 @@ class AuthService {
       return 'Não deu para continuar (erro ${e.code ?? e.statusCode ?? 'desconhecido'}). '
           'Tente de novo em instantes.';
     }
-    debugPrint('[auth${contexto != null ? '/$contexto' : ''}] erro inesperado: $e');
+    debugPrint(
+      '[auth${contexto != null ? '/$contexto' : ''}] erro inesperado: $e',
+    );
     return 'Não consegui continuar agora. Verifique sua conexão e tente de novo.';
   }
 
@@ -132,14 +145,23 @@ class AuthService {
   /// qr_flutter) e o segredo (pra digitar manualmente se não der pra
   /// escanear).
   static Future<AuthMFAEnrollResponse> mfaIniciarCadastro() {
-    return _client.auth.mfa.enroll(factorType: FactorType.totp, friendlyName: 'Estrada que Cuida');
+    return _client.auth.mfa.enroll(
+      factorType: FactorType.totp,
+      friendlyName: 'Estrada que Cuida',
+    );
   }
 
   /// Confirma o cadastro (ou verifica no login) com o código de 6 dígitos
   /// gerado pelo app autenticador. `challengeAndVerify` já faz o
   /// challenge+verify num passo só.
-  static Future<AuthMFAVerifyResponse> mfaVerificarCodigo({required String factorId, required String codigo}) {
-    return _client.auth.mfa.challengeAndVerify(factorId: factorId, code: codigo);
+  static Future<AuthMFAVerifyResponse> mfaVerificarCodigo({
+    required String factorId,
+    required String codigo,
+  }) {
+    return _client.auth.mfa.challengeAndVerify(
+      factorId: factorId,
+      code: codigo,
+    );
   }
 
   static Future<AuthMFAListFactorsResponse> mfaListarFatores() {

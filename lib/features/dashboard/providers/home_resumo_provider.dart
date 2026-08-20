@@ -26,12 +26,12 @@ class SaldoCota {
   bool get emVolume => tipo == 'Volume';
 
   factory SaldoCota.fromJson(Map<String, dynamic> json) => SaldoCota(
-        tipo: json['tipo'] as String,
-        periodicidade: json['periodicidade'] as String,
-        limite: (json['limite'] as num).toDouble(),
-        consumido: (json['consumido'] as num).toDouble(),
-        saldo: (json['saldo'] as num).toDouble(),
-      );
+    tipo: json['tipo'] as String,
+    periodicidade: json['periodicidade'] as String,
+    limite: (json['limite'] as num).toDouble(),
+    consumido: (json['consumido'] as num).toDouble(),
+    saldo: (json['saldo'] as num).toDouble(),
+  );
 }
 
 class SaldoFrete {
@@ -54,13 +54,13 @@ class SaldoFrete {
   bool get emVolume => tipo == 'Volume';
 
   factory SaldoFrete.fromJson(Map<String, dynamic> json) => SaldoFrete(
-        freteId: json['frete_id'] as String,
-        titulo: json['titulo'] as String,
-        tipo: json['tipo'] as String,
-        alocado: (json['alocado'] as num).toDouble(),
-        consumido: (json['consumido'] as num).toDouble(),
-        saldo: (json['saldo'] as num).toDouble(),
-      );
+    freteId: json['frete_id'] as String,
+    titulo: json['titulo'] as String,
+    tipo: json['tipo'] as String,
+    alocado: (json['alocado'] as num).toDouble(),
+    consumido: (json['consumido'] as num).toDouble(),
+    saldo: (json['saldo'] as num).toDouble(),
+  );
 }
 
 class ConsumoHoje {
@@ -70,9 +70,9 @@ class ConsumoHoje {
   const ConsumoHoje({required this.litros, required this.valor});
 
   factory ConsumoHoje.fromJson(Map<String, dynamic> json) => ConsumoHoje(
-        litros: (json['litros'] as num).toDouble(),
-        valor: (json['valor'] as num).toDouble(),
-      );
+    litros: (json['litros'] as num).toDouble(),
+    valor: (json['valor'] as num).toDouble(),
+  );
 }
 
 class MediasConsumo {
@@ -82,9 +82,9 @@ class MediasConsumo {
   const MediasConsumo({this.kmL, this.valorPorLitro});
 
   factory MediasConsumo.fromJson(Map<String, dynamic> json) => MediasConsumo(
-        kmL: (json['km_l'] as num?)?.toDouble(),
-        valorPorLitro: (json['valor_por_litro'] as num?)?.toDouble(),
-      );
+    kmL: (json['km_l'] as num?)?.toDouble(),
+    valorPorLitro: (json['valor_por_litro'] as num?)?.toDouble(),
+  );
 }
 
 class PontoSerieDia {
@@ -92,13 +92,17 @@ class PontoSerieDia {
   final double litros;
   final double valor;
 
-  const PontoSerieDia({required this.dia, required this.litros, required this.valor});
+  const PontoSerieDia({
+    required this.dia,
+    required this.litros,
+    required this.valor,
+  });
 
   factory PontoSerieDia.fromJson(Map<String, dynamic> json) => PontoSerieDia(
-        dia: DateTime.parse(json['dia'] as String),
-        litros: (json['litros'] as num).toDouble(),
-        valor: (json['valor'] as num).toDouble(),
-      );
+    dia: DateTime.parse(json['dia'] as String),
+    litros: (json['litros'] as num).toDouble(),
+    valor: (json['valor'] as num).toDouble(),
+  );
 }
 
 class HomeResumo {
@@ -125,22 +129,26 @@ class HomeResumo {
   });
 
   factory HomeResumo.fromJson(Map<String, dynamic> json) => HomeResumo(
-        status: json['status'] as String,
-        empresaNome: json['empresa_nome'] as String?,
-        classificacao: json['classificacao'] as String?,
-        placa: json['placa'] as String?,
-        cota: json['cota'] != null ? SaldoCota.fromJson(json['cota'] as Map<String, dynamic>) : null,
-        frete: json['frete'] != null ? SaldoFrete.fromJson(json['frete'] as Map<String, dynamic>) : null,
-        hoje: json['hoje'] != null
-            ? ConsumoHoje.fromJson(json['hoje'] as Map<String, dynamic>)
-            : const ConsumoHoje(litros: 0, valor: 0),
-        medias: json['medias'] != null
-            ? MediasConsumo.fromJson(json['medias'] as Map<String, dynamic>)
-            : const MediasConsumo(),
-        serie7Dias: (json['serie_7dias'] as List? ?? [])
-            .map((e) => PontoSerieDia.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    status: json['status'] as String,
+    empresaNome: json['empresa_nome'] as String?,
+    classificacao: json['classificacao'] as String?,
+    placa: json['placa'] as String?,
+    cota: json['cota'] != null
+        ? SaldoCota.fromJson(json['cota'] as Map<String, dynamic>)
+        : null,
+    frete: json['frete'] != null
+        ? SaldoFrete.fromJson(json['frete'] as Map<String, dynamic>)
+        : null,
+    hoje: json['hoje'] != null
+        ? ConsumoHoje.fromJson(json['hoje'] as Map<String, dynamic>)
+        : const ConsumoHoje(litros: 0, valor: 0),
+    medias: json['medias'] != null
+        ? MediasConsumo.fromJson(json['medias'] as Map<String, dynamic>)
+        : const MediasConsumo(),
+    serie7Dias: (json['serie_7dias'] as List? ?? [])
+        .map((e) => PontoSerieDia.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 final homeResumoProvider = FutureProvider.autoDispose<HomeResumo?>((ref) async {

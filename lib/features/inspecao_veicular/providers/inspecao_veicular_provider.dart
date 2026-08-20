@@ -35,32 +35,40 @@ class VeiculoInspecao {
 
   const VeiculoInspecao({required this.placa, this.marca, this.modelo});
 
-  String get rotulo => [marca, modelo].where((e) => e != null && e.isNotEmpty).join(' ').isEmpty
+  String get rotulo =>
+      [marca, modelo].where((e) => e != null && e.isNotEmpty).join(' ').isEmpty
       ? placa
       : '$placa · ${[marca, modelo].where((e) => e != null && e.isNotEmpty).join(' ')}';
 }
 
-final veiculosInspecaoProvider = FutureProvider.autoDispose<List<VeiculoInspecao>>((ref) async {
-  final resp = await SupabaseService.client.rpc('meus_veiculos_roteirizacao');
-  return (resp as List).map((e) {
-    final mapa = e as Map<String, dynamic>;
-    return VeiculoInspecao(
-      placa: mapa['placa'] as String,
-      marca: mapa['marca'] as String?,
-      modelo: mapa['modelo'] as String?,
-    );
-  }).toList();
-});
+final veiculosInspecaoProvider =
+    FutureProvider.autoDispose<List<VeiculoInspecao>>((ref) async {
+      final resp = await SupabaseService.client.rpc(
+        'meus_veiculos_roteirizacao',
+      );
+      return (resp as List).map((e) {
+        final mapa = e as Map<String, dynamic>;
+        return VeiculoInspecao(
+          placa: mapa['placa'] as String,
+          marca: mapa['marca'] as String?,
+          modelo: mapa['modelo'] as String?,
+        );
+      }).toList();
+    });
 
 // Fase Inspeção-pelo-Motorista — ajuste (30/07/2026) — pedido do Daniel:
 // "traer a informação de hodometro atual para o usuario em tela". Maior
 // hodômetro conhecido pro veículo (último abastecimento OU última
 // inspeção), pra ele saber a partir de onde preencher sem precisar
 // adivinhar ou olhar o painel do carro.
-final ultimoHodometroInspecaoProvider = FutureProvider.autoDispose.family<num?, String>((ref, placa) async {
-  final resp = await SupabaseService.client.rpc('ultimo_hodometro_veiculo', params: {'p_placa': placa});
-  return resp as num?;
-});
+final ultimoHodometroInspecaoProvider = FutureProvider.autoDispose
+    .family<num?, String>((ref, placa) async {
+      final resp = await SupabaseService.client.rpc(
+        'ultimo_hodometro_veiculo',
+        params: {'p_placa': placa},
+      );
+      return resp as num?;
+    });
 
 // Histórico das inspeções que o próprio motorista já registrou, mais
 // recente primeiro — mostrado no topo da tela pra ele acompanhar o que já
@@ -96,17 +104,26 @@ class InspecaoRegistrada {
 // de RLS dessa tabela são todas amarradas ao JWT de e-mail do gestor
 // (`empresas_do_usuario`), e a sessão do motorista (telefone+OTP) não tem
 // esse claim, então um select direto retornaria sempre vazio.
-final minhasInspecoesProvider = FutureProvider.autoDispose<List<InspecaoRegistrada>>((ref) async {
-  final resp = await SupabaseService.client.rpc('minhas_inspecoes_motorista');
-  return (resp as List).map((e) => InspecaoRegistrada.fromJson(e as Map<String, dynamic>)).toList();
-});
+final minhasInspecoesProvider =
+    FutureProvider.autoDispose<List<InspecaoRegistrada>>((ref) async {
+      final resp = await SupabaseService.client.rpc(
+        'minhas_inspecoes_motorista',
+      );
+      return (resp as List)
+          .map((e) => InspecaoRegistrada.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
 
 class InspecaoResultado {
   final String status;
   final int? pontos;
   final int? itensNaoConformes;
 
-  InspecaoResultado({required this.status, this.pontos, this.itensNaoConformes});
+  InspecaoResultado({
+    required this.status,
+    this.pontos,
+    this.itensNaoConformes,
+  });
 
   factory InspecaoResultado.fromJson(Map<String, dynamic> json) {
     return InspecaoResultado(
@@ -126,20 +143,25 @@ class InspecaoVeicularService {
     required Map<String, String> observacoesPorItem,
   }) async {
     final itens = itensInspecao
-        .map((item) => {
-              'item': item,
-              'critico': itensCriticos.contains(item),
-              'conforme': conformidadePorItem[item] ?? true,
-              'observacao': observacoesPorItem[item] ?? '',
-            })
+        .map(
+          (item) => {
+            'item': item,
+            'critico': itensCriticos.contains(item),
+            'conforme': conformidadePorItem[item] ?? true,
+            'observacao': observacoesPorItem[item] ?? '',
+          },
+        )
         .toList();
 
-    final resp = await SupabaseService.client.rpc('registrar_inspecao_motorista', params: {
-      'p_placa': placa,
-      'p_data_inspecao': dataInspecao.toIso8601String().split('T').first,
-      'p_hodometro': hodometro,
-      'p_itens': itens,
-    });
+    final resp = await SupabaseService.client.rpc(
+      'registrar_inspecao_motorista',
+      params: {
+        'p_placa': placa,
+        'p_data_inspecao': dataInspecao.toIso8601String().split('T').first,
+        'p_hodometro': hodometro,
+        'p_itens': itens,
+      },
+    );
     return InspecaoResultado.fromJson(resp as Map<String, dynamic>);
   }
 }

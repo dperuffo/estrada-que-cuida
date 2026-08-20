@@ -83,33 +83,37 @@ class Frete {
   });
 
   factory Frete.fromMap(Map<String, dynamic> m) => Frete(
-        id: m['id'] as String,
-        titulo: m['titulo'] as String,
-        descricao: m['descricao'] as String?,
-        status: m['status'] as String,
-        origemLabel: m['origem_label'] as String,
-        origemLat: (m['origem_lat'] as num).toDouble(),
-        origemLon: (m['origem_lon'] as num).toDouble(),
-        destinoLabel: m['destino_label'] as String,
-        destinoLat: (m['destino_lat'] as num).toDouble(),
-        destinoLon: (m['destino_lon'] as num).toDouble(),
-        tipoCarga: m['tipo_carga'] as String?,
-        pesoCargaKg: (m['peso_carga_kg'] as num?)?.toDouble(),
-        dataSaidaPrevista: m['data_saida_prevista'] as String?,
-        prazoEntrega: m['prazo_entrega'] as String?,
-        kmEstimado: (m['km_estimado'] as num?)?.toDouble(),
-        valorOferecido: (m['valor_oferecido'] as num).toDouble(),
-        motoristaId: m['motorista_id'] as String?,
-        criadoEm: DateTime.parse(m['criado_em'] as String),
-        coleta: EnderecoFrete.fromMap(m, 'coleta'),
-        entrega: EnderecoFrete.fromMap(m, 'entrega'),
-        cargaComprimentoM: (m['carga_comprimento_m'] as num?)?.toDouble(),
-        cargaLarguraM: (m['carga_largura_m'] as num?)?.toDouble(),
-        cargaAlturaM: (m['carga_altura_m'] as num?)?.toDouble(),
-        veiculosAceitos: (m['veiculos_aceitos'] as List?)?.map((v) => v as String).toList() ?? const [],
-        carroceriasAceitas: (m['carrocerias_aceitas'] as List?)?.map((v) => v as String).toList() ?? const [],
-        publicoAlvo: m['publico_alvo'] as String? ?? 'fora_base',
-      );
+    id: m['id'] as String,
+    titulo: m['titulo'] as String,
+    descricao: m['descricao'] as String?,
+    status: m['status'] as String,
+    origemLabel: m['origem_label'] as String,
+    origemLat: (m['origem_lat'] as num).toDouble(),
+    origemLon: (m['origem_lon'] as num).toDouble(),
+    destinoLabel: m['destino_label'] as String,
+    destinoLat: (m['destino_lat'] as num).toDouble(),
+    destinoLon: (m['destino_lon'] as num).toDouble(),
+    tipoCarga: m['tipo_carga'] as String?,
+    pesoCargaKg: (m['peso_carga_kg'] as num?)?.toDouble(),
+    dataSaidaPrevista: m['data_saida_prevista'] as String?,
+    prazoEntrega: m['prazo_entrega'] as String?,
+    kmEstimado: (m['km_estimado'] as num?)?.toDouble(),
+    valorOferecido: (m['valor_oferecido'] as num).toDouble(),
+    motoristaId: m['motorista_id'] as String?,
+    criadoEm: DateTime.parse(m['criado_em'] as String),
+    coleta: EnderecoFrete.fromMap(m, 'coleta'),
+    entrega: EnderecoFrete.fromMap(m, 'entrega'),
+    cargaComprimentoM: (m['carga_comprimento_m'] as num?)?.toDouble(),
+    cargaLarguraM: (m['carga_largura_m'] as num?)?.toDouble(),
+    cargaAlturaM: (m['carga_altura_m'] as num?)?.toDouble(),
+    veiculosAceitos:
+        (m['veiculos_aceitos'] as List?)?.map((v) => v as String).toList() ??
+        const [],
+    carroceriasAceitas:
+        (m['carrocerias_aceitas'] as List?)?.map((v) => v as String).toList() ??
+        const [],
+    publicoAlvo: m['publico_alvo'] as String? ?? 'fora_base',
+  );
 }
 
 class EnderecoFrete {
@@ -150,7 +154,8 @@ class EnderecoFrete {
     return partes.join(' — ');
   }
 
-  factory EnderecoFrete.fromMap(Map<String, dynamic> m, String prefixo) => EnderecoFrete(
+  factory EnderecoFrete.fromMap(Map<String, dynamic> m, String prefixo) =>
+      EnderecoFrete(
         rua: m['${prefixo}_rua'] as String?,
         numero: m['${prefixo}_numero'] as String?,
         bairro: m['${prefixo}_bairro'] as String?,
@@ -172,7 +177,8 @@ double distanciaKm(double lat1, double lon1, double lat2, double lon2) {
   const raioTerraKm = 6371.0;
   final dLat = _paraRad(lat2 - lat1);
   final dLon = _paraRad(lon2 - lon1);
-  final a = sin(dLat / 2) * sin(dLat / 2) +
+  final a =
+      sin(dLat / 2) * sin(dLat / 2) +
       cos(_paraRad(lat1)) * cos(_paraRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
   final c = 2 * atan2(sqrt(a), sqrt(1 - a));
   return raioTerraKm * c;
@@ -193,7 +199,8 @@ Future<Position?> obterLocalizacaoAtual() async {
     if (permissao == LocationPermission.denied) {
       permissao = await Geolocator.requestPermission();
     }
-    if (permissao == LocationPermission.denied || permissao == LocationPermission.deniedForever) {
+    if (permissao == LocationPermission.denied ||
+        permissao == LocationPermission.deniedForever) {
       return null;
     }
 
@@ -221,12 +228,12 @@ class RodadaNegociacao {
   });
 
   factory RodadaNegociacao.fromMap(Map<String, dynamic> m) => RodadaNegociacao(
-        numeroRodada: m['numero_rodada'] as int,
-        autor: m['autor'] as String,
-        valorProposto: (m['valor_proposto'] as num).toDouble(),
-        mensagem: m['mensagem'] as String?,
-        criadoEm: DateTime.parse(m['criado_em'] as String),
-      );
+    numeroRodada: m['numero_rodada'] as int,
+    autor: m['autor'] as String,
+    valorProposto: (m['valor_proposto'] as num).toDouble(),
+    mensagem: m['mensagem'] as String?,
+    criadoEm: DateTime.parse(m['criado_em'] as String),
+  );
 }
 
 class Negociacao {
@@ -254,7 +261,9 @@ Future<List<Frete>> buscarFretesMercado() async {
       .select()
       .eq('status', 'disponivel')
       .order('criado_em', ascending: false);
-  return (linhas as List).map((l) => Frete.fromMap(l as Map<String, dynamic>)).toList();
+  return (linhas as List)
+      .map((l) => Frete.fromMap(l as Map<String, dynamic>))
+      .toList();
 }
 
 /// Fretes atribuídos direto a mim (próprio ou parceiro) ou que eu ganhei
@@ -266,7 +275,9 @@ Future<List<Frete>> buscarMeusFretesAtribuidos() async {
       .select()
       .neq('status', 'disponivel')
       .order('criado_em', ascending: false);
-  return (linhas as List).map((l) => Frete.fromMap(l as Map<String, dynamic>)).toList();
+  return (linhas as List)
+      .map((l) => Frete.fromMap(l as Map<String, dynamic>))
+      .toList();
 }
 
 /// Minhas negociações em aberto (mercado aberto), com o frete carregado à
@@ -295,9 +306,13 @@ Future<List<(Negociacao, Frete)>> buscarMinhasNegociacoes() async {
   if (negociacoes.isEmpty) return [];
 
   final freteIds = negociacoes.map((n) => n.freteId).toSet().toList();
-  final fretesLinhas = await SupabaseService.client.from('fretes').select().inFilter('id', freteIds);
+  final fretesLinhas = await SupabaseService.client
+      .from('fretes')
+      .select()
+      .inFilter('id', freteIds);
   final fretesPorId = {
-    for (final f in (fretesLinhas as List)) (f as Map<String, dynamic>)['id'] as String: Frete.fromMap(f),
+    for (final f in (fretesLinhas as List))
+      (f as Map<String, dynamic>)['id'] as String: Frete.fromMap(f),
   };
 
   final resultado = <(Negociacao, Frete)>[];
@@ -311,7 +326,11 @@ Future<List<(Negociacao, Frete)>> buscarMinhasNegociacoes() async {
 /// Busca um frete específico por id (RLS garante que só retorna se eu
 /// puder ver: disponível pra rede, ou atribuído/negociado por mim).
 Future<Frete?> buscarFrete(String freteId) async {
-  final linha = await SupabaseService.client.from('fretes').select().eq('id', freteId).maybeSingle();
+  final linha = await SupabaseService.client
+      .from('fretes')
+      .select()
+      .eq('id', freteId)
+      .maybeSingle();
   if (linha == null) return null;
   return Frete.fromMap(linha);
 }
@@ -336,36 +355,61 @@ Future<Negociacao?> buscarMinhaNegociacao(String freteId) async {
     freteId: linha['frete_id'] as String,
     status: linha['status'] as String,
     rodadaAtual: linha['rodada_atual'] as int,
-    rodadas: (rodadas as List).map((r) => RodadaNegociacao.fromMap(r as Map<String, dynamic>)).toList(),
+    rodadas: (rodadas as List)
+        .map((r) => RodadaNegociacao.fromMap(r as Map<String, dynamic>))
+        .toList(),
   );
 }
 
-Future<void> abrirNegociacaoFrete(String freteId, double valor, {String? mensagem}) async {
-  await SupabaseService.client.rpc('abrir_negociacao_frete', params: {
-    'p_frete_id': freteId,
-    'p_valor_proposto': valor,
-    'p_mensagem': mensagem,
-  });
+Future<void> abrirNegociacaoFrete(
+  String freteId,
+  double valor, {
+  String? mensagem,
+}) async {
+  await SupabaseService.client.rpc(
+    'abrir_negociacao_frete',
+    params: {
+      'p_frete_id': freteId,
+      'p_valor_proposto': valor,
+      'p_mensagem': mensagem,
+    },
+  );
 }
 
-Future<void> proporRodadaNegociacao(String negociacaoId, double valor, {String? mensagem}) async {
-  await SupabaseService.client.rpc('propor_rodada_negociacao', params: {
-    'p_negociacao_id': negociacaoId,
-    'p_valor_proposto': valor,
-    'p_mensagem': mensagem,
-  });
+Future<void> proporRodadaNegociacao(
+  String negociacaoId,
+  double valor, {
+  String? mensagem,
+}) async {
+  await SupabaseService.client.rpc(
+    'propor_rodada_negociacao',
+    params: {
+      'p_negociacao_id': negociacaoId,
+      'p_valor_proposto': valor,
+      'p_mensagem': mensagem,
+    },
+  );
 }
 
 Future<void> aceitarNegociacaoFrete(String negociacaoId) async {
-  await SupabaseService.client.rpc('aceitar_negociacao_frete', params: {'p_negociacao_id': negociacaoId});
+  await SupabaseService.client.rpc(
+    'aceitar_negociacao_frete',
+    params: {'p_negociacao_id': negociacaoId},
+  );
 }
 
 Future<void> recusarNegociacaoFrete(String negociacaoId) async {
-  await SupabaseService.client.rpc('recusar_negociacao_frete', params: {'p_negociacao_id': negociacaoId});
+  await SupabaseService.client.rpc(
+    'recusar_negociacao_frete',
+    params: {'p_negociacao_id': negociacaoId},
+  );
 }
 
 Future<void> responderFreteDireto(String freteId, bool aceitar) async {
-  await SupabaseService.client.rpc('responder_frete_direto', params: {'p_frete_id': freteId, 'p_aceitar': aceitar});
+  await SupabaseService.client.rpc(
+    'responder_frete_direto',
+    params: {'p_frete_id': freteId, 'p_aceitar': aceitar},
+  );
 }
 
 // Fase Fretes-Aceitar-Direto-Mercado (19/07) — pedido do Daniel: aceitar o
@@ -374,7 +418,10 @@ Future<void> responderFreteDireto(String freteId, bool aceitar) async {
 // mercado aberto). Primeiro motorista a chamar leva — a RLS/lock no banco
 // garante isso (ver aceitar_frete_disponivel).
 Future<void> aceitarFreteDisponivel(String freteId) async {
-  await SupabaseService.client.rpc('aceitar_frete_disponivel', params: {'p_frete_id': freteId});
+  await SupabaseService.client.rpc(
+    'aceitar_frete_disponivel',
+    params: {'p_frete_id': freteId},
+  );
 }
 
 // Fase Fretes B — postos recomendados, checkpoints de execução e avaliação.
@@ -385,14 +432,19 @@ class PostoRecomendado {
   final String? observacao;
   final String? itemCatalogoId;
 
-  const PostoRecomendado({required this.id, required this.nomePosto, this.observacao, this.itemCatalogoId});
+  const PostoRecomendado({
+    required this.id,
+    required this.nomePosto,
+    this.observacao,
+    this.itemCatalogoId,
+  });
 
   factory PostoRecomendado.fromMap(Map<String, dynamic> m) => PostoRecomendado(
-        id: m['id'] as String,
-        nomePosto: m['nome_posto'] as String,
-        observacao: m['observacao'] as String?,
-        itemCatalogoId: m['item_catalogo_id'] as String?,
-      );
+    id: m['id'] as String,
+    nomePosto: m['nome_posto'] as String,
+    observacao: m['observacao'] as String?,
+    itemCatalogoId: m['item_catalogo_id'] as String?,
+  );
 }
 
 class EventoFrete {
@@ -417,13 +469,13 @@ class EventoFrete {
   });
 
   factory EventoFrete.fromMap(Map<String, dynamic> m) => EventoFrete(
-        id: m['id'] as String,
-        tipoEvento: m['tipo_evento'] as String,
-        observacao: m['observacao'] as String?,
-        criadoEm: DateTime.parse(m['criado_em'] as String),
-        fotoPath: m['foto_path'] as String?,
-        codigoOcorrencia: m['codigo_ocorrencia'] as String?,
-      );
+    id: m['id'] as String,
+    tipoEvento: m['tipo_evento'] as String,
+    observacao: m['observacao'] as String?,
+    criadoEm: DateTime.parse(m['criado_em'] as String),
+    fotoPath: m['foto_path'] as String?,
+    codigoOcorrencia: m['codigo_ocorrencia'] as String?,
+  );
 }
 
 class AvaliacaoFrete {
@@ -431,13 +483,17 @@ class AvaliacaoFrete {
   final int estrelas;
   final String? comentario;
 
-  const AvaliacaoFrete({required this.avaliador, required this.estrelas, this.comentario});
+  const AvaliacaoFrete({
+    required this.avaliador,
+    required this.estrelas,
+    this.comentario,
+  });
 
   factory AvaliacaoFrete.fromMap(Map<String, dynamic> m) => AvaliacaoFrete(
-        avaliador: m['avaliador'] as String,
-        estrelas: m['estrelas'] as int,
-        comentario: m['comentario'] as String?,
-      );
+    avaliador: m['avaliador'] as String,
+    estrelas: m['estrelas'] as int,
+    comentario: m['comentario'] as String?,
+  );
 }
 
 Future<List<PostoRecomendado>> buscarPostosRecomendados(String freteId) async {
@@ -446,7 +502,9 @@ Future<List<PostoRecomendado>> buscarPostosRecomendados(String freteId) async {
       .select()
       .eq('frete_id', freteId)
       .order('ordem', ascending: true);
-  return (linhas as List).map((l) => PostoRecomendado.fromMap(l as Map<String, dynamic>)).toList();
+  return (linhas as List)
+      .map((l) => PostoRecomendado.fromMap(l as Map<String, dynamic>))
+      .toList();
 }
 
 Future<List<EventoFrete>> buscarEventosFrete(String freteId) async {
@@ -455,12 +513,19 @@ Future<List<EventoFrete>> buscarEventosFrete(String freteId) async {
       .select()
       .eq('frete_id', freteId)
       .order('criado_em', ascending: true);
-  return (linhas as List).map((l) => EventoFrete.fromMap(l as Map<String, dynamic>)).toList();
+  return (linhas as List)
+      .map((l) => EventoFrete.fromMap(l as Map<String, dynamic>))
+      .toList();
 }
 
 Future<List<AvaliacaoFrete>> buscarAvaliacoesFrete(String freteId) async {
-  final linhas = await SupabaseService.client.from('fretes_avaliacoes').select().eq('frete_id', freteId);
-  return (linhas as List).map((l) => AvaliacaoFrete.fromMap(l as Map<String, dynamic>)).toList();
+  final linhas = await SupabaseService.client
+      .from('fretes_avaliacoes')
+      .select()
+      .eq('frete_id', freteId);
+  return (linhas as List)
+      .map((l) => AvaliacaoFrete.fromMap(l as Map<String, dynamic>))
+      .toList();
 }
 
 Future<void> registrarEventoFrete(
@@ -479,16 +544,19 @@ Future<void> registrarEventoFrete(
   double? lat,
   double? lon,
 }) async {
-  await SupabaseService.client.rpc('registrar_evento_frete', params: {
-    'p_frete_id': freteId,
-    'p_tipo_evento': tipoEvento,
-    'p_posto_recomendado_id': postoRecomendadoId,
-    'p_observacao': observacao,
-    'p_lat': lat,
-    'p_lon': lon,
-    'p_foto_path': fotoPath,
-    'p_codigo_ocorrencia': codigoOcorrencia,
-  });
+  await SupabaseService.client.rpc(
+    'registrar_evento_frete',
+    params: {
+      'p_frete_id': freteId,
+      'p_tipo_evento': tipoEvento,
+      'p_posto_recomendado_id': postoRecomendadoId,
+      'p_observacao': observacao,
+      'p_lat': lat,
+      'p_lon': lon,
+      'p_foto_path': fotoPath,
+      'p_codigo_ocorrencia': codigoOcorrencia,
+    },
+  );
 }
 
 // Fase Botao-Panico (02/08/2026, Grupo 1 item 2 do benchmark FNI vs KMM) —
@@ -515,8 +583,11 @@ Future<String> enviarFotoEvidenciaFrete({
   required String tipoEvento,
   required Uint8List bytes,
 }) async {
-  final caminho = '$freteId/${DateTime.now().millisecondsSinceEpoch}_$tipoEvento.jpg';
-  await SupabaseService.client.storage.from('fretes-evidencias').uploadBinary(
+  final caminho =
+      '$freteId/${DateTime.now().millisecondsSinceEpoch}_$tipoEvento.jpg';
+  await SupabaseService.client.storage
+      .from('fretes-evidencias')
+      .uploadBinary(
         caminho,
         bytes,
         fileOptions: const FileOptions(contentType: 'image/jpeg'),
@@ -524,12 +595,19 @@ Future<String> enviarFotoEvidenciaFrete({
   return caminho;
 }
 
-Future<void> avaliarFrete(String freteId, int estrelas, {String? comentario}) async {
-  await SupabaseService.client.rpc('avaliar_frete', params: {
-    'p_frete_id': freteId,
-    'p_estrelas': estrelas,
-    'p_comentario': comentario,
-  });
+Future<void> avaliarFrete(
+  String freteId,
+  int estrelas, {
+  String? comentario,
+}) async {
+  await SupabaseService.client.rpc(
+    'avaliar_frete',
+    params: {
+      'p_frete_id': freteId,
+      'p_estrelas': estrelas,
+      'p_comentario': comentario,
+    },
+  );
 }
 
 // Fase P0.4 — canhoto digital (POD): confirmação de entrega substitui o
@@ -543,8 +621,11 @@ Future<String> enviarAssinaturaEntregaFrete({
   required String freteId,
   required Uint8List bytes,
 }) async {
-  final caminho = '$freteId/assinatura_${DateTime.now().millisecondsSinceEpoch}.png';
-  await SupabaseService.client.storage.from('fretes-evidencias').uploadBinary(
+  final caminho =
+      '$freteId/assinatura_${DateTime.now().millisecondsSinceEpoch}.png';
+  await SupabaseService.client.storage
+      .from('fretes-evidencias')
+      .uploadBinary(
         caminho,
         bytes,
         fileOptions: const FileOptions(contentType: 'image/png'),
@@ -573,12 +654,12 @@ class MensagemFrete {
   });
 
   factory MensagemFrete.fromMap(Map<String, dynamic> m) => MensagemFrete(
-        id: m['id'] as String,
-        remetenteTipo: m['remetente_tipo'] as String,
-        remetenteEmail: m['remetente_email'] as String?,
-        mensagem: m['mensagem'] as String,
-        criadoEm: DateTime.parse(m['criado_em'] as String),
-      );
+    id: m['id'] as String,
+    remetenteTipo: m['remetente_tipo'] as String,
+    remetenteEmail: m['remetente_email'] as String?,
+    mensagem: m['mensagem'] as String,
+    criadoEm: DateTime.parse(m['criado_em'] as String),
+  );
 }
 
 Stream<List<MensagemFrete>> streamMensagensFrete(String freteId) {
@@ -593,7 +674,11 @@ Stream<List<MensagemFrete>> streamMensagensFrete(String freteId) {
 // `motoristaId` aqui é o mesmo `frete.motoristaId` já carregado na tela —
 // como essa tela só mostra fretes já atribuídos a mim, é sempre o meu
 // próprio id de motorista. Evita ter que buscar separadamente.
-Future<void> enviarMensagemFrete(String freteId, String motoristaId, String mensagem) async {
+Future<void> enviarMensagemFrete(
+  String freteId,
+  String motoristaId,
+  String mensagem,
+) async {
   await SupabaseService.client.from('fretes_mensagens').insert({
     'frete_id': freteId,
     'remetente_tipo': 'motorista',
@@ -611,13 +696,16 @@ Future<void> confirmarEntregaFrete(
   double? lat,
   double? lon,
 }) async {
-  await SupabaseService.client.rpc('confirmar_entrega_frete', params: {
-    'p_frete_id': freteId,
-    'p_nome_recebedor': nomeRecebedor,
-    'p_foto_canhoto_path': fotoCanhotoPath,
-    'p_assinatura_path': assinaturaPath,
-    'p_documento_recebedor': documentoRecebedor,
-    'p_lat': lat,
-    'p_lon': lon,
-  });
+  await SupabaseService.client.rpc(
+    'confirmar_entrega_frete',
+    params: {
+      'p_frete_id': freteId,
+      'p_nome_recebedor': nomeRecebedor,
+      'p_foto_canhoto_path': fotoCanhotoPath,
+      'p_assinatura_path': assinaturaPath,
+      'p_documento_recebedor': documentoRecebedor,
+      'p_lat': lat,
+      'p_lon': lon,
+    },
+  );
 }

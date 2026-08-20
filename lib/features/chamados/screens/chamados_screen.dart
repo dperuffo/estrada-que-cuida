@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/chamados_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 
 class ChamadosScreen extends ConsumerWidget {
@@ -15,7 +17,15 @@ class ChamadosScreen extends ConsumerWidget {
     final chamadosAsync = ref.watch(meusChamadosProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Meus chamados')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Meus chamados'),
+      ),
       drawer: const AppDrawer(),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/chamados/novo'),
@@ -29,7 +39,12 @@ class ChamadosScreen extends ConsumerWidget {
           error: (e, _) => ListView(
             children: [
               const SizedBox(height: 80),
-              Center(child: Text('Não consegui carregar seus chamados. Puxe pra atualizar.\n$e', textAlign: TextAlign.center)),
+              Center(
+                child: Text(
+                  'Não consegui carregar seus chamados. Puxe pra atualizar.\n$e',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             ],
           ),
           data: (chamados) {
@@ -58,13 +73,21 @@ class ChamadosScreen extends ConsumerWidget {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     onTap: () => context.push('/chamados/${t.id}'),
-                    title: Text('#${t.numero} — ${t.titulo}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    title: Text(
+                      '#${t.numero} — ${t.titulo}',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
                         Text(tiposTicket[t.tipo] ?? t.tipo),
-                        if (t.criadoEm != null) Text(_formatoData.format(DateTime.parse(t.criadoEm!).toLocal())),
+                        if (t.criadoEm != null)
+                          Text(
+                            _formatoData.format(
+                              DateTime.parse(t.criadoEm!).toLocal(),
+                            ),
+                          ),
                       ],
                     ),
                     trailing: Column(
@@ -74,7 +97,11 @@ class ChamadosScreen extends ConsumerWidget {
                         if (t.naoVisto)
                           const Padding(
                             padding: EdgeInsets.only(top: 4),
-                            child: Icon(Icons.circle, color: Colors.red, size: 10),
+                            child: Icon(
+                              Icons.circle,
+                              color: Colors.red,
+                              size: 10,
+                            ),
                           ),
                       ],
                     ),
@@ -104,7 +131,10 @@ class _ChipStatus extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Text(
         statusTicket[status] ?? status,
         style: TextStyle(color: cor, fontSize: 11, fontWeight: FontWeight.bold),

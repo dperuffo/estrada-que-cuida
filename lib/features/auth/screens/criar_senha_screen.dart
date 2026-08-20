@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../core/providers/auth_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // Fase login-por-senha — tela de criação/redefinição da senha numérica de
 // 6 dígitos. Reusada em dois lugares:
 // 1. Inline no "portão" (PortaoEntradaScreen), pro motorista recém-vinculado
@@ -13,7 +15,11 @@ class CriarSenhaScreen extends StatefulWidget {
   final VoidCallback onSalvo;
   final bool redefinicao;
 
-  const CriarSenhaScreen({super.key, required this.onSalvo, this.redefinicao = false});
+  const CriarSenhaScreen({
+    super.key,
+    required this.onSalvo,
+    this.redefinicao = false,
+  });
 
   @override
   State<CriarSenhaScreen> createState() => _CriarSenhaScreenState();
@@ -51,7 +57,10 @@ class _CriarSenhaScreenState extends State<CriarSenhaScreen> {
       await AuthService.definirSenha(senha);
       widget.onSalvo();
     } catch (e) {
-      setState(() => _erro = 'Não consegui salvar a senha agora. Tente de novo em instantes.');
+      setState(
+        () => _erro =
+            'Não consegui salvar a senha agora. Tente de novo em instantes.',
+      );
     } finally {
       if (mounted) setState(() => _salvando = false);
     }
@@ -60,7 +69,17 @@ class _CriarSenhaScreenState extends State<CriarSenhaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.redefinicao ? 'Crie uma nova senha' : 'Crie sua senha')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: Text(
+          widget.redefinicao ? 'Crie uma nova senha' : 'Crie sua senha',
+        ),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -81,7 +100,11 @@ class _CriarSenhaScreenState extends State<CriarSenhaScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24, letterSpacing: 8),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(labelText: 'Nova senha', hintText: '••••••', counterText: ''),
+                decoration: const InputDecoration(
+                  labelText: 'Nova senha',
+                  hintText: '••••••',
+                  counterText: '',
+                ),
               ),
               const SizedBox(height: 8),
               TextField(
@@ -92,7 +115,11 @@ class _CriarSenhaScreenState extends State<CriarSenhaScreen> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 24, letterSpacing: 8),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(labelText: 'Confirme a senha', hintText: '••••••', counterText: ''),
+                decoration: const InputDecoration(
+                  labelText: 'Confirme a senha',
+                  hintText: '••••••',
+                  counterText: '',
+                ),
                 onSubmitted: (_) => _salvar(),
               ),
               if (_erro != null) ...[
@@ -103,7 +130,14 @@ class _CriarSenhaScreenState extends State<CriarSenhaScreen> {
               ElevatedButton(
                 onPressed: _salvando ? null : _salvar,
                 child: _salvando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Salvar senha'),
               ),
             ],

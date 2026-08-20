@@ -7,7 +7,9 @@ import '../../../core/services/supabase_service.dart';
 // já restringe a leitura só às linhas do próprio motorista, então basta
 // somar tudo que vier.
 final saldoPontosProvider = FutureProvider.autoDispose<int>((ref) async {
-  final rows = await SupabaseService.client.from('fidelidade_pontos_ledger').select('pontos');
+  final rows = await SupabaseService.client
+      .from('fidelidade_pontos_ledger')
+      .select('pontos');
   int soma = 0;
   for (final r in (rows as List)) {
     soma += (r as Map<String, dynamic>)['pontos'] as int;
@@ -24,15 +26,45 @@ class NivelFidelidade {
   final Color cor;
   final IconData icone;
 
-  const NivelFidelidade({required this.nome, required this.min, required this.cor, required this.icone});
+  const NivelFidelidade({
+    required this.nome,
+    required this.min,
+    required this.cor,
+    required this.icone,
+  });
 }
 
 const List<NivelFidelidade> niveisFidelidade = [
-  NivelFidelidade(nome: 'Bronze', min: 0, cor: Color(0xFF8D5B2D), icone: Icons.shield_outlined),
-  NivelFidelidade(nome: 'Prata', min: 10000, cor: Color(0xFF9E9E9E), icone: Icons.shield),
-  NivelFidelidade(nome: 'Ouro', min: 30000, cor: Color(0xFFC9A227), icone: Icons.military_tech_outlined),
-  NivelFidelidade(nome: 'Diamante', min: 70000, cor: Color(0xFF3AAFD9), icone: Icons.diamond_outlined),
-  NivelFidelidade(nome: 'Herói da Estrada', min: 150000, cor: Color(0xFF1B7A43), icone: Icons.emoji_events),
+  NivelFidelidade(
+    nome: 'Bronze',
+    min: 0,
+    cor: Color(0xFF8D5B2D),
+    icone: Icons.shield_outlined,
+  ),
+  NivelFidelidade(
+    nome: 'Prata',
+    min: 10000,
+    cor: Color(0xFF9E9E9E),
+    icone: Icons.shield,
+  ),
+  NivelFidelidade(
+    nome: 'Ouro',
+    min: 30000,
+    cor: Color(0xFFC9A227),
+    icone: Icons.military_tech_outlined,
+  ),
+  NivelFidelidade(
+    nome: 'Diamante',
+    min: 70000,
+    cor: Color(0xFF3AAFD9),
+    icone: Icons.diamond_outlined,
+  ),
+  NivelFidelidade(
+    nome: 'Herói da Estrada',
+    min: 150000,
+    cor: Color(0xFF1B7A43),
+    icone: Icons.emoji_events,
+  ),
 ];
 
 NivelFidelidade nivelParaSaldo(int saldo) {

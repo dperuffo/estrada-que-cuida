@@ -5,6 +5,8 @@ import '../../../core/widgets/app_drawer.dart';
 import '../providers/catalogo_provider.dart';
 import '../widgets/card_voucher.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 
 const Map<String, String> _labelStatus = {
@@ -29,7 +31,15 @@ class MeusResgatesScreen extends ConsumerWidget {
     final resgatesAsync = ref.watch(meusResgatesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Meus resgates')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Meus resgates'),
+      ),
       drawer: const AppDrawer(),
       body: resgatesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -41,7 +51,10 @@ class MeusResgatesScreen extends ConsumerWidget {
               children: [
                 const Text('Não consegui carregar seus resgates agora.'),
                 const SizedBox(height: 12),
-                ElevatedButton(onPressed: () => ref.invalidate(meusResgatesProvider), child: const Text('Tentar de novo')),
+                ElevatedButton(
+                  onPressed: () => ref.invalidate(meusResgatesProvider),
+                  child: const Text('Tentar de novo'),
+                ),
               ],
             ),
           ),
@@ -51,7 +64,10 @@ class MeusResgatesScreen extends ConsumerWidget {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Você ainda não resgatou nenhum item do catálogo.', textAlign: TextAlign.center),
+                child: Text(
+                  'Você ainda não resgatou nenhum item do catálogo.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -76,11 +92,18 @@ class MeusResgatesScreen extends ConsumerWidget {
                     children: [
                       Text(
                         _formatoData.format(r.solicitadoEm),
-                        style: const TextStyle(fontSize: 11, color: Colors.black45),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                        ),
                       ),
                       Text(
                         _labelStatus[r.status] ?? r.status,
-                        style: TextStyle(color: _corStatus[r.status] ?? Colors.black54, fontWeight: FontWeight.bold, fontSize: 12),
+                        style: TextStyle(
+                          color: _corStatus[r.status] ?? Colors.black54,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),

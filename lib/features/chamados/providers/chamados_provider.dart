@@ -10,14 +10,22 @@ import '../../../core/services/supabase_service.dart';
 // chamados_e_avaliacao_motorista) — só enxerga os chamados vinculados ao
 // próprio `motorista_id`.
 
-const tiposTicket = <String, String>{'incidente': 'Incidente', 'melhoria': 'Melhoria'};
+const tiposTicket = <String, String>{
+  'incidente': 'Incidente',
+  'melhoria': 'Melhoria',
+};
 const statusTicket = <String, String>{
   'aberto': 'Aberto',
   'em_analise': 'Em análise',
   'resolvido': 'Resolvido',
   'fechado': 'Fechado',
 };
-const prioridadesTicket = <String, String>{'baixa': 'Baixa', 'media': 'Média', 'alta': 'Alta', 'critica': 'Crítica'};
+const prioridadesTicket = <String, String>{
+  'baixa': 'Baixa',
+  'media': 'Média',
+  'alta': 'Alta',
+  'critica': 'Crítica',
+};
 
 class Ticket {
   final String id;
@@ -47,23 +55,25 @@ class Ticket {
   });
 
   factory Ticket.fromMap(Map<String, dynamic> m) => Ticket(
-        id: m['id'].toString(),
-        numero: (m['numero'] as num?)?.toInt() ?? 0,
-        tipo: m['tipo'] as String? ?? '',
-        titulo: m['titulo'] as String? ?? '',
-        descricao: m['descricao'] as String? ?? '',
-        status: m['status'] as String? ?? 'aberto',
-        prioridade: m['prioridade'] as String? ?? 'media',
-        respostaAdmin: m['resposta_admin'] as String?,
-        criadoEm: m['criado_em'] as String?,
-        atualizadoEm: m['atualizado_em'] as String?,
-        usuarioVistoEm: m['usuario_visto_em'] as String?,
-      );
+    id: m['id'].toString(),
+    numero: (m['numero'] as num?)?.toInt() ?? 0,
+    tipo: m['tipo'] as String? ?? '',
+    titulo: m['titulo'] as String? ?? '',
+    descricao: m['descricao'] as String? ?? '',
+    status: m['status'] as String? ?? 'aberto',
+    prioridade: m['prioridade'] as String? ?? 'media',
+    respostaAdmin: m['resposta_admin'] as String?,
+    criadoEm: m['criado_em'] as String?,
+    atualizadoEm: m['atualizado_em'] as String?,
+    usuarioVistoEm: m['usuario_visto_em'] as String?,
+  );
 
   bool get naoVisto {
     if (atualizadoEm == null) return false;
     if (usuarioVistoEm == null) return true;
-    return DateTime.parse(atualizadoEm!).isAfter(DateTime.parse(usuarioVistoEm!));
+    return DateTime.parse(
+      atualizadoEm!,
+    ).isAfter(DateTime.parse(usuarioVistoEm!));
   }
 }
 
@@ -81,22 +91,28 @@ class TicketComentario {
   });
 
   factory TicketComentario.fromMap(Map<String, dynamic> m) => TicketComentario(
-        id: m['id'].toString(),
-        autorTipo: m['autor_tipo'] as String? ?? 'usuario',
-        texto: m['texto'] as String? ?? '',
-        criadoEm: m['criado_em'] as String? ?? '',
-      );
+    id: m['id'].toString(),
+    autorTipo: m['autor_tipo'] as String? ?? 'usuario',
+    texto: m['texto'] as String? ?? '',
+    criadoEm: m['criado_em'] as String? ?? '',
+  );
 }
 
-final meusChamadosProvider = FutureProvider.autoDispose<List<Ticket>>((ref) async {
+final meusChamadosProvider = FutureProvider.autoDispose<List<Ticket>>((
+  ref,
+) async {
   final perfil = await ref.watch(meuPerfilProvider.future);
   if (perfil == null) return [];
   final rows = await SupabaseService.client
       .from('tickets')
-      .select('id, numero, tipo, titulo, descricao, status, prioridade, resposta_admin, criado_em, atualizado_em, usuario_visto_em')
+      .select(
+        'id, numero, tipo, titulo, descricao, status, prioridade, resposta_admin, criado_em, atualizado_em, usuario_visto_em',
+      )
       .eq('motorista_id', perfil.id)
       .order('criado_em', ascending: false);
-  return (rows as List).map((m) => Ticket.fromMap(m as Map<String, dynamic>)).toList();
+  return (rows as List)
+      .map((m) => Ticket.fromMap(m as Map<String, dynamic>))
+      .toList();
 });
 
 class ChamadoDetalhe {
@@ -106,22 +122,30 @@ class ChamadoDetalhe {
   const ChamadoDetalhe({required this.ticket, required this.comentarios});
 }
 
-final chamadoDetalheProvider = FutureProvider.autoDispose.family<ChamadoDetalhe?, String>((ref, ticketId) async {
-  final supabase = SupabaseService.client;
+final chamadoDetalheProvider = FutureProvider.autoDispose
+    .family<ChamadoDetalhe?, String>((ref, ticketId) async {
+      final supabase = SupabaseService.client;
 
-  final ticketRaw = await supabase
-      .from('tickets')
-      .select('id, numero, tipo, titulo, descricao, status, prioridade, resposta_admin, criado_em, atualizado_em, usuario_visto_em')
-      .eq('id', ticketId)
-      .maybeSingle();
-  if (ticketRaw == null) return null;
+      final ticketRaw = await supabase
+          .from('tickets')
+          .select(
+            'id, numero, tipo, titulo, descricao, status, prioridade, resposta_admin, criado_em, atualizado_em, usuario_visto_em',
+          )
+          .eq('id', ticketId)
+          .maybeSingle();
+      if (ticketRaw == null) return null;
 
-  final comentariosRaw = await supabase
-      .from('ticket_comentarios')
-      .select('id, autor_tipo, texto, criado_em')
-      .eq('ticket_id', ticketId)
-      .order('criado_em', ascending: true);
-  final comentarios = (comentariosRaw as List).map((m) => TicketComentario.fromMap(m as Map<String, dynamic>)).toList();
+      final comentariosRaw = await supabase
+          .from('ticket_comentarios')
+          .select('id, autor_tipo, texto, criado_em')
+          .eq('ticket_id', ticketId)
+          .order('criado_em', ascending: true);
+      final comentarios = (comentariosRaw as List)
+          .map((m) => TicketComentario.fromMap(m as Map<String, dynamic>))
+          .toList();
 
-  return ChamadoDetalhe(ticket: Ticket.fromMap(ticketRaw), comentarios: comentarios);
-});
+      return ChamadoDetalhe(
+        ticket: Ticket.fromMap(ticketRaw),
+        comentarios: comentarios,
+      );
+    });

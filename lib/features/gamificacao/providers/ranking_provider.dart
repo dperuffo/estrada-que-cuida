@@ -11,7 +11,13 @@ class ItemRanking {
   final int pontos;
   final bool voce;
 
-  ItemRanking({required this.posicao, required this.motoristaId, required this.nome, required this.pontos, required this.voce});
+  ItemRanking({
+    required this.posicao,
+    required this.motoristaId,
+    required this.nome,
+    required this.pontos,
+    required this.voce,
+  });
 
   factory ItemRanking.fromJson(Map<String, dynamic> json) {
     return ItemRanking(
@@ -32,11 +38,18 @@ class ResultadoRanking {
 }
 
 /// `periodo`: 'semana' (últimos 7 dias) ou 'mes' (últimos 30 dias).
-final rankingProvider = FutureProvider.autoDispose.family<ResultadoRanking, String>((ref, periodo) async {
-  final resp = await SupabaseService.client.rpc('ranking_motoristas_empresa', params: {'p_periodo': periodo});
-  final json = resp as Map<String, dynamic>;
-  final lista = (json['ranking'] as List? ?? [])
-      .map((e) => ItemRanking.fromJson(e as Map<String, dynamic>))
-      .toList();
-  return ResultadoRanking(itens: lista, minhaPosicao: json['minha_posicao'] as int?);
-});
+final rankingProvider = FutureProvider.autoDispose
+    .family<ResultadoRanking, String>((ref, periodo) async {
+      final resp = await SupabaseService.client.rpc(
+        'ranking_motoristas_empresa',
+        params: {'p_periodo': periodo},
+      );
+      final json = resp as Map<String, dynamic>;
+      final lista = (json['ranking'] as List? ?? [])
+          .map((e) => ItemRanking.fromJson(e as Map<String, dynamic>))
+          .toList();
+      return ResultadoRanking(
+        itens: lista,
+        minhaPosicao: json['minha_posicao'] as int?,
+      );
+    });

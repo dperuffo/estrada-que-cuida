@@ -8,6 +8,8 @@ import '../../dependentes/providers/dependentes_provider.dart';
 import '../providers/catalogo_provider.dart';
 import '../widgets/card_voucher.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
 
 class CatalogoScreen extends ConsumerStatefulWidget {
@@ -44,7 +46,9 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Resgatar por ${_formatoPontos.format(item.pontosNecessarios)} pontos?'),
+              Text(
+                'Resgatar por ${_formatoPontos.format(item.pontosNecessarios)} pontos?',
+              ),
               const SizedBox(height: 4),
               Text(
                 item.validadeDias != null
@@ -54,7 +58,10 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
               ),
               if (dependentes.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                const Text('Para quem?', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'Para quem?',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 RadioGroup<String?>(
                   groupValue: dependenteId,
                   onChanged: (v) => setState(() => dependenteId = v),
@@ -65,11 +72,13 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                         title: Text('Para mim'),
                         value: null,
                       ),
-                      ...dependentes.map((d) => RadioListTile<String?>(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(d.nome),
-                            value: d.id,
-                          )),
+                      ...dependentes.map(
+                        (d) => RadioListTile<String?>(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(d.nome),
+                          value: d.id,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -77,8 +86,14 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Resgatar')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Resgatar'),
+            ),
           ],
         ),
       ),
@@ -87,26 +102,53 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final resultado = await CatalogoService.resgatar(itemId: item.id, dependenteId: dependenteId);
+      final resultado = await CatalogoService.resgatar(
+        itemId: item.id,
+        dependenteId: dependenteId,
+      );
       switch (resultado.status) {
         case 'ok':
-          messenger.showSnackBar(const SnackBar(content: Text('Resgate feito! Acompanhe o status em "Meus resgates".')));
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Resgate feito! Acompanhe o status em "Meus resgates".',
+              ),
+            ),
+          );
           break;
         case 'saldo_insuficiente':
-          messenger.showSnackBar(SnackBar(
-            content: Text('Saldo insuficiente — você tem ${resultado.saldo}, precisa de ${resultado.necessario}.'),
-          ));
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                'Saldo insuficiente — você tem ${resultado.saldo}, precisa de ${resultado.necessario}.',
+              ),
+            ),
+          );
           break;
         case 'nao_aderido':
-          messenger.showSnackBar(const SnackBar(content: Text('Sua adesão ao programa não está ativa.')));
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Sua adesão ao programa não está ativa.'),
+            ),
+          );
           break;
         default:
-          messenger.showSnackBar(const SnackBar(content: Text('Não foi possível resgatar esse item agora.')));
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível resgatar esse item agora.'),
+            ),
+          );
       }
       ref.invalidate(saldoPontosProvider);
       ref.invalidate(meusResgatesProvider);
     } catch (e) {
-      messenger.showSnackBar(const SnackBar(content: Text('Não consegui resgatar agora. Tente de novo em instantes.')));
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Não consegui resgatar agora. Tente de novo em instantes.',
+          ),
+        ),
+      );
     }
   }
 
@@ -116,6 +158,12 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Catálogo'),
         actions: [
           IconButton(
@@ -134,7 +182,11 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                _ChipCategoria(label: 'Todas', selecionado: _categoria == null, onTap: () => setState(() => _categoria = null)),
+                _ChipCategoria(
+                  label: 'Todas',
+                  selecionado: _categoria == null,
+                  onTap: () => setState(() => _categoria = null),
+                ),
                 ...categoriasCatalogo.map(
                   (c) => _ChipCategoria(
                     label: c.label,
@@ -156,7 +208,11 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                     children: [
                       const Text('Não consegui carregar o catálogo agora.'),
                       const SizedBox(height: 12),
-                      ElevatedButton(onPressed: () => ref.invalidate(catalogoProvider(_categoria)), child: const Text('Tentar de novo')),
+                      ElevatedButton(
+                        onPressed: () =>
+                            ref.invalidate(catalogoProvider(_categoria)),
+                        child: const Text('Tentar de novo'),
+                      ),
                     ],
                   ),
                 ),
@@ -166,7 +222,10 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
-                      child: Text('Nenhum item disponível nessa categoria ainda.', textAlign: TextAlign.center),
+                      child: Text(
+                        'Nenhum item disponível nessa categoria ainda.',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   );
                 }
@@ -189,8 +248,14 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                       // vai ter pra usar o benefício antes de gastar os
                       // pontos.
                       rodape: Text(
-                        item.validadeDias != null ? 'Válido por ${item.validadeDias} dias após o resgate' : 'Sem prazo de validade',
-                        style: const TextStyle(fontSize: 11, color: Colors.black45, fontStyle: FontStyle.italic),
+                        item.validadeDias != null
+                            ? 'Válido por ${item.validadeDias} dias após o resgate'
+                            : 'Sem prazo de validade',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.black45,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                       acoes: Align(
                         alignment: Alignment.centerRight,
@@ -200,7 +265,9 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                           // botões de login/adesão) — aqui o botão precisa
                           // ficar do tamanho do texto (ver footgun
                           // documentado em app_theme.dart).
-                          style: ElevatedButton.styleFrom(minimumSize: const Size(64, 40)),
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(64, 40),
+                          ),
                           onPressed: () => _resgatar(item),
                           child: const Text('Resgatar'),
                         ),
@@ -222,13 +289,21 @@ class _ChipCategoria extends StatelessWidget {
   final bool selecionado;
   final VoidCallback onTap;
 
-  const _ChipCategoria({required this.label, required this.selecionado, required this.onTap});
+  const _ChipCategoria({
+    required this.label,
+    required this.selecionado,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-      child: ChoiceChip(label: Text(label), selected: selecionado, onSelected: (_) => onTap()),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selecionado,
+        onSelected: (_) => onTap(),
+      ),
     );
   }
 }

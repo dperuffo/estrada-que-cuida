@@ -50,8 +50,13 @@ class AppTheme {
   static ThemeData get tema {
     return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(seedColor: frota500, brightness: Brightness.light),
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC), // slate-50, igual ao painel web
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: frota500,
+        brightness: Brightness.light,
+      ),
+      scaffoldBackgroundColor: const Color(
+        0xFFF8FAFC,
+      ), // slate-50, igual ao painel web
       appBarTheme: const AppBarTheme(
         backgroundColor: frota950,
         foregroundColor: Colors.white,
@@ -87,7 +92,9 @@ class AppTheme {
           backgroundColor: frota500,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -95,7 +102,9 @@ class AppTheme {
           foregroundColor: frota700,
           side: const BorderSide(color: frota600),
           minimumSize: const Size.fromHeight(48),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

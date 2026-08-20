@@ -11,7 +11,11 @@ class CategoriaCatalogo {
   final String label;
   final IconData icone;
 
-  const CategoriaCatalogo({required this.codigo, required this.label, required this.icone});
+  const CategoriaCatalogo({
+    required this.codigo,
+    required this.label,
+    required this.icone,
+  });
 }
 
 // Fase Parcerias Locais (17/07) — "Conveniência do Posto" entrou como 7ª
@@ -21,13 +25,41 @@ class CategoriaCatalogo {
 // continuam sendo tanto do catálogo global do admin quanto de benefícios
 // que cliente/posto criam pra própria rede.
 const List<CategoriaCatalogo> categoriasCatalogo = [
-  CategoriaCatalogo(codigo: 'conveniencia_posto', label: 'Conveniência do Posto', icone: Icons.local_gas_station_outlined),
-  CategoriaCatalogo(codigo: 'economia_imediata', label: 'Economia Imediata', icone: Icons.savings_outlined),
-  CategoriaCatalogo(codigo: 'marketplace_cabine', label: 'Marketplace da Cabine', icone: Icons.storefront_outlined),
-  CategoriaCatalogo(codigo: 'saude_estrada', label: 'Saúde na Estrada', icone: Icons.favorite_outline),
-  CategoriaCatalogo(codigo: 'universidade_estrada', label: 'Universidade da Estrada', icone: Icons.school_outlined),
-  CategoriaCatalogo(codigo: 'clube_caminhao', label: 'Clube do Caminhão', icone: Icons.groups_outlined),
-  CategoriaCatalogo(codigo: 'volte_para_casa', label: 'Volte para Casa', icone: Icons.home_outlined),
+  CategoriaCatalogo(
+    codigo: 'conveniencia_posto',
+    label: 'Conveniência do Posto',
+    icone: Icons.local_gas_station_outlined,
+  ),
+  CategoriaCatalogo(
+    codigo: 'economia_imediata',
+    label: 'Economia Imediata',
+    icone: Icons.savings_outlined,
+  ),
+  CategoriaCatalogo(
+    codigo: 'marketplace_cabine',
+    label: 'Marketplace da Cabine',
+    icone: Icons.storefront_outlined,
+  ),
+  CategoriaCatalogo(
+    codigo: 'saude_estrada',
+    label: 'Saúde na Estrada',
+    icone: Icons.favorite_outline,
+  ),
+  CategoriaCatalogo(
+    codigo: 'universidade_estrada',
+    label: 'Universidade da Estrada',
+    icone: Icons.school_outlined,
+  ),
+  CategoriaCatalogo(
+    codigo: 'clube_caminhao',
+    label: 'Clube do Caminhão',
+    icone: Icons.groups_outlined,
+  ),
+  CategoriaCatalogo(
+    codigo: 'volte_para_casa',
+    label: 'Volte para Casa',
+    icone: Icons.home_outlined,
+  ),
 ];
 
 class ItemCatalogo {
@@ -66,15 +98,20 @@ class ItemCatalogo {
 }
 
 /// `categoria` null = todas.
-final catalogoProvider = FutureProvider.autoDispose.family<List<ItemCatalogo>, String?>((ref, categoria) async {
-  var query = SupabaseService.client
-      .from('fidelidade_catalogo_itens')
-      .select('id, categoria, titulo, descricao, parceiro_nome, pontos_necessarios, imagem_url, validade_dias')
-      .eq('ativo', true);
-  if (categoria != null) query = query.eq('categoria', categoria);
-  final rows = await query.order('pontos_necessarios');
-  return (rows as List).map((e) => ItemCatalogo.fromJson(e as Map<String, dynamic>)).toList();
-});
+final catalogoProvider = FutureProvider.autoDispose
+    .family<List<ItemCatalogo>, String?>((ref, categoria) async {
+      var query = SupabaseService.client
+          .from('fidelidade_catalogo_itens')
+          .select(
+            'id, categoria, titulo, descricao, parceiro_nome, pontos_necessarios, imagem_url, validade_dias',
+          )
+          .eq('ativo', true);
+      if (categoria != null) query = query.eq('categoria', categoria);
+      final rows = await query.order('pontos_necessarios');
+      return (rows as List)
+          .map((e) => ItemCatalogo.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
 
 class ResgateResultado {
   final String status;
@@ -82,7 +119,12 @@ class ResgateResultado {
   final int? necessario;
   final String? numeroVoucher;
 
-  ResgateResultado({required this.status, this.saldo, this.necessario, this.numeroVoucher});
+  ResgateResultado({
+    required this.status,
+    this.saldo,
+    this.necessario,
+    this.numeroVoucher,
+  });
 
   factory ResgateResultado.fromJson(Map<String, dynamic> json) {
     return ResgateResultado(
@@ -95,11 +137,14 @@ class ResgateResultado {
 }
 
 class CatalogoService {
-  static Future<ResgateResultado> resgatar({required String itemId, String? dependenteId}) async {
-    final resp = await SupabaseService.client.rpc('resgatar_item_catalogo', params: {
-      'p_item_id': itemId,
-      'p_dependente_id': dependenteId,
-    });
+  static Future<ResgateResultado> resgatar({
+    required String itemId,
+    String? dependenteId,
+  }) async {
+    final resp = await SupabaseService.client.rpc(
+      'resgatar_item_catalogo',
+      params: {'p_item_id': itemId, 'p_dependente_id': dependenteId},
+    );
     return ResgateResultado.fromJson(resp as Map<String, dynamic>);
   }
 }
@@ -138,19 +183,25 @@ class Resgate {
       status: json['status'] as String,
       solicitadoEm: DateTime.parse(json['solicitado_em'] as String),
       numeroVoucher: json['numero_voucher'] as String?,
-      validoAte: json['valido_ate'] != null ? DateTime.parse(json['valido_ate'] as String) : null,
+      validoAte: json['valido_ate'] != null
+          ? DateTime.parse(json['valido_ate'] as String)
+          : null,
       parceiroNome: json['parceiro_nome'] as String?,
       imagemUrl: json['imagem_url'] as String?,
     );
   }
 }
 
-final meusResgatesProvider = FutureProvider.autoDispose<List<Resgate>>((ref) async {
+final meusResgatesProvider = FutureProvider.autoDispose<List<Resgate>>((
+  ref,
+) async {
   final rows = await SupabaseService.client
       .from('fidelidade_resgates')
       .select(
         'id, categoria, titulo, pontos_gastos, status, solicitado_em, numero_voucher, valido_ate, parceiro_nome, imagem_url',
       )
       .order('solicitado_em', ascending: false);
-  return (rows as List).map((e) => Resgate.fromJson(e as Map<String, dynamic>)).toList();
+  return (rows as List)
+      .map((e) => Resgate.fromJson(e as Map<String, dynamic>))
+      .toList();
 });

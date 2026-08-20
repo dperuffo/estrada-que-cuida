@@ -22,15 +22,21 @@ class PortaoEntradaScreen extends ConsumerWidget {
 
     return vinculoAsync.when(
       loading: () => const _Carregando(),
-      error: (e, _) => _Erro(onTentarNovamente: () => ref.invalidate(vinculoProvider(null))),
+      error: (e, _) =>
+          _Erro(onTentarNovamente: () => ref.invalidate(vinculoProvider(null))),
       data: (resultado) {
         switch (resultado.status) {
           case 'vinculado':
           case 'ja_vinculado':
             if (!resultado.senhaDefinida) {
-              return CriarSenhaScreen(onSalvo: () => ref.invalidate(vinculoProvider(null)));
+              return CriarSenhaScreen(
+                onSalvo: () => ref.invalidate(vinculoProvider(null)),
+              );
             }
-            return _PosVinculo(motoristaId: resultado.motoristaId!, nome: resultado.nome);
+            return _PosVinculo(
+              motoristaId: resultado.motoristaId!,
+              nome: resultado.nome,
+            );
           case 'ambiguo_requer_cpf':
           case 'nao_encontrado':
             return VinculoScreen(statusInicial: resultado.status);
@@ -56,7 +62,8 @@ class _PosVinculo extends ConsumerWidget {
     final adesaoAsync = ref.watch(adesaoAtivaProvider);
     return adesaoAsync.when(
       loading: () => const _Carregando(),
-      error: (e, _) => _Erro(onTentarNovamente: () => ref.invalidate(adesaoAtivaProvider)),
+      error: (e, _) =>
+          _Erro(onTentarNovamente: () => ref.invalidate(adesaoAtivaProvider)),
       data: (aderido) {
         if (!aderido) return AdesaoScreen(motoristaId: motoristaId, nome: nome);
         return DashboardScreen(motoristaId: motoristaId, nome: nome);
@@ -90,7 +97,10 @@ class _Erro extends StatelessWidget {
             children: [
               const Text('Não consegui carregar seus dados agora.'),
               const SizedBox(height: 12),
-              ElevatedButton(onPressed: onTentarNovamente, child: const Text('Tentar de novo')),
+              ElevatedButton(
+                onPressed: onTentarNovamente,
+                child: const Text('Tentar de novo'),
+              ),
             ],
           ),
         ),

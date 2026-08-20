@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers/auth_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // Fase MFA-opcional — "Camada 2" do login (rota /mfa-verificar): só é
 // alcançada pelo redirect do router quando a sessão está em aal1 mas o
 // motorista tem um fator TOTP verificado (nextLevel aal2). Pede o código
@@ -36,7 +38,9 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
   Future<void> _carregarFator() async {
     try {
       final fatores = await AuthService.mfaListarFatores();
-      final verificado = fatores.totp.where((f) => f.status == FactorStatus.verified);
+      final verificado = fatores.totp.where(
+        (f) => f.status == FactorStatus.verified,
+      );
       if (verificado.isEmpty) {
         // Estado inesperado (fator foi desativado em outro dispositivo
         // entre o login e essa tela) — mais seguro é sair.
@@ -45,7 +49,9 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
       }
       setState(() => _factorId = verificado.first.id);
     } catch (_) {
-      setState(() => _erro = 'Não consegui carregar a verificação. Tente de novo.');
+      setState(
+        () => _erro = 'Não consegui carregar a verificação. Tente de novo.',
+      );
     }
   }
 
@@ -54,7 +60,9 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
     if (factorId == null) return;
     final codigo = _codigoCtrl.text.trim();
     if (codigo.length != 6) {
-      setState(() => _erro = 'Digite o código de 6 dígitos do app autenticador.');
+      setState(
+        () => _erro = 'Digite o código de 6 dígitos do app autenticador.',
+      );
       return;
     }
     setState(() {
@@ -77,6 +85,12 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Verificação em duas etapas'),
         automaticallyImplyLeading: false,
       ),
@@ -86,7 +100,9 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Digite o código de 6 dígitos gerado pelo seu app autenticador.'),
+              const Text(
+                'Digite o código de 6 dígitos gerado pelo seu app autenticador.',
+              ),
               const SizedBox(height: 24),
               TextField(
                 controller: _codigoCtrl,
@@ -95,7 +111,10 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
                 maxLength: 6,
                 style: const TextStyle(fontSize: 24, letterSpacing: 6),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(hintText: '000000', counterText: ''),
+                decoration: const InputDecoration(
+                  hintText: '000000',
+                  counterText: '',
+                ),
                 onSubmitted: (_) => _verificar(),
               ),
               if (_erro != null) ...[
@@ -104,9 +123,18 @@ class _MfaVerificarScreenState extends State<MfaVerificarScreen> {
               ],
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: (_verificando || _factorId == null) ? null : _verificar,
+                onPressed: (_verificando || _factorId == null)
+                    ? null
+                    : _verificar,
                 child: _verificando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Verificar'),
               ),
               const SizedBox(height: 8),

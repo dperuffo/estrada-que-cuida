@@ -4,13 +4,17 @@ import 'package:intl/intl.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/extrato_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 final _formatoData = DateFormat('dd/MM/yyyy HH:mm');
 
 String _rotuloEvento(LancamentoPontos item) {
   switch (item.tipoEvento) {
     case 'abastecimento_confirmado':
       final placa = item.referencia?['placa'] as String?;
-      return placa != null ? 'Abastecimento confirmado — $placa' : 'Abastecimento confirmado';
+      return placa != null
+          ? 'Abastecimento confirmado — $placa'
+          : 'Abastecimento confirmado';
     case 'ajuste_manual':
       return 'Ajuste';
     case 'resgate':
@@ -31,7 +35,15 @@ class ExtratoScreen extends ConsumerWidget {
     final extratoAsync = ref.watch(extratoPontosProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Extrato de pontos')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Extrato de pontos'),
+      ),
       drawer: const AppDrawer(),
       body: extratoAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -56,7 +68,10 @@ class ExtratoScreen extends ConsumerWidget {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
-                child: Text('Nenhum lançamento ainda. Confirme um abastecimento pra começar a pontuar.', textAlign: TextAlign.center),
+                child: Text(
+                  'Nenhum lançamento ainda. Confirme um abastecimento pra começar a pontuar.',
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -70,8 +85,12 @@ class ExtratoScreen extends ConsumerWidget {
                 final positivo = item.pontos >= 0;
                 return ListTile(
                   leading: Icon(
-                    positivo ? Icons.add_circle_outline : Icons.remove_circle_outline,
-                    color: positivo ? const Color(0xFF1B7A43) : Colors.redAccent,
+                    positivo
+                        ? Icons.add_circle_outline
+                        : Icons.remove_circle_outline,
+                    color: positivo
+                        ? const Color(0xFF1B7A43)
+                        : Colors.redAccent,
                   ),
                   title: Text(_rotuloEvento(item)),
                   subtitle: Text(_formatoData.format(item.criadoEm)),
@@ -79,7 +98,9 @@ class ExtratoScreen extends ConsumerWidget {
                     '${positivo ? '+' : ''}${item.pontos}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: positivo ? const Color(0xFF1B7A43) : Colors.redAccent,
+                      color: positivo
+                          ? const Color(0xFF1B7A43)
+                          : Colors.redAccent,
                     ),
                   ),
                 );

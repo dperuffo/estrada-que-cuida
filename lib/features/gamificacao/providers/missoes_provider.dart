@@ -79,7 +79,9 @@ const Map<String, IconData> iconesMissao = {
 // Chama a RPC que avalia todas as missões ativas (globais + da empresa do
 // motorista), credita bônus pra qualquer uma recém-concluída, e devolve o
 // progresso de todas já com o conteúdo pronto pra exibir.
-final missoesProvider = FutureProvider.autoDispose<List<MissaoProgresso>>((ref) async {
+final missoesProvider = FutureProvider.autoDispose<List<MissaoProgresso>>((
+  ref,
+) async {
   final resp = await SupabaseService.client.rpc('avaliar_missoes_motorista');
   final json = resp as Map<String, dynamic>;
   final lista = (json['missoes'] as List? ?? [])

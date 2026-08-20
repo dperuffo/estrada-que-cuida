@@ -49,7 +49,9 @@ class AvisoUsuario {
 // com a política de RLS `coalesce(auth.jwt()->>'email', auth.jwt()->>'phone')`).
 String? _identidadeAtual() => SupabaseService.client.auth.currentUser?.phone;
 
-final avisosProvider = FutureProvider.autoDispose<List<AvisoUsuario>>((ref) async {
+final avisosProvider = FutureProvider.autoDispose<List<AvisoUsuario>>((
+  ref,
+) async {
   final identidade = _identidadeAtual();
   if (identidade == null || identidade.isEmpty) return [];
 
@@ -57,15 +59,18 @@ final avisosProvider = FutureProvider.autoDispose<List<AvisoUsuario>>((ref) asyn
   final supabase = SupabaseService.client;
 
   final agora = DateTime.now().toUtc().toIso8601String();
-  final linhas = await supabase
-      .from('comunicados')
-      .select(
-          'id, tipo, urgencia, titulo, resumo, corpo, imagem_path, segmentos_alvo, planos_alvo, empresas_alvo, fixado, data_publicacao, data_expiracao')
-      .eq('ativo', true)
-      .lte('data_publicacao', agora)
-      .or('data_expiracao.is.null,data_expiracao.gte.$agora')
-      .order('fixado', ascending: false)
-      .order('data_publicacao', ascending: false) as List;
+  final linhas =
+      await supabase
+              .from('comunicados')
+              .select(
+                'id, tipo, urgencia, titulo, resumo, corpo, imagem_path, segmentos_alvo, planos_alvo, empresas_alvo, fixado, data_publicacao, data_expiracao',
+              )
+              .eq('ativo', true)
+              .lte('data_publicacao', agora)
+              .or('data_expiracao.is.null,data_expiracao.gte.$agora')
+              .order('fixado', ascending: false)
+              .order('data_publicacao', ascending: false)
+          as List;
 
   if (linhas.isEmpty) return [];
 
@@ -75,10 +80,16 @@ final avisosProvider = FutureProvider.autoDispose<List<AvisoUsuario>>((ref) asyn
   // `perfil.empresaId` só).
   var segmentosUsuario = <String>{};
   var planosUsuario = <String>{};
-  final idsEmpresa = <String>[if (perfil?.empresaId != null) perfil!.empresaId!];
+  final idsEmpresa = <String>[
+    if (perfil?.empresaId != null) perfil!.empresaId!,
+  ];
   if (idsEmpresa.isNotEmpty) {
     final empresasData =
-        await supabase.from('empresas').select('id, segmento, plano').inFilter('id', idsEmpresa) as List;
+        await supabase
+                .from('empresas')
+                .select('id, segmento, plano')
+                .inFilter('id', idsEmpresa)
+            as List;
     for (final e in empresasData) {
       final m = e as Map<String, dynamic>;
       final seg = m['segmento'] as String?;
@@ -93,15 +104,24 @@ final avisosProvider = FutureProvider.autoDispose<List<AvisoUsuario>>((ref) asyn
     final segmentosAlvo = ((m['segmentos_alvo'] as List?) ?? []).cast<String>();
     final planosAlvo = ((m['planos_alvo'] as List?) ?? []).cast<String>();
     final empresasAlvo = ((m['empresas_alvo'] as List?) ?? []).cast<String>();
-    final segOk = segmentosAlvo.isEmpty || segmentosAlvo.any(segmentosUsuario.contains);
-    final planoOk = planosAlvo.isEmpty || planosAlvo.any(planosUsuario.contains);
-    final empresaOk = empresasAlvo.isEmpty || empresasAlvo.any(idsEmpresa.contains);
+    final segOk =
+        segmentosAlvo.isEmpty || segmentosAlvo.any(segmentosUsuario.contains);
+    final planoOk =
+        planosAlvo.isEmpty || planosAlvo.any(planosUsuario.contains);
+    final empresaOk =
+        empresasAlvo.isEmpty || empresasAlvo.any(idsEmpresa.contains);
     return segOk && planoOk && empresaOk;
   }).toList();
 
   final leituras =
-      await supabase.from('comunicados_leituras').select('comunicado_id').eq('usuario_email', identidade) as List;
-  final lidosSet = leituras.map((l) => (l as Map<String, dynamic>)['comunicado_id'] as String).toSet();
+      await supabase
+              .from('comunicados_leituras')
+              .select('comunicado_id')
+              .eq('usuario_email', identidade)
+          as List;
+  final lidosSet = leituras
+      .map((l) => (l as Map<String, dynamic>)['comunicado_id'] as String)
+      .toSet();
 
   return visiveis.map((l) {
     final m = l as Map<String, dynamic>;
@@ -131,11 +151,13 @@ Future<void> marcarAvisoLido(WidgetRef ref, String comunicadoId) async {
   final identidade = _identidadeAtual();
   if (identidade == null || identidade.isEmpty) return;
   try {
-    await SupabaseService.client.from('comunicados_leituras').upsert(
-      {'comunicado_id': comunicadoId, 'usuario_email': identidade},
-      onConflict: 'comunicado_id,usuario_email',
-      ignoreDuplicates: true,
-    );
+    await SupabaseService.client
+        .from('comunicados_leituras')
+        .upsert(
+          {'comunicado_id': comunicadoId, 'usuario_email': identidade},
+          onConflict: 'comunicado_id,usuario_email',
+          ignoreDuplicates: true,
+        );
   } catch (_) {
     // Best-effort — mesmo espírito das demais gravações "silenciosas" do app.
   }

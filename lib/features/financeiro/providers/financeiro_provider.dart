@@ -31,7 +31,8 @@ class FreteCombustivel {
 
   bool get emVolume => tipo == 'Volume';
 
-  factory FreteCombustivel.fromJson(Map<String, dynamic> json) => FreteCombustivel(
+  factory FreteCombustivel.fromJson(Map<String, dynamic> json) =>
+      FreteCombustivel(
         freteId: json['frete_id'] as String,
         titulo: json['titulo'] as String,
         status: json['status'] as String,
@@ -47,9 +48,14 @@ class TotaisCombustivel {
   final double consumido;
   final double saldo;
 
-  const TotaisCombustivel({required this.depositado, required this.consumido, required this.saldo});
+  const TotaisCombustivel({
+    required this.depositado,
+    required this.consumido,
+    required this.saldo,
+  });
 
-  factory TotaisCombustivel.fromJson(Map<String, dynamic> json) => TotaisCombustivel(
+  factory TotaisCombustivel.fromJson(Map<String, dynamic> json) =>
+      TotaisCombustivel(
         depositado: (json['depositado'] as num).toDouble(),
         consumido: (json['consumido'] as num).toDouble(),
         saldo: (json['saldo'] as num).toDouble(),
@@ -79,14 +85,16 @@ class PagamentoFrete {
   bool get isAdiantamento => tipo == 'adiantamento';
 
   factory PagamentoFrete.fromJson(Map<String, dynamic> json) => PagamentoFrete(
-        freteId: json['frete_id'] as String,
-        titulo: json['titulo'] as String,
-        tipo: json['tipo'] as String,
-        percentual: (json['percentual'] as num).toDouble(),
-        valor: (json['valor'] as num).toDouble(),
-        status: json['status'] as String,
-        pagoEm: json['pago_em'] != null ? DateTime.parse(json['pago_em'] as String) : null,
-      );
+    freteId: json['frete_id'] as String,
+    titulo: json['titulo'] as String,
+    tipo: json['tipo'] as String,
+    percentual: (json['percentual'] as num).toDouble(),
+    valor: (json['valor'] as num).toDouble(),
+    status: json['status'] as String,
+    pagoEm: json['pago_em'] != null
+        ? DateTime.parse(json['pago_em'] as String)
+        : null,
+  );
 }
 
 class FinanceiroResumo {
@@ -117,10 +125,14 @@ class FinanceiroResumo {
           .map((e) => FreteCombustivel.fromJson(e as Map<String, dynamic>))
           .toList(),
       totaisValor: combustivel?['totais_valor'] != null
-          ? TotaisCombustivel.fromJson(combustivel!['totais_valor'] as Map<String, dynamic>)
+          ? TotaisCombustivel.fromJson(
+              combustivel!['totais_valor'] as Map<String, dynamic>,
+            )
           : const TotaisCombustivel(depositado: 0, consumido: 0, saldo: 0),
       totaisVolume: combustivel?['totais_volume'] != null
-          ? TotaisCombustivel.fromJson(combustivel!['totais_volume'] as Map<String, dynamic>)
+          ? TotaisCombustivel.fromJson(
+              combustivel!['totais_volume'] as Map<String, dynamic>,
+            )
           : const TotaisCombustivel(depositado: 0, consumido: 0, saldo: 0),
       pagamentos: ((pagamentos?['itens'] as List?) ?? [])
           .map((e) => PagamentoFrete.fromJson(e as Map<String, dynamic>))
@@ -131,7 +143,9 @@ class FinanceiroResumo {
   }
 }
 
-final financeiroResumoProvider = FutureProvider.autoDispose<FinanceiroResumo?>((ref) async {
+final financeiroResumoProvider = FutureProvider.autoDispose<FinanceiroResumo?>((
+  ref,
+) async {
   final resp = await SupabaseService.client.rpc('motorista_financeiro_resumo');
   if (resp == null) return null;
   return FinanceiroResumo.fromJson(resp as Map<String, dynamic>);

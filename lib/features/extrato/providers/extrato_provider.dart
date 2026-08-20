@@ -26,10 +26,13 @@ class LancamentoPontos {
   }
 }
 
-final extratoPontosProvider = FutureProvider.autoDispose<List<LancamentoPontos>>((ref) async {
-  final rows = await SupabaseService.client
-      .from('fidelidade_pontos_ledger')
-      .select('tipo_evento, pontos, referencia, criado_em')
-      .order('criado_em', ascending: false);
-  return (rows as List).map((e) => LancamentoPontos.fromJson(e as Map<String, dynamic>)).toList();
-});
+final extratoPontosProvider =
+    FutureProvider.autoDispose<List<LancamentoPontos>>((ref) async {
+      final rows = await SupabaseService.client
+          .from('fidelidade_pontos_ledger')
+          .select('tipo_evento, pontos, referencia, criado_em')
+          .order('criado_em', ascending: false);
+      return (rows as List)
+          .map((e) => LancamentoPontos.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });

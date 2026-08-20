@@ -49,8 +49,14 @@ class DashboardScreen extends ConsumerWidget {
         surfaceTintColor: Colors.transparent,
         foregroundColor: AppTheme.glassTexto,
         iconTheme: const IconThemeData(color: AppTheme.glassIcone),
-        titleTextStyle: const TextStyle(color: AppTheme.glassTexto, fontSize: 18, fontWeight: FontWeight.w600),
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient)),
+        titleTextStyle: const TextStyle(
+          color: AppTheme.glassTexto,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
         actions: const [SinoAvisos()],
       ),
       drawer: const AppDrawer(),
@@ -67,7 +73,9 @@ class DashboardScreen extends ConsumerWidget {
           children: [
             Text(
               primeiroNome.isEmpty ? 'Olá!' : 'Olá, $primeiroNome!',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
@@ -117,7 +125,9 @@ class DashboardScreen extends ConsumerWidget {
               data: (saldo) => _CartaoNivel(saldo: saldo),
             ),
             const SizedBox(height: 16),
-            _CartaoVoltePraCasa(onTap: () => context.push('/catalogo', extra: 'volte_para_casa')),
+            _CartaoVoltePraCasa(
+              onTap: () => context.push('/catalogo', extra: 'volte_para_casa'),
+            ),
 
             // Sugestões — cartões dinâmicos, só aparecem quando fazem
             // sentido pro motorista agora (nada de espaço vazio "avisando
@@ -141,7 +151,10 @@ class DashboardScreen extends ConsumerWidget {
             ),
 
             const SizedBox(height: 28),
-            const Text('Suas missões', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text(
+              'Suas missões',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             const SizedBox(height: 4),
             const Text(
               'Complete missões pra ganhar pontos bônus, além dos pontos normais de cada abastecimento.',
@@ -174,7 +187,10 @@ class DashboardScreen extends ConsumerWidget {
             // R$/L) e gráfico dos últimos 7 dias. Some se ainda não há
             // veículo vinculado (nada pra mostrar).
             homeResumoAsync.maybeWhen(
-              data: (resumo) => resumo == null || resumo.status != 'ok' || resumo.placa == null
+              data: (resumo) =>
+                  resumo == null ||
+                      resumo.status != 'ok' ||
+                      resumo.placa == null
                   ? const SizedBox.shrink()
                   : Padding(
                       padding: const EdgeInsets.only(top: 28),
@@ -246,7 +262,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
         final pontos = registro.pontos ?? 0;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(pontos > 0 ? '$label! Você ganhou $pontos pontos.' : '$label!'),
+            content: Text(
+              pontos > 0 ? '$label! Você ganhou $pontos pontos.' : '$label!',
+            ),
             backgroundColor: Colors.green,
           ),
         );
@@ -254,7 +272,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não consegui registrar agora. Tente de novo.')),
+          const SnackBar(
+            content: Text('Não consegui registrar agora. Tente de novo.'),
+          ),
         );
       }
     } finally {
@@ -283,35 +303,38 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
         // acabou de retomar de uma pausa (fim_pausa). O relógio de condução
         // contínua (excedeuLimite) reinicia nos dois casos, porque os dois
         // marcam "voltei a dirigir agora".
-        final dirigindo = ultimo?.tipoEvento == 'inicio_jornada' || ultimo?.tipoEvento == 'fim_pausa';
+        final dirigindo =
+            ultimo?.tipoEvento == 'inicio_jornada' ||
+            ultimo?.tipoEvento == 'fim_pausa';
         final emPausa = ultimo?.tipoEvento == 'inicio_pausa';
         final descansando = ultimo?.tipoEvento == 'inicio_descanso';
         final nuncaIniciado = ultimo == null;
         final desde = ultimo?.criadoEm;
         final duracao = desde != null ? DateTime.now().difference(desde) : null;
-        final excedeuLimite = dirigindo && duracao != null && duracao > _limiteDirecaoContinua;
+        final excedeuLimite =
+            dirigindo && duracao != null && duracao > _limiteDirecaoContinua;
 
         final cor = dirigindo
             ? (excedeuLimite ? Colors.red.shade700 : const Color(0xFF1B7A43))
             : emPausa
-                ? const Color(0xFFB8860B)
-                : descansando
-                    ? const Color(0xFF1E6FBF)
-                    : Colors.black45;
+            ? const Color(0xFFB8860B)
+            : descansando
+            ? const Color(0xFF1E6FBF)
+            : Colors.black45;
 
         final icone = dirigindo
             ? Icons.local_shipping_outlined
             : emPausa
-                ? Icons.free_breakfast_outlined
-                : Icons.bedtime_outlined;
+            ? Icons.free_breakfast_outlined
+            : Icons.bedtime_outlined;
 
         final texto = nuncaIniciado
             ? 'Jornada não iniciada'
             : dirigindo
-                ? 'Dirigindo há ${_formatarDuracao(duracao!)}'
-                : emPausa
-                    ? 'Em pausa há ${_formatarDuracao(duracao!)}'
-                    : 'Descansando há ${_formatarDuracao(duracao!)}';
+            ? 'Dirigindo há ${_formatarDuracao(duracao!)}'
+            : emPausa
+            ? 'Em pausa há ${_formatarDuracao(duracao!)}'
+            : 'Descansando há ${_formatarDuracao(duracao!)}';
 
         Widget botoes;
         if (dirigindo) {
@@ -319,7 +342,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _processando ? null : () => _alternar('inicio_pausa'),
+                  onPressed: _processando
+                      ? null
+                      : () => _alternar('inicio_pausa'),
                   icon: const Icon(Icons.free_breakfast_outlined, size: 18),
                   label: Text(_processando ? '...' : 'Iniciar pausa'),
                 ),
@@ -327,7 +352,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _processando ? null : () => _alternar('inicio_descanso'),
+                  onPressed: _processando
+                      ? null
+                      : () => _alternar('inicio_descanso'),
                   icon: const Icon(Icons.bedtime_outlined, size: 18),
                   label: Text(_processando ? '...' : 'Iniciar descanso'),
                 ),
@@ -347,7 +374,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
               const SizedBox(width: 8),
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: _processando ? null : () => _alternar('inicio_descanso'),
+                  onPressed: _processando
+                      ? null
+                      : () => _alternar('inicio_descanso'),
                   icon: const Icon(Icons.bedtime_outlined, size: 18),
                   label: Text(_processando ? '...' : 'Iniciar descanso'),
                 ),
@@ -358,7 +387,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
           botoes = SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
-              onPressed: _processando ? null : () => _alternar('inicio_jornada'),
+              onPressed: _processando
+                  ? null
+                  : () => _alternar('inicio_jornada'),
               icon: const Icon(Icons.local_shipping_outlined, size: 18),
               label: Text(_processando ? '...' : 'Iniciar jornada'),
             ),
@@ -379,7 +410,11 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
                     Expanded(
                       child: Text(
                         texto,
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: cor),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: cor,
+                        ),
                       ),
                     ),
                   ],
@@ -418,7 +453,10 @@ class _BadgeClassificacao extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Text(
         classificacao,
         style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12),
@@ -452,7 +490,8 @@ class _BarraSaldo extends StatelessWidget {
     this.textoEstourou = '(estourou)',
   });
 
-  String _formata(double v) => emVolume ? '${_formatoNumero.format(v)} L' : _formatoMoeda.format(v);
+  String _formata(double v) =>
+      emVolume ? '${_formatoNumero.format(v)} L' : _formatoMoeda.format(v);
 
   @override
   Widget build(BuildContext context) {
@@ -461,8 +500,8 @@ class _BarraSaldo extends StatelessWidget {
     final cor = estourou
         ? Colors.redAccent
         : progresso < 0.2
-            ? const Color(0xFFC97A00)
-            : const Color(0xFF1B7A43);
+        ? const Color(0xFFC97A00)
+        : const Color(0xFF1B7A43);
 
     // Rótulo (pode incluir o título do frete, tamanho variável) numa linha
     // e o saldo embaixo, à parte — um Row com os dois lado a lado estourava
@@ -470,11 +509,20 @@ class _BarraSaldo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(rotulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+        Text(
+          rotulo,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+        ),
         const SizedBox(height: 4),
         Text(
-          estourou ? '${_formata(saldo)} $textoEstourou' : '${_formata(saldo)} $textoDentroDoLimite',
-          style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 13),
+          estourou
+              ? '${_formata(saldo)} $textoEstourou'
+              : '${_formata(saldo)} $textoDentroDoLimite',
+          style: TextStyle(
+            color: cor,
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 6),
         ClipRRect(
@@ -487,7 +535,10 @@ class _BarraSaldo extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 2),
-        Text('de ${_formata(limite)}', style: const TextStyle(color: Colors.black45, fontSize: 11.5)),
+        Text(
+          'de ${_formata(limite)}',
+          style: const TextStyle(color: Colors.black45, fontSize: 11.5),
+        ),
       ],
     );
   }
@@ -511,16 +562,24 @@ class _CartaoCliente extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(Icons.apartment_outlined, color: Colors.black54, size: 22),
+                const Icon(
+                  Icons.apartment_outlined,
+                  color: Colors.black54,
+                  size: 22,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     resumo.empresaNome ?? 'Cliente',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (resumo.classificacao != null) _BadgeClassificacao(classificacao: resumo.classificacao!),
+                if (resumo.classificacao != null)
+                  _BadgeClassificacao(classificacao: resumo.classificacao!),
               ],
             ),
             if (cota != null || frete != null) ...[
@@ -543,7 +602,8 @@ class _CartaoCliente extends StatelessWidget {
               ],
               if (cota != null)
                 _BarraSaldo(
-                  rotulo: 'Cota de combustível (${cota.periodicidade.toLowerCase()})',
+                  rotulo:
+                      'Cota de combustível (${cota.periodicidade.toLowerCase()})',
                   limite: cota.limite,
                   saldo: cota.saldo,
                   emVolume: cota.emVolume,
@@ -561,7 +621,11 @@ class _IndicadorConsumo extends StatelessWidget {
   final String valor;
   final IconData icone;
 
-  const _IndicadorConsumo({required this.rotulo, required this.valor, required this.icone});
+  const _IndicadorConsumo({
+    required this.rotulo,
+    required this.valor,
+    required this.icone,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -576,9 +640,16 @@ class _IndicadorConsumo extends StatelessWidget {
           children: [
             Icon(icone, color: const Color(0xFF1E6FBF), size: 22),
             const SizedBox(height: 6),
-            Text(valor, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            Text(
+              valor,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
             const SizedBox(height: 2),
-            Text(rotulo, style: const TextStyle(color: Colors.black54, fontSize: 11.5), textAlign: TextAlign.center),
+            Text(
+              rotulo,
+              style: const TextStyle(color: Colors.black54, fontSize: 11.5),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -598,7 +669,10 @@ class _SecaoConsumo extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Seu consumo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text(
+          'Seu consumo',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+        ),
         const SizedBox(height: 4),
         Text(
           'Hoje: ${_formatoNumero.format(resumo.hoje.litros)} L · ${_formatoMoeda.format(resumo.hoje.valor)}',
@@ -609,20 +683,27 @@ class _SecaoConsumo extends StatelessWidget {
           children: [
             _IndicadorConsumo(
               rotulo: 'Média KM/L (30 dias)',
-              valor: medias.kmL == null ? '—' : '${medias.kmL!.toStringAsFixed(2)} km/L',
+              valor: medias.kmL == null
+                  ? '—'
+                  : '${medias.kmL!.toStringAsFixed(2)} km/L',
               icone: Icons.speed_outlined,
             ),
             const SizedBox(width: 12),
             _IndicadorConsumo(
               rotulo: 'Média R\$/L (30 dias)',
-              valor: medias.valorPorLitro == null ? '—' : _formatoMoeda.format(medias.valorPorLitro),
+              valor: medias.valorPorLitro == null
+                  ? '—'
+                  : _formatoMoeda.format(medias.valorPorLitro),
               icone: Icons.local_gas_station_outlined,
             ),
           ],
         ),
         if (resumo.serie7Dias.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text('Litros abastecidos — últimos 7 dias', style: TextStyle(color: Colors.black54, fontSize: 12.5)),
+          const Text(
+            'Litros abastecidos — últimos 7 dias',
+            style: TextStyle(color: Colors.black54, fontSize: 12.5),
+          ),
           const SizedBox(height: 8),
           SizedBox(
             height: 140,
@@ -644,7 +725,9 @@ class _GraficoBarrasDiario extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maximo = pontos.map((p) => p.litros).fold<double>(0, (a, b) => a > b ? a : b);
+    final maximo = pontos
+        .map((p) => p.litros)
+        .fold<double>(0, (a, b) => a > b ? a : b);
     const alturaMax = 92.0;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -655,18 +738,26 @@ class _GraficoBarrasDiario extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
             if (p.litros > 0)
-              Text(_formatoNumero.format(p.litros), style: const TextStyle(fontSize: 10, color: Colors.black54)),
+              Text(
+                _formatoNumero.format(p.litros),
+                style: const TextStyle(fontSize: 10, color: Colors.black54),
+              ),
             const SizedBox(height: 4),
             Container(
               width: 22,
               height: altura < 3 && p.litros > 0 ? 3 : altura,
               decoration: BoxDecoration(
                 color: const Color(0xFF1E6FBF),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(4),
+                ),
               ),
             ),
             const SizedBox(height: 6),
-            Text(_formatoDiaCurto.format(p.dia), style: const TextStyle(fontSize: 10.5, color: Colors.black54)),
+            Text(
+              _formatoDiaCurto.format(p.dia),
+              style: const TextStyle(fontSize: 10.5, color: Colors.black54),
+            ),
           ],
         );
       }).toList(),
@@ -693,14 +784,24 @@ class _CartaoVoltePraCasa extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              const Icon(Icons.home_outlined, color: Color(0xFF1B7A43), size: 28),
+              const Icon(
+                Icons.home_outlined,
+                color: Color(0xFF1B7A43),
+                size: 28,
+              ),
               const SizedBox(width: 12),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Cansado na estrada?', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Veja os benefícios de Volte para Casa.', style: TextStyle(color: Colors.black54)),
+                    Text(
+                      'Cansado na estrada?',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'Veja os benefícios de Volte para Casa.',
+                      style: TextStyle(color: Colors.black54),
+                    ),
                   ],
                 ),
               ),
@@ -722,7 +823,9 @@ class _CartaoNivel extends StatelessWidget {
   Widget build(BuildContext context) {
     final nivel = nivelParaSaldo(saldo);
     final proximo = proximoNivel(saldo);
-    final progresso = proximo == null ? 1.0 : (saldo - nivel.min) / (proximo.min - nivel.min);
+    final progresso = proximo == null
+        ? 1.0
+        : (saldo - nivel.min) / (proximo.min - nivel.min);
 
     return Card(
       child: Padding(
@@ -737,8 +840,17 @@ class _CartaoNivel extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Nível ${nivel.nome}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text('${_formatoPontos.format(saldo)} pontos', style: const TextStyle(color: Colors.black54)),
+                    Text(
+                      'Nível ${nivel.nome}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    Text(
+                      '${_formatoPontos.format(saldo)} pontos',
+                      style: const TextStyle(color: Colors.black54),
+                    ),
                   ],
                 ),
               ],
@@ -803,8 +915,17 @@ class _CartaoSugestao extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(subtitulo, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+                    Text(
+                      titulo,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      subtitulo,
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -828,7 +949,10 @@ class _BlocoMissoes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (missoes.isEmpty) {
-      return const Text('Nenhuma missão disponível no momento.', style: TextStyle(color: Colors.black45));
+      return const Text(
+        'Nenhuma missão disponível no momento.',
+        style: TextStyle(color: Colors.black45),
+      );
     }
 
     final pendentes = missoes.where((m) => !m.concluida).toList()
@@ -866,7 +990,9 @@ class _CartaoMissao extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progresso = missao.meta == 0 ? 0.0 : missao.progresso / missao.meta;
-    final cor = missao.concluida ? const Color(0xFF1B7A43) : const Color(0xFF1E6FBF);
+    final cor = missao.concluida
+        ? const Color(0xFF1B7A43)
+        : const Color(0xFF1E6FBF);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -874,13 +1000,20 @@ class _CartaoMissao extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
-            Icon(missao.iconeData, color: missao.concluida ? cor : Colors.black38, size: 30),
+            Icon(
+              missao.iconeData,
+              color: missao.concluida ? cor : Colors.black38,
+              size: 30,
+            ),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(missao.titulo, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    missao.titulo,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   if (!missao.concluida) ...[
                     const SizedBox(height: 6),
                     ClipRRect(
@@ -895,12 +1028,19 @@ class _CartaoMissao extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Faltam ${(missao.meta - missao.progresso).clamp(0, missao.meta)} — +${missao.bonus} pontos ao concluir',
-                      style: const TextStyle(color: Colors.black54, fontSize: 12.5),
+                      style: const TextStyle(
+                        color: Colors.black54,
+                        fontSize: 12.5,
+                      ),
                     ),
                   ] else
                     Text(
                       'Concluída — +${missao.bonus} pontos',
-                      style: TextStyle(color: cor, fontWeight: FontWeight.bold, fontSize: 12.5),
+                      style: TextStyle(
+                        color: cor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12.5,
+                      ),
                     ),
                 ],
               ),

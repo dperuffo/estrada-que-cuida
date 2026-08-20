@@ -61,15 +61,28 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   Future<void> _atualizar() async {
     try {
       final frete = await buscarFrete(widget.freteId);
-      final negociacao = frete != null && frete.status == 'disponivel' ? await buscarMinhaNegociacao(widget.freteId) : null;
-      final postos = frete != null ? await buscarPostosRecomendados(widget.freteId) : <PostoRecomendado>[];
-      final eventos = frete != null ? await buscarEventosFrete(widget.freteId) : <EventoFrete>[];
-      final avaliacoes = frete != null && frete.status == 'concluido' ? await buscarAvaliacoesFrete(widget.freteId) : <AvaliacaoFrete>[];
+      final negociacao = frete != null && frete.status == 'disponivel'
+          ? await buscarMinhaNegociacao(widget.freteId)
+          : null;
+      final postos = frete != null
+          ? await buscarPostosRecomendados(widget.freteId)
+          : <PostoRecomendado>[];
+      final eventos = frete != null
+          ? await buscarEventosFrete(widget.freteId)
+          : <EventoFrete>[];
+      final avaliacoes = frete != null && frete.status == 'concluido'
+          ? await buscarAvaliacoesFrete(widget.freteId)
+          : <AvaliacaoFrete>[];
       // Só pergunta a localização quando ainda faz sentido decidir (mercado
       // aberto ou atribuição direta aguardando confirmação) — depois disso
       // o motorista já aceitou, não precisa mais do prompt do navegador.
-      final precisaDistancia = frete != null && (frete.status == 'disponivel' || frete.status == 'aguardando_confirmacao');
-      final posicao = precisaDistancia && _minhaPosicao == null ? await obterLocalizacaoAtual() : _minhaPosicao;
+      final precisaDistancia =
+          frete != null &&
+          (frete.status == 'disponivel' ||
+              frete.status == 'aguardando_confirmacao');
+      final posicao = precisaDistancia && _minhaPosicao == null
+          ? await obterLocalizacaoAtual()
+          : _minhaPosicao;
       if (!mounted) return;
       setState(() {
         _frete = frete;
@@ -83,13 +96,17 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _erro = e is PostgrestException ? e.message : 'Não consegui carregar o frete agora.';
+        _erro = e is PostgrestException
+            ? e.message
+            : 'Não consegui carregar o frete agora.';
         _carregando = false;
       });
     }
   }
 
-  String _mensagemErro(Object e) => e is PostgrestException ? e.message : 'Não foi possível completar a ação agora.';
+  String _mensagemErro(Object e) => e is PostgrestException
+      ? e.message
+      : 'Não foi possível completar a ação agora.';
 
   Future<void> _executar(Future<void> Function() acao) async {
     setState(() => _processando = true);
@@ -108,6 +125,12 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Detalhes do frete'),
         actions: [
           IconButton(
@@ -120,47 +143,73 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       body: _carregando
           ? const Center(child: CircularProgressIndicator())
           : _erro != null
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(_erro!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red)),
-                        const SizedBox(height: 12),
-                        ElevatedButton(onPressed: _carregar, child: const Text('Tentar de novo')),
-                      ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _erro!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.red),
                     ),
-                  ),
-                )
-              : _frete == null
-              ? const Center(child: Text('Frete não encontrado.'))
-              : RefreshIndicator(
-                  onRefresh: _atualizar,
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _CartaoInfo(frete: _frete!, minhaPosicao: _minhaPosicao),
-                      if (_frete!.coleta.preenchido || _frete!.entrega.preenchido) ...[
-                        const SizedBox(height: 12),
-                        _BlocoEndereco(titulo: '📍 Coleta', endereco: _frete!.coleta),
-                        const SizedBox(height: 8),
-                        _BlocoEndereco(titulo: '📍 Entrega', endereco: _frete!.entrega),
-                      ],
-                      if (_frete!.status == 'disponivel' || _frete!.status == 'aguardando_confirmacao') ...[
-                        const SizedBox(height: 12),
-                        _CalculadoraLucro(frete: _frete!),
-                      ],
-                      const SizedBox(height: 20),
-                      if (_frete!.status == 'aguardando_confirmacao') _blocoAtribuicaoDireta(),
-                      if (_frete!.status == 'disponivel') _blocoNegociacao(),
-                      if (_frete!.status == 'aceito' || _frete!.status == 'em_andamento') ..._blocoExecucao(),
-                      if (_frete!.status == 'concluido') ..._blocoConcluido(),
-                      if (_frete!.status == 'cancelado') const _Aviso('Esse frete foi cancelado pelo cliente.', cor: Colors.red),
-                      if (_frete!.status == 'recusado') const _Aviso('Você recusou esse frete.', cor: Colors.black54),
-                    ],
-                  ),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: _carregar,
+                      child: const Text('Tentar de novo'),
+                    ),
+                  ],
                 ),
+              ),
+            )
+          : _frete == null
+          ? const Center(child: Text('Frete não encontrado.'))
+          : RefreshIndicator(
+              onRefresh: _atualizar,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _CartaoInfo(frete: _frete!, minhaPosicao: _minhaPosicao),
+                  if (_frete!.coleta.preenchido ||
+                      _frete!.entrega.preenchido) ...[
+                    const SizedBox(height: 12),
+                    _BlocoEndereco(
+                      titulo: '📍 Coleta',
+                      endereco: _frete!.coleta,
+                    ),
+                    const SizedBox(height: 8),
+                    _BlocoEndereco(
+                      titulo: '📍 Entrega',
+                      endereco: _frete!.entrega,
+                    ),
+                  ],
+                  if (_frete!.status == 'disponivel' ||
+                      _frete!.status == 'aguardando_confirmacao') ...[
+                    const SizedBox(height: 12),
+                    _CalculadoraLucro(frete: _frete!),
+                  ],
+                  const SizedBox(height: 20),
+                  if (_frete!.status == 'aguardando_confirmacao')
+                    _blocoAtribuicaoDireta(),
+                  if (_frete!.status == 'disponivel') _blocoNegociacao(),
+                  if (_frete!.status == 'aceito' ||
+                      _frete!.status == 'em_andamento')
+                    ..._blocoExecucao(),
+                  if (_frete!.status == 'concluido') ..._blocoConcluido(),
+                  if (_frete!.status == 'cancelado')
+                    const _Aviso(
+                      'Esse frete foi cancelado pelo cliente.',
+                      cor: Colors.red,
+                    ),
+                  if (_frete!.status == 'recusado')
+                    const _Aviso(
+                      'Você recusou esse frete.',
+                      cor: Colors.black54,
+                    ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -174,12 +223,19 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         ),
         const SizedBox(height: 12),
         ElevatedButton(
-          onPressed: _processando ? null : () => _executar(() => responderFreteDireto(widget.freteId, true)),
+          onPressed: _processando
+              ? null
+              : () =>
+                    _executar(() => responderFreteDireto(widget.freteId, true)),
           child: const Text('Aceitar frete'),
         ),
         const SizedBox(height: 8),
         OutlinedButton(
-          onPressed: _processando ? null : () => _executar(() => responderFreteDireto(widget.freteId, false)),
+          onPressed: _processando
+              ? null
+              : () => _executar(
+                  () => responderFreteDireto(widget.freteId, false),
+                ),
           child: const Text('Recusar'),
         ),
       ],
@@ -196,25 +252,38 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ElevatedButton(
-            onPressed: _processando ? null : () => _executar(() => aceitarFreteDisponivel(widget.freteId)),
-            child: Text('Aceitar ${_formatoMoeda.format(_frete!.valorOferecido)}'),
+            onPressed: _processando
+                ? null
+                : () => _executar(() => aceitarFreteDisponivel(widget.freteId)),
+            child: Text(
+              'Aceitar ${_formatoMoeda.format(_frete!.valorOferecido)}',
+            ),
           ),
           const SizedBox(height: 8),
           const Row(
             children: [
               Expanded(child: Divider()),
-              Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('ou', style: TextStyle(color: Colors.black45, fontSize: 12))),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 8),
+                child: Text(
+                  'ou',
+                  style: TextStyle(color: Colors.black45, fontSize: 12),
+                ),
+              ),
               Expanded(child: Divider()),
             ],
           ),
           const SizedBox(height: 8),
           _FormularioProposta(
             processando: _processando,
-            onEnviar: (valor) => _executar(() => abrirNegociacaoFrete(widget.freteId, valor)),
+            onEnviar: (valor) =>
+                _executar(() => abrirNegociacaoFrete(widget.freteId, valor)),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: _processando ? null : () => Navigator.of(context).maybePop(),
+            onPressed: _processando
+                ? null
+                : () => Navigator.of(context).maybePop(),
             child: const Text('Não me interessa'),
           ),
         ],
@@ -237,7 +306,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Histórico da negociação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const Text(
+          'Histórico da negociação',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         ...negociacao.rodadas.map(
           (r) => Padding(
@@ -253,18 +325,25 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           const _Aviso('Aguardando resposta do cliente.', cor: Colors.black54)
         else ...[
           ElevatedButton(
-            onPressed: _processando ? null : () => _executar(() => aceitarNegociacaoFrete(negociacao.id)),
-            child: Text('Aceitar ${_formatoMoeda.format(ultima!.valorProposto)}'),
+            onPressed: _processando
+                ? null
+                : () => _executar(() => aceitarNegociacaoFrete(negociacao.id)),
+            child: Text(
+              'Aceitar ${_formatoMoeda.format(ultima!.valorProposto)}',
+            ),
           ),
           const SizedBox(height: 8),
           _FormularioProposta(
             processando: _processando,
             label: 'Contrapropor',
-            onEnviar: (valor) => _executar(() => proporRodadaNegociacao(negociacao.id, valor)),
+            onEnviar: (valor) =>
+                _executar(() => proporRodadaNegociacao(negociacao.id, valor)),
           ),
           const SizedBox(height: 8),
           OutlinedButton(
-            onPressed: _processando ? null : () => _executar(() => recusarNegociacaoFrete(negociacao.id)),
+            onPressed: _processando
+                ? null
+                : () => _executar(() => recusarNegociacaoFrete(negociacao.id)),
             child: const Text('Recusar / retirar proposta'),
           ),
         ],
@@ -282,8 +361,13 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   // opcional em saiu_origem/chegou_posto/parada.
   Future<Uint8List?> _capturarFoto() async {
     try {
-      final foto = await ImagePicker().pickImage(source: ImageSource.camera, imageQuality: 70, maxWidth: 1600);
-      if (foto == null) return null; // usuário cancelou — não é erro, não mostra nada
+      final foto = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+        maxWidth: 1600,
+      );
+      if (foto == null)
+        return null; // usuário cancelou — não é erro, não mostra nada
       return await foto.readAsBytes();
     } catch (e) {
       // Fase foto-evidência-checkpoints-3 — achado do Daniel: "não está
@@ -322,13 +406,20 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             child: Image.memory(bytes, fit: BoxFit.contain),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Tirar de novo')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Tirar de novo'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Confirmar'),
+            ),
           ],
         ),
       );
       if (confirmou == true) return bytes;
-      if (confirmou == null) return null; // fechou o diálogo sem escolher — cancela
+      if (confirmou == null)
+        return null; // fechou o diálogo sem escolher — cancela
       // false: volta pro topo do loop e abre a câmera de novo
       if (!mounted) return null;
     }
@@ -339,10 +430,18 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Anexar uma foto?'),
-        content: const Text('Opcional, mas ajuda o cliente a acompanhar a viagem.'),
+        content: const Text(
+          'Opcional, mas ajuda o cliente a acompanhar a viagem.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Pular')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Tirar foto')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Pular'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Tirar foto'),
+          ),
         ],
       ),
     );
@@ -361,8 +460,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       fotoBytes = await _tirarFoto();
       if (fotoBytes == null) {
         if (mounted) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Esse checkpoint exige uma foto.')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Esse checkpoint exige uma foto.')),
+          );
         }
         return;
       }
@@ -374,7 +474,11 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     await _executar(() async {
       String? fotoPath;
       if (fotoBytes != null) {
-        fotoPath = await enviarFotoEvidenciaFrete(freteId: widget.freteId, tipoEvento: tipoEvento, bytes: fotoBytes);
+        fotoPath = await enviarFotoEvidenciaFrete(
+          freteId: widget.freteId,
+          tipoEvento: tipoEvento,
+          bytes: fotoBytes,
+        );
       }
       await registrarEventoFrete(
         widget.freteId,
@@ -404,7 +508,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           'Use só em caso real de emergência.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancelar'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
             onPressed: () => Navigator.pop(ctx, true),
@@ -419,7 +526,12 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final posicao = await obterLocalizacaoAtual();
-      await registrarEventoFrete(widget.freteId, 'panico', lat: posicao?.latitude, lon: posicao?.longitude);
+      await registrarEventoFrete(
+        widget.freteId,
+        'panico',
+        lat: posicao?.latitude,
+        lon: posicao?.longitude,
+      );
       await dispararAlertaPanicoFrete(widget.freteId);
       await _carregar();
       messenger.showSnackBar(
@@ -435,7 +547,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     }
   }
 
-  Future<void> _registrarComPosto(String tipoEvento, {required bool fotoObrigatoria}) async {
+  Future<void> _registrarComPosto(
+    String tipoEvento, {
+    required bool fotoObrigatoria,
+  }) async {
     String? postoId;
     if (_postos.isNotEmpty) {
       postoId = await showModalBottomSheet<String>(
@@ -446,23 +561,36 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             children: [
               const Padding(
                 padding: EdgeInsets.all(12),
-                child: Text('Em qual posto?', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(
+                  'Em qual posto?',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
               ),
               ..._postos.map(
                 (p) => ListTile(
-                  leading: const Icon(Icons.local_gas_station, color: AppTheme.frota600),
+                  leading: const Icon(
+                    Icons.local_gas_station,
+                    color: AppTheme.frota600,
+                  ),
                   title: Text(p.nomePosto),
                   onTap: () => Navigator.pop(ctx, p.id),
                 ),
               ),
-              ListTile(title: const Text('Outro posto (não listado)'), onTap: () => Navigator.pop(ctx, null)),
+              ListTile(
+                title: const Text('Outro posto (não listado)'),
+                onTap: () => Navigator.pop(ctx, null),
+              ),
             ],
           ),
         ),
       );
     }
     if (!mounted) return;
-    await _registrarEvento(tipoEvento, postoId: postoId, fotoObrigatoria: fotoObrigatoria);
+    await _registrarEvento(
+      tipoEvento,
+      postoId: postoId,
+      fotoObrigatoria: fotoObrigatoria,
+    );
   }
 
   // Fase P0.4 — pedido do plano: ocorrência precisa de um código
@@ -494,9 +622,17 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 DropdownButtonFormField<String>(
                   initialValue: codigoSelecionado,
                   isExpanded: true,
-                  decoration: const InputDecoration(labelText: 'Tipo de ocorrência', isDense: true),
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de ocorrência',
+                    isDense: true,
+                  ),
                   items: _labelCodigoOcorrencia.entries
-                      .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+                      .map(
+                        (e) => DropdownMenuItem(
+                          value: e.key,
+                          child: Text(e.value),
+                        ),
+                      )
                       .toList(),
                   onChanged: (v) => setStateDialog(() => codigoSelecionado = v),
                 ),
@@ -504,16 +640,24 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 TextField(
                   controller: controller,
                   maxLines: 3,
-                  decoration: const InputDecoration(hintText: 'Descreva o que aconteceu'),
+                  decoration: const InputDecoration(
+                    hintText: 'Descreva o que aconteceu',
+                  ),
                 ),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancelar'),
+              ),
               TextButton(
                 onPressed: codigoSelecionado == null
                     ? null
-                    : () => Navigator.pop(ctx, (codigoSelecionado!, controller.text.trim())),
+                    : () => Navigator.pop(ctx, (
+                        codigoSelecionado!,
+                        controller.text.trim(),
+                      )),
                 child: const Text('Continuar'),
               ),
             ],
@@ -534,15 +678,20 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
 
   Future<void> _verFoto(String path) async {
     try {
-      final url = await SupabaseService.client.storage.from('fretes-evidencias').createSignedUrl(path, 3600);
+      final url = await SupabaseService.client.storage
+          .from('fretes-evidencias')
+          .createSignedUrl(path, 3600);
       if (!mounted) return;
       await showDialog(
         context: context,
-        builder: (_) => Dialog(child: InteractiveViewer(child: Image.network(url))),
+        builder: (_) =>
+            Dialog(child: InteractiveViewer(child: Image.network(url))),
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Não consegui abrir a foto.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Não consegui abrir a foto.')),
+        );
       }
     }
   }
@@ -550,18 +699,32 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   List<Widget> _blocoExecucao() {
     return [
       if (_postos.isNotEmpty) ...[
-        const Text('Postos recomendados', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const Text(
+          'Postos recomendados',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         ..._postos.map(
           (p) => Card(
             margin: const EdgeInsets.only(bottom: 6),
             child: ListTile(
               dense: true,
-              leading: const Icon(Icons.local_gas_station_outlined, color: AppTheme.frota600),
+              leading: const Icon(
+                Icons.local_gas_station_outlined,
+                color: AppTheme.frota600,
+              ),
               title: Text(p.nomePosto, style: const TextStyle(fontSize: 13)),
               subtitle: p.itemCatalogoId != null
-                  ? const Text('🎟️ tem benefício disponível — confira no Catálogo', style: TextStyle(fontSize: 11.5))
-                  : (p.observacao != null ? Text(p.observacao!, style: const TextStyle(fontSize: 11.5)) : null),
+                  ? const Text(
+                      '🎟️ tem benefício disponível — confira no Catálogo',
+                      style: TextStyle(fontSize: 11.5),
+                    )
+                  : (p.observacao != null
+                        ? Text(
+                            p.observacao!,
+                            style: const TextStyle(fontSize: 11.5),
+                          )
+                        : null),
             ),
           ),
         ),
@@ -577,13 +740,19 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: _processando ? null : _registrarPanico,
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700, foregroundColor: Colors.white),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade700,
+            foregroundColor: Colors.white,
+          ),
           icon: const Icon(Icons.emergency_outlined),
           label: const Text('Alerta de emergência'),
         ),
       ),
       const SizedBox(height: 16),
-      const Text('Acompanhamento da viagem', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      const Text(
+        'Acompanhamento da viagem',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
       const SizedBox(height: 8),
       const Text(
         '📷 Foto obrigatória em: abasteceu, chegou no destino, concluir e ocorrência.',
@@ -601,33 +770,53 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           // travar o botão de saída deles.
           if (!_jaTemEvento('chegou_origem'))
             ElevatedButton.icon(
-              onPressed: _processando ? null : () => _registrarEvento('chegou_origem', fotoObrigatoria: false),
+              onPressed: _processando
+                  ? null
+                  : () => _registrarEvento(
+                      'chegou_origem',
+                      fotoObrigatoria: false,
+                    ),
               icon: const Icon(Icons.flag_circle_outlined, size: 18),
               label: const Text('Cheguei na origem'),
             ),
           if (!_jaTemEvento('saiu_origem'))
             ElevatedButton.icon(
-              onPressed: _processando ? null : () => _registrarEvento('saiu_origem', fotoObrigatoria: false),
+              onPressed: _processando
+                  ? null
+                  : () =>
+                        _registrarEvento('saiu_origem', fotoObrigatoria: false),
               icon: const Icon(Icons.play_arrow, size: 18),
               label: const Text('Saí da origem'),
             ),
           OutlinedButton.icon(
-            onPressed: _processando ? null : () => _registrarComPosto('chegou_posto', fotoObrigatoria: false),
+            onPressed: _processando
+                ? null
+                : () => _registrarComPosto(
+                    'chegou_posto',
+                    fotoObrigatoria: false,
+                  ),
             icon: const Icon(Icons.local_gas_station_outlined, size: 18),
             label: const Text('Cheguei num posto'),
           ),
           OutlinedButton.icon(
-            onPressed: _processando ? null : () => _registrarComPosto('abasteceu', fotoObrigatoria: true),
+            onPressed: _processando
+                ? null
+                : () => _registrarComPosto('abasteceu', fotoObrigatoria: true),
             icon: const Icon(Icons.local_gas_station, size: 18),
             label: const Text('Abasteci 📷'),
           ),
           OutlinedButton.icon(
-            onPressed: _processando ? null : () => _registrarEvento('parada', fotoObrigatoria: false),
+            onPressed: _processando
+                ? null
+                : () => _registrarEvento('parada', fotoObrigatoria: false),
             icon: const Icon(Icons.pause_circle_outline, size: 18),
             label: const Text('Parada'),
           ),
           OutlinedButton.icon(
-            onPressed: _processando ? null : () => _registrarEvento('chegou_destino', fotoObrigatoria: true),
+            onPressed: _processando
+                ? null
+                : () =>
+                      _registrarEvento('chegou_destino', fotoObrigatoria: true),
             icon: const Icon(Icons.flag_outlined, size: 18),
             label: const Text('Cheguei no destino 📷'),
           ),
@@ -641,7 +830,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       const SizedBox(height: 12),
       ElevatedButton.icon(
         onPressed: _processando ? null : _confirmarEntrega,
-        style: ElevatedButton.styleFrom(backgroundColor: AppTheme.statusAtivo, foregroundColor: Colors.white),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppTheme.statusAtivo,
+          foregroundColor: Colors.white,
+        ),
         icon: const Icon(Icons.check_circle_outline, size: 18),
         label: const Text('Confirmar entrega ✍️'),
       ),
@@ -671,11 +863,17 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         content: SizedBox(
           width: double.maxFinite,
           height: 220,
-          child: Signature(controller: controller, backgroundColor: Colors.white),
+          child: Signature(
+            controller: controller,
+            backgroundColor: Colors.white,
+          ),
         ),
         actions: [
           TextButton(onPressed: controller.clear, child: const Text('Limpar')),
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
           ElevatedButton(
             onPressed: () async {
               if (controller.isEmpty) return;
@@ -695,7 +893,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     final fotoCanhoto = await _tirarFoto();
     if (fotoCanhoto == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A foto do canhoto é obrigatória.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('A foto do canhoto é obrigatória.')),
+        );
       }
       return;
     }
@@ -725,19 +925,29 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: nomeCtrl, decoration: const InputDecoration(labelText: 'Nome de quem recebeu')),
+              TextField(
+                controller: nomeCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nome de quem recebeu',
+                ),
+              ),
               const SizedBox(height: 8),
               TextField(
                 controller: docCtrl,
                 decoration: InputDecoration(
                   labelText: 'Documento (opcional)',
-                  helperText: documentoSugerido != null ? 'Lido da foto — confira antes de continuar.' : null,
+                  helperText: documentoSugerido != null
+                      ? 'Lido da foto — confira antes de continuar.'
+                      : null,
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancelar'),
+            ),
             TextButton(
               onPressed: () {
                 if (nomeCtrl.text.trim().isEmpty) return;
@@ -755,19 +965,32 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     final assinatura = await _capturarAssinatura();
     if (assinatura == null) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('A assinatura do recebedor é obrigatória.')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('A assinatura do recebedor é obrigatória.'),
+          ),
+        );
       }
       return;
     }
     if (!mounted) return;
 
     await _executar(() async {
-      final fotoPath = await enviarFotoEvidenciaFrete(freteId: widget.freteId, tipoEvento: 'canhoto', bytes: fotoCanhoto);
-      final assinaturaPath = await enviarAssinaturaEntregaFrete(freteId: widget.freteId, bytes: assinatura);
+      final fotoPath = await enviarFotoEvidenciaFrete(
+        freteId: widget.freteId,
+        tipoEvento: 'canhoto',
+        bytes: fotoCanhoto,
+      );
+      final assinaturaPath = await enviarAssinaturaEntregaFrete(
+        freteId: widget.freteId,
+        bytes: assinatura,
+      );
       await confirmarEntregaFrete(
         widget.freteId,
         nomeRecebedor: nomeRecebedor,
-        documentoRecebedor: documentoRecebedor.isEmpty ? null : documentoRecebedor,
+        documentoRecebedor: documentoRecebedor.isEmpty
+            ? null
+            : documentoRecebedor,
         fotoCanhotoPath: fotoPath,
         assinaturaPath: assinaturaPath,
         lat: _minhaPosicao?.latitude,
@@ -791,7 +1014,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Linha do tempo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+        const Text(
+          'Linha do tempo',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+        ),
         const SizedBox(height: 8),
         ..._eventos.map(
           (e) => Padding(
@@ -810,7 +1036,11 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 if (e.fotoPath != null)
                   IconButton(
                     onPressed: () => _verFoto(e.fotoPath!),
-                    icon: const Icon(Icons.photo_camera, size: 16, color: AppTheme.frota600),
+                    icon: const Icon(
+                      Icons.photo_camera,
+                      size: 16,
+                      color: AppTheme.frota600,
+                    ),
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -829,10 +1059,12 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
   }
 
   List<Widget> _blocoConcluido() {
-    final avaliacaoMinha = _avaliacoes.where((a) => a.avaliador == 'motorista').isEmpty
+    final avaliacaoMinha =
+        _avaliacoes.where((a) => a.avaliador == 'motorista').isEmpty
         ? null
         : _avaliacoes.firstWhere((a) => a.avaliador == 'motorista');
-    final avaliacaoCliente = _avaliacoes.where((a) => a.avaliador == 'cliente').isEmpty
+    final avaliacaoCliente =
+        _avaliacoes.where((a) => a.avaliador == 'cliente').isEmpty
         ? null
         : _avaliacoes.firstWhere((a) => a.avaliador == 'cliente');
 
@@ -842,19 +1074,30 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         _ChatFrete(freteId: widget.freteId, motoristaId: _frete!.motoristaId!),
         const SizedBox(height: 20),
       ],
-      const Text('Avaliação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+      const Text(
+        'Avaliação',
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+      ),
       const SizedBox(height: 8),
       if (avaliacaoCliente != null)
-        Text('O cliente te avaliou: ${'★' * avaliacaoCliente.estrelas}', style: const TextStyle(fontSize: 13)),
+        Text(
+          'O cliente te avaliou: ${'★' * avaliacaoCliente.estrelas}',
+          style: const TextStyle(fontSize: 13),
+        ),
       const SizedBox(height: 8),
       if (avaliacaoMinha == null)
         _FormularioAvaliacao(
           processando: _processando,
-          onEnviar: (estrelas, comentario) =>
-              _executar(() => avaliarFrete(widget.freteId, estrelas, comentario: comentario)),
+          onEnviar: (estrelas, comentario) => _executar(
+            () =>
+                avaliarFrete(widget.freteId, estrelas, comentario: comentario),
+          ),
         )
       else
-        Text('Você avaliou o cliente: ${'★' * avaliacaoMinha.estrelas}', style: const TextStyle(fontSize: 13)),
+        Text(
+          'Você avaliou o cliente: ${'★' * avaliacaoMinha.estrelas}',
+          style: const TextStyle(fontSize: 13),
+        ),
     ];
   }
 }
@@ -867,8 +1110,14 @@ class _CartaoInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final posicao = minhaPosicao;
-    final distanciaAteColeta =
-        posicao == null ? null : distanciaKm(posicao.latitude, posicao.longitude, frete.origemLat, frete.origemLon);
+    final distanciaAteColeta = posicao == null
+        ? null
+        : distanciaKm(
+            posicao.latitude,
+            posicao.longitude,
+            frete.origemLat,
+            frete.origemLon,
+          );
 
     return Card(
       child: Padding(
@@ -876,53 +1125,93 @@ class _CartaoInfo extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(frete.titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+            Text(
+              frete.titulo,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+            ),
             const SizedBox(height: 6),
-            Text('${frete.origemLabel} → ${frete.destinoLabel}', style: const TextStyle(fontSize: 14)),
+            Text(
+              '${frete.origemLabel} → ${frete.destinoLabel}',
+              style: const TextStyle(fontSize: 14),
+            ),
             if (distanciaAteColeta != null) ...[
               const SizedBox(height: 6),
               Text(
                 '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até o ponto de coleta',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.frota700),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.frota700,
+                ),
               ),
             ],
             const SizedBox(height: 10),
             Text(
               _formatoMoeda.format(frete.valorOferecido),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: AppTheme.frota700),
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+                color: AppTheme.frota700,
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
               spacing: 16,
               runSpacing: 4,
               children: [
-                if (frete.kmEstimado != null) Text('${frete.kmEstimado!.toStringAsFixed(0)} km', style: const TextStyle(fontSize: 12.5)),
-                if (frete.tipoCarga != null) Text('Carga: ${frete.tipoCarga}', style: const TextStyle(fontSize: 12.5)),
-                if (frete.pesoCargaKg != null) Text('${frete.pesoCargaKg!.toStringAsFixed(0)} kg', style: const TextStyle(fontSize: 12.5)),
-                if (frete.dataSaidaPrevista != null) Text('Saída: ${frete.dataSaidaPrevista}', style: const TextStyle(fontSize: 12.5)),
+                if (frete.kmEstimado != null)
+                  Text(
+                    '${frete.kmEstimado!.toStringAsFixed(0)} km',
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                if (frete.tipoCarga != null)
+                  Text(
+                    'Carga: ${frete.tipoCarga}',
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                if (frete.pesoCargaKg != null)
+                  Text(
+                    '${frete.pesoCargaKg!.toStringAsFixed(0)} kg',
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
+                if (frete.dataSaidaPrevista != null)
+                  Text(
+                    'Saída: ${frete.dataSaidaPrevista}',
+                    style: const TextStyle(fontSize: 12.5),
+                  ),
               ],
             ),
-            if (frete.cargaComprimentoM != null || frete.cargaLarguraM != null || frete.cargaAlturaM != null) ...[
+            if (frete.cargaComprimentoM != null ||
+                frete.cargaLarguraM != null ||
+                frete.cargaAlturaM != null) ...[
               const SizedBox(height: 6),
               Text(
                 '📐 ${frete.cargaComprimentoM ?? '—'}m × ${frete.cargaLarguraM ?? '—'}m × ${frete.cargaAlturaM ?? '—'}m (C×L×A)',
                 style: const TextStyle(fontSize: 12, color: Colors.black54),
               ),
             ],
-            if (frete.veiculosAceitos.isNotEmpty || frete.carroceriasAceitas.isNotEmpty) ...[
+            if (frete.veiculosAceitos.isNotEmpty ||
+                frete.carroceriasAceitas.isNotEmpty) ...[
               const SizedBox(height: 8),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  ...frete.veiculosAceitos.map((v) => _tagDetalhe(v, AppTheme.frota700)),
-                  ...frete.carroceriasAceitas.map((c) => _tagDetalhe(c, Colors.black54)),
+                  ...frete.veiculosAceitos.map(
+                    (v) => _tagDetalhe(v, AppTheme.frota700),
+                  ),
+                  ...frete.carroceriasAceitas.map(
+                    (c) => _tagDetalhe(c, Colors.black54),
+                  ),
                 ],
               ),
             ],
             if (frete.descricao != null) ...[
               const SizedBox(height: 10),
-              Text(frete.descricao!, style: const TextStyle(fontSize: 13, color: Colors.black87)),
+              Text(
+                frete.descricao!,
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+              ),
             ],
           ],
         ),
@@ -958,7 +1247,8 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
   @override
   void initState() {
     super.initState();
-    final kmInicial = widget.frete.kmEstimado ??
+    final kmInicial =
+        widget.frete.kmEstimado ??
         distanciaKm(
           widget.frete.origemLat,
           widget.frete.origemLon,
@@ -1012,7 +1302,8 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
     setState(() {
       _precoMedio = preco;
       _calculando = false;
-      if (preco == null) _erro = 'Não achei preço de referência pra esse combustível agora.';
+      if (preco == null)
+        _erro = 'Não achei preço de referência pra esse combustível agora.';
     });
   }
 
@@ -1024,10 +1315,15 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
     double? custoEstimado;
     double? lucroEstimado;
     double? margemPct;
-    if (km != null && veiculo != null && veiculo.autonomia > 0 && preco != null) {
+    if (km != null &&
+        veiculo != null &&
+        veiculo.autonomia > 0 &&
+        preco != null) {
       custoEstimado = (km / veiculo.autonomia) * preco;
       lucroEstimado = widget.frete.valorOferecido - custoEstimado;
-      margemPct = widget.frete.valorOferecido > 0 ? (lucroEstimado / widget.frete.valorOferecido) * 100 : null;
+      margemPct = widget.frete.valorOferecido > 0
+          ? (lucroEstimado / widget.frete.valorOferecido) * 100
+          : null;
     }
 
     return Card(
@@ -1036,7 +1332,10 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('🧮 Calculadora de lucro', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              '🧮 Calculadora de lucro',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 2),
             const Text(
               'Antes de decidir, veja quanto esse frete deve custar de combustível e o quanto sobra pra você.',
@@ -1044,7 +1343,12 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
             ),
             const SizedBox(height: 10),
             if (_carregandoVeiculos)
-              const Center(child: Padding(padding: EdgeInsets.all(8), child: CircularProgressIndicator(strokeWidth: 2)))
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(8),
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
             else if (_veiculos.isEmpty)
               const Text(
                 'Cadastre um veículo com tanque e autonomia (mesmo cadastro da Roteirização) pra usar a calculadora.',
@@ -1054,16 +1358,22 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
               DropdownButtonFormField<VeiculoRoteirizacao>(
                 initialValue: _veiculoSelecionado,
                 isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Veículo', isDense: true, border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'Veículo',
+                  isDense: true,
+                  border: OutlineInputBorder(),
+                ),
                 items: _veiculos
-                    .map((v) => DropdownMenuItem(
-                          value: v,
-                          child: Text(
-                            '${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}',
-                            style: const TextStyle(fontSize: 13),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
+                    .map(
+                      (v) => DropdownMenuItem(
+                        value: v,
+                        child: Text(
+                          '${v.placa}${v.modelo != null ? ' — ${v.modelo}' : ''}',
+                          style: const TextStyle(fontSize: 13),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (v) => setState(() => _veiculoSelecionado = v),
               ),
@@ -1074,17 +1384,38 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                     flex: 2,
                     child: DropdownButtonFormField<String>(
                       initialValue: _combustivel,
-                      decoration: const InputDecoration(labelText: 'Combustível', isDense: true, border: OutlineInputBorder()),
-                      items: produtosPosto.map((p) => DropdownMenuItem(value: p, child: Text(p, style: const TextStyle(fontSize: 13)))).toList(),
-                      onChanged: (v) => setState(() => _combustivel = v ?? _combustivel),
+                      decoration: const InputDecoration(
+                        labelText: 'Combustível',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
+                      items: produtosPosto
+                          .map(
+                            (p) => DropdownMenuItem(
+                              value: p,
+                              child: Text(
+                                p,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) =>
+                          setState(() => _combustivel = v ?? _combustivel),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
                       controller: _kmCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'Km', isDense: true, border: OutlineInputBorder()),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Km',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                      ),
                       onChanged: (_) => setState(() {}),
                     ),
                   ),
@@ -1097,7 +1428,10 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
               ),
               if (_erro != null) ...[
                 const SizedBox(height: 6),
-                Text(_erro!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                Text(
+                  _erro!,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
               ],
               if (custoEstimado != null && lucroEstimado != null) ...[
                 const SizedBox(height: 10),
@@ -1106,21 +1440,38 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Custo estimado de combustível', style: TextStyle(fontSize: 12.5)),
-                    Text(_formatoMoeda.format(custoEstimado), style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                    const Text(
+                      'Custo estimado de combustível',
+                      style: TextStyle(fontSize: 12.5),
+                    ),
+                    Text(
+                      _formatoMoeda.format(custoEstimado),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Lucro estimado', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    const Text(
+                      'Lucro estimado',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     Text(
                       _formatoMoeda.format(lucroEstimado),
                       style: TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: lucroEstimado >= 0 ? AppTheme.statusAtivo : Colors.red,
+                        color: lucroEstimado >= 0
+                            ? AppTheme.statusAtivo
+                            : Colors.red,
                       ),
                     ),
                   ],
@@ -1129,7 +1480,13 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                   const SizedBox(height: 2),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: Text('${margemPct.toStringAsFixed(0)}% de margem sobre o valor do frete', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+                    child: Text(
+                      '${margemPct.toStringAsFixed(0)}% de margem sobre o valor do frete',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.black54,
+                      ),
+                    ),
                   ),
                 ],
               ],
@@ -1183,7 +1540,13 @@ class _ChatFreteState extends State<_ChatFrete> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e is PostgrestException ? e.message : 'Não consegui enviar. Tente de novo.')),
+          SnackBar(
+            content: Text(
+              e is PostgrestException
+                  ? e.message
+                  : 'Não consegui enviar. Tente de novo.',
+            ),
+          ),
         );
       }
     } finally {
@@ -1199,7 +1562,10 @@ class _ChatFreteState extends State<_ChatFrete> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('💬 Chat com a operação', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text(
+              '💬 Chat com a operação',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 8),
             StreamBuilder<List<MensagemFrete>>(
               stream: _stream,
@@ -1207,16 +1573,27 @@ class _ChatFreteState extends State<_ChatFrete> {
                 final mensagens = snapshot.data ?? const <MensagemFrete>[];
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   if (_scrollController.hasClients) {
-                    _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+                    _scrollController.jumpTo(
+                      _scrollController.position.maxScrollExtent,
+                    );
                   }
                 });
                 return Container(
                   height: 220,
-                  decoration: BoxDecoration(color: Colors.grey.shade100, borderRadius: BorderRadius.circular(8)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                   padding: const EdgeInsets.all(8),
                   child: mensagens.isEmpty
                       ? const Center(
-                          child: Text('Nenhuma mensagem ainda.', style: TextStyle(fontSize: 12, color: Colors.black45)),
+                          child: Text(
+                            'Nenhuma mensagem ainda.',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.black45,
+                            ),
+                          ),
                         )
                       : ListView.builder(
                           controller: _scrollController,
@@ -1225,14 +1602,26 @@ class _ChatFreteState extends State<_ChatFrete> {
                             final m = mensagens[i];
                             final souEu = m.remetenteTipo == 'motorista';
                             return Align(
-                              alignment: souEu ? Alignment.centerRight : Alignment.centerLeft,
+                              alignment: souEu
+                                  ? Alignment.centerRight
+                                  : Alignment.centerLeft,
                               child: Container(
                                 margin: const EdgeInsets.symmetric(vertical: 3),
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).size.width * 0.7,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: souEu ? AppTheme.frota600 : Colors.white,
-                                  border: souEu ? null : Border.all(color: Colors.black12),
+                                  color: souEu
+                                      ? AppTheme.frota600
+                                      : Colors.white,
+                                  border: souEu
+                                      ? null
+                                      : Border.all(color: Colors.black12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Column(
@@ -1241,11 +1630,21 @@ class _ChatFreteState extends State<_ChatFrete> {
                                   children: [
                                     Text(
                                       m.mensagem,
-                                      style: TextStyle(fontSize: 13, color: souEu ? Colors.white : Colors.black87),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: souEu
+                                            ? Colors.white
+                                            : Colors.black87,
+                                      ),
                                     ),
                                     Text(
                                       '${m.criadoEm.hour.toString().padLeft(2, '0')}:${m.criadoEm.minute.toString().padLeft(2, '0')}',
-                                      style: TextStyle(fontSize: 10, color: souEu ? Colors.white70 : Colors.black45),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: souEu
+                                            ? Colors.white70
+                                            : Colors.black45,
+                                      ),
                                     ),
                                   ],
                                 ),
@@ -1264,14 +1663,21 @@ class _ChatFreteState extends State<_ChatFrete> {
                     controller: _controller,
                     minLines: 1,
                     maxLines: 3,
-                    decoration: const InputDecoration(hintText: 'Escreva uma mensagem...', isDense: true),
+                    decoration: const InputDecoration(
+                      hintText: 'Escreva uma mensagem...',
+                      isDense: true,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
                   onPressed: _enviando ? null : _enviar,
                   icon: _enviando
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Icon(Icons.send, color: AppTheme.frota600),
                 ),
               ],
@@ -1284,10 +1690,13 @@ class _ChatFreteState extends State<_ChatFrete> {
 }
 
 Widget _tagDetalhe(String texto, Color cor) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(10)),
-      child: Text(texto, style: TextStyle(fontSize: 10, color: cor)),
-    );
+  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+  decoration: BoxDecoration(
+    color: cor.withValues(alpha: 0.12),
+    borderRadius: BorderRadius.circular(10),
+  ),
+  child: Text(texto, style: TextStyle(fontSize: 10, color: cor)),
+);
 
 class _BlocoEndereco extends StatelessWidget {
   final String titulo;
@@ -1303,12 +1712,22 @@ class _BlocoEndereco extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(titulo, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(
+              titulo,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
             const SizedBox(height: 4),
             Text(endereco.linhaEndereco, style: const TextStyle(fontSize: 13)),
-            if (endereco.cep != null) Text('CEP ${endereco.cep}', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+            if (endereco.cep != null)
+              Text(
+                'CEP ${endereco.cep}',
+                style: const TextStyle(fontSize: 11, color: Colors.black54),
+              ),
             if (endereco.referencia != null)
-              Text('Referência: ${endereco.referencia}', style: const TextStyle(fontSize: 11, color: Colors.black54)),
+              Text(
+                'Referência: ${endereco.referencia}',
+                style: const TextStyle(fontSize: 11, color: Colors.black54),
+              ),
             if (endereco.data != null || endereco.hora != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -1317,7 +1736,8 @@ class _BlocoEndereco extends StatelessWidget {
                   style: const TextStyle(fontSize: 11.5, color: Colors.black54),
                 ),
               ),
-            if (endereco.contatoNome != null || endereco.contatoTelefone != null)
+            if (endereco.contatoNome != null ||
+                endereco.contatoTelefone != null)
               Padding(
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
@@ -1341,7 +1761,10 @@ class _Aviso extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: cor.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(
+        color: cor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: Text(texto, style: TextStyle(color: cor, fontSize: 13)),
     );
   }
@@ -1351,7 +1774,10 @@ class _FormularioAvaliacao extends StatefulWidget {
   final bool processando;
   final void Function(int estrelas, String? comentario) onEnviar;
 
-  const _FormularioAvaliacao({required this.processando, required this.onEnviar});
+  const _FormularioAvaliacao({
+    required this.processando,
+    required this.onEnviar,
+  });
 
   @override
   State<_FormularioAvaliacao> createState() => _FormularioAvaliacaoState();
@@ -1386,13 +1812,21 @@ class _FormularioAvaliacaoState extends State<_FormularioAvaliacao> {
         ),
         TextField(
           controller: _comentarioCtrl,
-          decoration: const InputDecoration(labelText: 'Comentário (opcional)', isDense: true),
+          decoration: const InputDecoration(
+            labelText: 'Comentário (opcional)',
+            isDense: true,
+          ),
         ),
         const SizedBox(height: 8),
         ElevatedButton(
           onPressed: widget.processando
               ? null
-              : () => widget.onEnviar(_estrelas, _comentarioCtrl.text.trim().isEmpty ? null : _comentarioCtrl.text.trim()),
+              : () => widget.onEnviar(
+                  _estrelas,
+                  _comentarioCtrl.text.trim().isEmpty
+                      ? null
+                      : _comentarioCtrl.text.trim(),
+                ),
           child: const Text('Avaliar cliente'),
         ),
       ],
@@ -1405,7 +1839,11 @@ class _FormularioProposta extends StatefulWidget {
   final String label;
   final Future<void> Function(double valor) onEnviar;
 
-  const _FormularioProposta({required this.processando, this.label = 'Propor valor', required this.onEnviar});
+  const _FormularioProposta({
+    required this.processando,
+    this.label = 'Propor valor',
+    required this.onEnviar,
+  });
 
   @override
   State<_FormularioProposta> createState() => _FormularioPropostaState();
@@ -1428,7 +1866,10 @@ class _FormularioPropostaState extends State<_FormularioProposta> {
           child: TextField(
             controller: _controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            decoration: const InputDecoration(labelText: 'Valor (R\$)', isDense: true),
+            decoration: const InputDecoration(
+              labelText: 'Valor (R\$)',
+              isDense: true,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -1437,7 +1878,9 @@ class _FormularioPropostaState extends State<_FormularioProposta> {
           onPressed: widget.processando
               ? null
               : () {
-                  final valor = double.tryParse(_controller.text.replaceAll(',', '.'));
+                  final valor = double.tryParse(
+                    _controller.text.replaceAll(',', '.'),
+                  );
                   if (valor == null || valor <= 0) return;
                   widget.onEnviar(valor);
                 },

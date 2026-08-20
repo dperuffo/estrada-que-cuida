@@ -5,6 +5,8 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/providers/motorista_provider.dart';
 import '../../../core/services/supabase_service.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 // Tela de Adesão — obrigatória antes de qualquer outra tela do programa
 // (confirmar abastecimento, ver saldo). Pontos ficam cumulativos enquanto
 // o motorista permanecer aderido (decisão do Daniel, ver
@@ -59,7 +61,15 @@ class _AdesaoScreenState extends ConsumerState<AdesaoScreen> {
   Widget build(BuildContext context) {
     final primeiroNome = (widget.nome ?? '').split(' ').first;
     return Scaffold(
-      appBar: AppBar(title: const Text('Estrada que Cuida')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Estrada que Cuida'),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -67,8 +77,12 @@ class _AdesaoScreenState extends ConsumerState<AdesaoScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                primeiroNome.isEmpty ? 'Bem-vindo!' : 'Bem-vindo, $primeiroNome!',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                primeiroNome.isEmpty
+                    ? 'Bem-vindo!'
+                    : 'Bem-vindo, $primeiroNome!',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 12),
               const Text(
@@ -82,7 +96,9 @@ class _AdesaoScreenState extends ConsumerState<AdesaoScreen> {
                 onChanged: (v) => setState(() => _aceitou = v ?? false),
                 controlAffinity: ListTileControlAffinity.leading,
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Li e aceito participar do programa Estrada que Cuida.'),
+                title: const Text(
+                  'Li e aceito participar do programa Estrada que Cuida.',
+                ),
               ),
               if (_erro != null) ...[
                 const SizedBox(height: 8),
@@ -92,7 +108,14 @@ class _AdesaoScreenState extends ConsumerState<AdesaoScreen> {
               ElevatedButton(
                 onPressed: _enviando ? null : _aderir,
                 child: _enviando
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
                     : const Text('Quero participar'),
               ),
               const SizedBox(height: 8),

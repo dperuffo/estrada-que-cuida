@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../providers/ranking_provider.dart';
 
+import '../../../core/theme/app_theme.dart';
+
 class RankingScreen extends ConsumerStatefulWidget {
   const RankingScreen({super.key});
 
@@ -18,7 +20,15 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     final rankingAsync = ref.watch(rankingProvider(_periodo));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ranking')),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        ),
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        title: const Text('Ranking'),
+      ),
       drawer: const AppDrawer(),
       body: Column(
         children: [
@@ -30,7 +40,8 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                 ButtonSegment(value: 'mes', label: Text('Mês')),
               ],
               selected: {_periodo},
-              onSelectionChanged: (novo) => setState(() => _periodo = novo.first),
+              onSelectionChanged: (novo) =>
+                  setState(() => _periodo = novo.first),
             ),
           ),
           Expanded(
@@ -45,7 +56,8 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                       const Text('Não consegui carregar o ranking agora.'),
                       const SizedBox(height: 12),
                       ElevatedButton(
-                        onPressed: () => ref.invalidate(rankingProvider(_periodo)),
+                        onPressed: () =>
+                            ref.invalidate(rankingProvider(_periodo)),
                         child: const Text('Tentar de novo'),
                       ),
                     ],
@@ -57,7 +69,10 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   return const Center(
                     child: Padding(
                       padding: EdgeInsets.all(24),
-                      child: Text('Ainda não há pontos suficientes pra montar o ranking neste período.', textAlign: TextAlign.center),
+                      child: Text(
+                        'Ainda não há pontos suficientes pra montar o ranking neste período.',
+                        textAlign: TextAlign.center,
+                      ),
                     ),
                   );
                 }
@@ -70,12 +85,26 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                     return ListTile(
                       tileColor: item.voce ? const Color(0xFFEAF5EE) : null,
                       leading: CircleAvatar(
-                        backgroundColor: item.posicao <= 3 ? const Color(0xFFC9A227) : const Color(0xFFE5E5E0),
-                        foregroundColor: item.posicao <= 3 ? Colors.white : Colors.black87,
+                        backgroundColor: item.posicao <= 3
+                            ? const Color(0xFFC9A227)
+                            : const Color(0xFFE5E5E0),
+                        foregroundColor: item.posicao <= 3
+                            ? Colors.white
+                            : Colors.black87,
                         child: Text('${item.posicao}'),
                       ),
-                      title: Text(item.voce ? '${item.nome} (você)' : item.nome, style: TextStyle(fontWeight: item.voce ? FontWeight.bold : FontWeight.normal)),
-                      trailing: Text('${item.pontos} pts', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(
+                        item.voce ? '${item.nome} (você)' : item.nome,
+                        style: TextStyle(
+                          fontWeight: item.voce
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      trailing: Text(
+                        '${item.pontos} pts',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     );
                   },
                 );
