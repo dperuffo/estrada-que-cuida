@@ -28,23 +28,33 @@ class AppTheme {
 
   // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: aplicar nos PWAs
   // cliente e motorista o mesmo liquid glass já feito na web) — mesma
-  // paleta bronze/champanhe do menu lateral web e do PWA cliente (ver
-  // globals.css: .glass-nav/.glass-nav-*). O Flutter não tem
-  // "backdrop-filter" aplicável via Theme a qualquer widget — o efeito
-  // vidro aqui vem da combinação gradiente + opacidade + borda clara +
-  // sombra suave, sem desfoque literal, mesma linguagem visual da web.
-  static const Color glassBronzeClaro = Color(0xF0C4A884);
-  static const Color glassBronzeMedio = Color(0xF08B6C52);
-  static const Color glassBronzeEscuro = Color(0xF54A3A2A);
-  static const Color glassTexto = Color(0xFFF8ECD9);
-  static const Color glassTextoMuted = Color(0xFFE4CBA8);
-  static const Color glassIcone = Color(0xFFF0DCBC);
+  // paleta do menu lateral web e do PWA cliente (ver globals.css:
+  // .glass-nav/.glass-nav-*). O Flutter não tem "backdrop-filter"
+  // aplicável via Theme a qualquer widget — o efeito vidro aqui vem da
+  // combinação gradiente + opacidade + borda clara + sombra suave, sem
+  // desfoque literal, mesma linguagem visual da web.
+  //
+  // Fase Liquid-Glass-Cinza (20/08/2026, pedido do Daniel: "queria este
+  // gradiente na aplicação Web e PWA" — nova imagem de referência: vidro
+  // curvo cinza-arroxeado/azulado, escuro num canto e claro no outro, com
+  // uma faixa de brilho na diagonal) — troca a paleta bronze/champanhe da
+  // fase anterior por esta nova, extraída por amostragem de pixel da
+  // própria imagem. Nomes das constantes mantidos (glassBronze*) por
+  // estabilidade — só o valor de cor mudou.
+  static const Color glassBronzeClaro = Color(0xF0ABAFBA);
+  static const Color glassBronzeMedio = Color(0xF07A8494);
+  static const Color glassBronzeEscuro = Color(0xF53D3C4E);
+  static const Color glassBrilho = Color(0xE0E2E4EE);
+  static const Color glassTexto = Color(0xFFF3F4F8);
+  static const Color glassTextoMuted = Color(0xFFC9CCD6);
+  static const Color glassIcone = Color(0xFFECECF3);
   static const Color glassAcento = Color(0xFFFFD9A0);
 
   static const LinearGradient glassNavGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
-    colors: [glassBronzeClaro, glassBronzeMedio, glassBronzeEscuro],
+    colors: [glassBronzeClaro, glassBrilho, glassBronzeMedio, glassBronzeEscuro],
+    stops: [0.0, 0.42, 0.6, 1.0],
   );
 
   static ThemeData get tema {
