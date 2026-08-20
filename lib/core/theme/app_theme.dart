@@ -26,6 +26,27 @@ class AppTheme {
   /// pra não quebrar quem já importa `corPrincipal`.
   static const Color corPrincipal = frota500;
 
+  // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: aplicar nos PWAs
+  // cliente e motorista o mesmo liquid glass já feito na web) — mesma
+  // paleta bronze/champanhe do menu lateral web e do PWA cliente (ver
+  // globals.css: .glass-nav/.glass-nav-*). O Flutter não tem
+  // "backdrop-filter" aplicável via Theme a qualquer widget — o efeito
+  // vidro aqui vem da combinação gradiente + opacidade + borda clara +
+  // sombra suave, sem desfoque literal, mesma linguagem visual da web.
+  static const Color glassBronzeClaro = Color(0xF0C4A884);
+  static const Color glassBronzeMedio = Color(0xF08B6C52);
+  static const Color glassBronzeEscuro = Color(0xF54A3A2A);
+  static const Color glassTexto = Color(0xFFF8ECD9);
+  static const Color glassTextoMuted = Color(0xFFE4CBA8);
+  static const Color glassIcone = Color(0xFFF0DCBC);
+  static const Color glassAcento = Color(0xFFFFD9A0);
+
+  static const LinearGradient glassNavGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [glassBronzeClaro, glassBronzeMedio, glassBronzeEscuro],
+  );
+
   static ThemeData get tema {
     return ThemeData(
       useMaterial3: true,
@@ -38,6 +59,22 @@ class AppTheme {
         iconTheme: IconThemeData(color: Colors.white),
       ),
       drawerTheme: const DrawerThemeData(backgroundColor: frota950),
+      // Fase Liquid-Glass-PWA (20/08/2026) — Card é usado em quase toda
+      // tela sem estilo próprio (só `Card(child: ...)`, no visual padrão
+      // do Material). Por ser um ponto central do Theme (igual ao `.card`
+      // do globals.css na web), dá pra dar o efeito vidro (translúcido +
+      // borda clara + sombra suave) em toda tela de uma vez, sem editar
+      // arquivo por arquivo.
+      cardTheme: CardThemeData(
+        elevation: 1,
+        color: Colors.white.withOpacity(0.82),
+        surfaceTintColor: Colors.transparent,
+        shadowColor: frota950.withOpacity(0.15),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.white.withOpacity(0.7)),
+        ),
+      ),
       // ATENÇÃO: `Size.fromHeight(48)` deixa a LARGURA mínima infinita —
       // funciona bem pros botões de tela cheia (login, OTP, adesão), mas
       // quebra o layout (erro "BoxConstraints forces an infinite width")

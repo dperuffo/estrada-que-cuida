@@ -49,11 +49,19 @@ class AppDrawer extends ConsumerWidget {
     final saldoAsync = ref.watch(saldoPontosProvider);
 
     return Drawer(
-      backgroundColor: AppTheme.frota950,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      backgroundColor: Colors.transparent,
+      // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: "implementar
+      // estas mudanças nos PWAs cliente e motorista") — todo o Drawer vira
+      // uma única superfície bronze/champanhe contínua, igual ao <aside> da
+      // web (e ao Drawer já atualizado do PWA cliente). Sem blur literal:
+      // o drawer do celular fica sobre um scrim escuro, não sobre
+      // conteúdo real pra desfocar.
+      child: Container(
+        decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
               child: Column(
@@ -71,16 +79,16 @@ class AppDrawer extends ConsumerWidget {
                   perfilAsync.when(
                     data: (perfil) => Text(
                       perfil?.nomeCompleto ?? 'Motorista',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(color: AppTheme.glassTexto, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    loading: () => const Text('Carregando...', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                    error: (e, _) => const Text('Motorista', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    loading: () => const Text('Carregando...', style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 14)),
+                    error: (e, _) => const Text('Motorista', style: TextStyle(color: AppTheme.glassTexto, fontSize: 16)),
                   ),
                   perfilAsync.maybeWhen(
                     data: (perfil) => perfil?.telefone != null
                         ? Padding(
                             padding: const EdgeInsets.only(top: 2),
-                            child: Text(_formatarTelefone(perfil!.telefone!), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            child: Text(_formatarTelefone(perfil!.telefone!), style: const TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12)),
                           )
                         : const SizedBox.shrink(),
                     orElse: () => const SizedBox.shrink(),
@@ -90,7 +98,7 @@ class AppDrawer extends ConsumerWidget {
                     data: (saldo) => Text(
                       'Nível ${nivelParaSaldo(saldo).nome} • ${_formatoPontosDrawer.format(saldo)} pontos',
                       style: const TextStyle(
-                        color: AppTheme.frota500,
+                        color: AppTheme.glassAcento,
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 0.3,
@@ -102,7 +110,7 @@ class AppDrawer extends ConsumerWidget {
                 ],
               ),
             ),
-            const Divider(color: Colors.white12, height: 1),
+            const Divider(color: Colors.white24, height: 1),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 8),
@@ -210,7 +218,7 @@ class AppDrawer extends ConsumerWidget {
                 ],
               ),
             ),
-            const Divider(color: Colors.white12, height: 1),
+            const Divider(color: Colors.white24, height: 1),
             _ItemMenu(
               icone: Icons.logout,
               label: 'Sair',
@@ -220,7 +228,8 @@ class AppDrawer extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 8),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -239,7 +248,7 @@ Widget _grupo(String label) => Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
       child: Text(
         label.toUpperCase(),
-        style: const TextStyle(color: Colors.white38, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        style: const TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
       ),
     );
 
@@ -253,8 +262,8 @@ class _ItemMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icone, color: Colors.white70, size: 22),
-      title: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+      leading: Icon(icone, color: AppTheme.glassIcone, size: 22),
+      title: Text(label, style: const TextStyle(color: AppTheme.glassTexto, fontSize: 14)),
       onTap: onTap,
       dense: true,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),

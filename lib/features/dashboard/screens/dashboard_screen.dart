@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/sino_avisos.dart';
 import '../../abastecimentos/providers/abastecimentos_provider.dart';
@@ -37,7 +38,21 @@ class DashboardScreen extends ConsumerWidget {
     final homeResumoAsync = ref.watch(homeResumoProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estrada que Cuida'), actions: const [SinoAvisos()]),
+      // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: "implementar
+      // estas mudanças nos PWAs cliente e motorista") — mesma superfície
+      // bronze/champanhe do menu (ver AppDrawer), agora na barra do topo.
+      appBar: AppBar(
+        title: const Text('Estrada que Cuida'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: AppTheme.glassTexto,
+        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        titleTextStyle: const TextStyle(color: AppTheme.glassTexto, fontSize: 18, fontWeight: FontWeight.w600),
+        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient)),
+        actions: const [SinoAvisos()],
+      ),
       drawer: const AppDrawer(),
       body: RefreshIndicator(
         onRefresh: () async {
