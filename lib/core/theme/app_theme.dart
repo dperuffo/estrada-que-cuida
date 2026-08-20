@@ -34,27 +34,40 @@ class AppTheme {
   // combinação gradiente + opacidade + borda clara + sombra suave, sem
   // desfoque literal, mesma linguagem visual da web.
   //
-  // Fase Liquid-Glass-Cinza (20/08/2026, pedido do Daniel: "queria este
-  // gradiente na aplicação Web e PWA" — nova imagem de referência: vidro
-  // curvo cinza-arroxeado/azulado, escuro num canto e claro no outro, com
-  // uma faixa de brilho na diagonal) — troca a paleta bronze/champanhe da
-  // fase anterior por esta nova, extraída por amostragem de pixel da
-  // própria imagem. Nomes das constantes mantidos (glassBronze*) por
-  // estabilidade — só o valor de cor mudou.
-  static const Color glassBronzeClaro = Color(0xF0ABAFBA);
-  static const Color glassBronzeMedio = Color(0xF07A8494);
-  static const Color glassBronzeEscuro = Color(0xF53D3C4E);
-  static const Color glassBrilho = Color(0xE0E2E4EE);
-  static const Color glassTexto = Color(0xFFF3F4F8);
-  static const Color glassTextoMuted = Color(0xFFC9CCD6);
-  static const Color glassIcone = Color(0xFFECECF3);
+  // Fase Liquid-Glass-Anel (20/08/2026, pedido do Daniel: "o cinza anterior
+  // não ficou bom" — 3ª imagem de referência: fundo quase preto
+  // azul-marinho, com um anel de luz azul-violeta brilhando só do lado
+  // esquerdo, tipo borda de esfera/portal) — troca a paleta cinza da fase
+  // anterior por esta nova, extraída por amostragem de pixel da imagem.
+  // Nomes das constantes mantidos (glassBronze*) por estabilidade — só o
+  // valor de cor mudou. O CSS da web usa várias camadas de
+  // radial-gradient pro anel, mas o Flutter só aceita 1 gradient por
+  // BoxDecoration — por isso aqui é um ÚNICO RadialGradient com centro
+  // fora da tela (Alignment(-1.8, 0)) e paradas (stops) que criam
+  // transparent->brilho->transparent, o mesmo truque de "buraco no meio"
+  // que faz só a BORDA do círculo aparecer.
+  static const Color glassBronzeClaro = Color(0xFF2A2A45);
+  static const Color glassBronzeMedio = Color(0xFF1C1B2F);
+  static const Color glassBronzeEscuro = Color(0xFF10101F);
+  static const Color glassBrilho = Color(0xFF999ED9);
+  static const Color glassBrilhoMedio = Color(0xFF8D94CA);
+  static const Color glassTexto = Color(0xFFF5F5FA);
+  static const Color glassTextoMuted = Color(0xFFA5A6C4);
+  static const Color glassIcone = Color(0xFFE8E9F5);
   static const Color glassAcento = Color(0xFFFFD9A0);
 
-  static const LinearGradient glassNavGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [glassBronzeClaro, glassBrilho, glassBronzeMedio, glassBronzeEscuro],
-    stops: [0.0, 0.42, 0.6, 1.0],
+  static const Gradient glassNavGradient = RadialGradient(
+    center: Alignment(-1.8, 0.0),
+    radius: 1.3,
+    colors: [
+      glassBronzeMedio,
+      glassBronzeMedio,
+      glassBrilhoMedio,
+      glassBrilho,
+      glassBronzeEscuro,
+      glassBronzeClaro,
+    ],
+    stops: [0.0, 0.55, 0.6, 0.64, 0.7, 1.0],
   );
 
   static ThemeData get tema {
