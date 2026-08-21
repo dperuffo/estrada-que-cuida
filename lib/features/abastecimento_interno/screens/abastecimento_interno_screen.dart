@@ -39,6 +39,26 @@ class _AbastecimentoInternoScreenState
   bool get _ehDiesel =>
       (_combustivel ?? '').toLowerCase().startsWith('diesel');
 
+  // Fase Abastecimento-Interno — ajuste (21/08/2026, pedido do Daniel: "tem
+  // que trazer a informação do hodometro atual em tela, automaticamente") —
+  // ao escolher o veículo, busca sozinho o último hodômetro conhecido (RPC
+  // ultimo_hodometro_veiculo, mesma usada no Checklist de Inspeção) e já
+  // preenche o campo. O motorista ainda pode corrigir manualmente depois.
+  Future<void> _selecionarPlaca(String? placa) async {
+    setState(() {
+      _placa = placa;
+      _hodometroCtrl.clear();
+    });
+    if (placa == null) return;
+    final hod = await ref.read(
+      ultimoHodometroAbastecimentoInternoProvider(placa).future,
+    );
+    if (!mounted || _placa != placa) return;
+    if (hod != null && hod > 0) {
+      setState(() => _hodometroCtrl.text = hod.toStringAsFixed(0));
+    }
+  }
+
   Future<void> _enviar(OpcoesAbastecimentoInterno opcoes) async {
     if (_empresaId == null) {
       setState(() => _erro = 'Selecione a empresa onde o abastecimento foi feito.');
@@ -57,12 +77,18 @@ class _AbastecimentoInternoScreenState
       setState(() => _erro = 'Informe a quantidade abastecida (litros).');
       return;
     }
+    // Fase Abastecimento-Interno — ajuste (21/08/2026, pedido do Daniel): o
+    // hodômetro deixou de ser opcional — a RPC também valida isso do lado
+    // do servidor (status 'hodometro_obrigatorio'), esta checagem aqui é só
+    // pra dar feedback imediato sem round-trip.
+    final hodometro = num.tryParse(_hodometroCtrl.text.replaceAll(',', '.'));
+    if (hodometro == null || hodometro < 0) {
+      setState(() => _erro = 'Informe o hodômetro atual (só números).');
+      return;
+    }
     final arlaQuantidade = _arlaQuantidadeCtrl.text.trim().isEmpty
         ? null
         : num.tryParse(_arlaQuantidadeCtrl.text.replaceAll(',', '.'));
-    final hodometro = _hodometroCtrl.text.trim().isEmpty
-        ? null
-        : num.tryParse(_hodometroCtrl.text.replaceAll(',', '.'));
 
     setState(() {
       _enviando = true;
@@ -121,6 +147,9 @@ class _AbastecimentoInternoScreenState
           break;
         case 'quantidade_invalida':
           setState(() => _erro = 'Quantidade inválida.');
+          break;
+        case 'hodometro_obrigatorio':
+          setState(() => _erro = 'Informe o hodômetro atual (só números).');
           break;
         default:
           setState(() => _erro = 'Não consegui registrar agora. Tente de novo em instantes.');
@@ -223,7 +252,7 @@ class _AbastecimentoInternoScreenState
                   'Nenhum veículo vinculado a você no momento.',
                   style: TextStyle(color: Colors.black54),
                 )
-              else
+              else ...[
                 DropdownButtonFormField<String>(
                   initialValue: _placa,
                   isExpanded: true,
@@ -234,15 +263,31 @@ class _AbastecimentoInternoScreenState
                   items: opcoes.placas
                       .map((p) => DropdownMenuItem(value: p, child: Text(p)))
                       .toList(),
-                  onChanged: (v) => setState(() => _placa = v),
+                  onChanged: _selecionarPlaca,
                 ),
+                // Só 1 veículo disponível — seleciona sozinho, sem o
+                // motorista precisar tocar no dropdown pra isso acontecer.
+                Builder(
+                  builder: (context) {
+                    if (_placa == null && opcoes.placas.length == 1) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted && _placa == null) {
+                          _selecionarPlaca(opcoes.placas.first);
+                        }
+                      });
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _hodometroCtrl,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Hodômetro (km, opcional)',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: 'Hodômetro (km)',
+                  border: const OutlineInputBorder(),
+                  helperText: 'Preenchido automaticamente — confira e corrija se preciso.',
                 ),
               ),
               const SizedBox(height: 12),

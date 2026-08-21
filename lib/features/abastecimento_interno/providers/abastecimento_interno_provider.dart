@@ -100,6 +100,22 @@ final opcoesAbastecimentoInternoProvider =
       return OpcoesAbastecimentoInterno.fromJson(resp as Map<String, dynamic>);
     });
 
+// Fase Abastecimento-Interno — ajuste (21/08/2026, pedido do Daniel: "o
+// hodometro não é opcional, é obrigatorio e ja tem que trazer a informação
+// do hodometro atual em tela, automaticamente") — mesma RPC
+// `ultimo_hodometro_veiculo` já usada no Checklist de Inspeção
+// (ultimoHodometroInspecaoProvider): pega o maior hodômetro conhecido pro
+// veículo (último abastecimento — já inclui o interno, via
+// abastecimentos_unificado — ou última inspeção).
+final ultimoHodometroAbastecimentoInternoProvider = FutureProvider.autoDispose
+    .family<num?, String>((ref, placa) async {
+      final resp = await SupabaseService.client.rpc(
+        'ultimo_hodometro_veiculo',
+        params: {'p_placa': placa},
+      );
+      return resp as num?;
+    });
+
 class AbastecimentoInternoResultado {
   final String status;
   final num? valorTotal;
