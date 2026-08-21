@@ -177,6 +177,14 @@ class AppDrawer extends ConsumerWidget {
                       label: 'Checklist de inspeção',
                       onTap: () => _ir(context, '/inspecao-veicular'),
                     ),
+                    // Fase Abastecimento-Interno (21/08/2026) — pedido do
+                    // Daniel: confirmação, pelo motorista, do abastecimento
+                    // feito na garagem própria da empresa (matriz/filial).
+                    _ItemMenu(
+                      icone: Icons.warehouse_outlined,
+                      label: 'Abastecimento Interno',
+                      onTap: () => _ir(context, '/abastecimento-interno'),
+                    ),
                     _ItemMenu(
                       icone: Icons.alt_route_outlined,
                       label: 'Roteirização',

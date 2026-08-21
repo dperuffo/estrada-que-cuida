@@ -27,6 +27,7 @@ import '../../features/seguranca/screens/seguranca_screen.dart';
 import '../../features/seguranca/screens/mfa_verificar_screen.dart';
 import '../../features/avisos/screens/avisos_screen.dart';
 import '../../features/inspecao_veicular/screens/inspecao_veicular_screen.dart';
+import '../../features/abastecimento_interno/screens/abastecimento_interno_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -188,6 +189,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/inspecao-veicular',
       builder: (context, state) => const InspecaoVeicularScreen(),
+    ),
+    // Fase Abastecimento-Interno (21/08/2026) — confirmação, pelo próprio
+    // motorista, de um abastecimento feito na garagem/tanque interno da
+    // empresa (matriz/filial), antes de sair pra rota.
+    GoRoute(
+      path: '/abastecimento-interno',
+      builder: (context, state) => const AbastecimentoInternoScreen(),
     ),
   ],
 );
