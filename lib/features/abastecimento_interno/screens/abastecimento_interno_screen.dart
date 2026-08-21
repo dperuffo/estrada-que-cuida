@@ -110,12 +110,14 @@ class _AbastecimentoInternoScreenState
         case 'registrado':
           final total = resultado.valorTotal ?? 0;
           final arlaTotal = resultado.arlaValorTotal;
+          final codigo = resultado.codigoAbastecimento;
+          final idTexto = codigo != null ? ' (ID $codigo)' : '';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 arlaTotal != null
-                    ? 'Abastecimento interno confirmado! Combustível: R\$ ${total.toStringAsFixed(2)} · Arla32: R\$ ${arlaTotal.toStringAsFixed(2)}'
-                    : 'Abastecimento interno confirmado! Valor total: R\$ ${total.toStringAsFixed(2)}',
+                    ? 'Abastecimento interno confirmado$idTexto! Combustível: R\$ ${total.toStringAsFixed(2)} · Arla32: R\$ ${arlaTotal.toStringAsFixed(2)}'
+                    : 'Abastecimento interno confirmado$idTexto! Valor total: R\$ ${total.toStringAsFixed(2)}',
               ),
               backgroundColor: Colors.green,
             ),

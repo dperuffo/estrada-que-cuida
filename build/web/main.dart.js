@@ -9106,7 +9106,7 @@ n=t.P
 s=3
 return A.l(o.fK("registrar_abastecimento_interno",A.a5(["p_empresa_id",c,"p_placa",e,"p_combustivel",b,"p_quantidade",f,"p_arla_quantidade",a,"p_hodometro",d],t.N,p),p),$async$ag3)
 case 3:p=n.a(h)
-q=new A.US(A.a2(p.h(0,"status")),A.dt(p.h(0,"valorTotal")),A.dt(p.h(0,"arlaValorTotal")))
+q=new A.US(A.a2(p.h(0,"status")),A.dt(p.h(0,"valorTotal")),A.dt(p.h(0,"arlaValorTotal")),A.ak(p.h(0,"codigoAbastecimento")))
 s=1
 break
 case 1:return A.q(q,r)}})
@@ -9126,9 +9126,11 @@ ay4:function ay4(){},
 ay5:function ay5(){},
 b89:function b89(){},
 b8T:function b8T(){},
-US:function US(a,b,c){this.a=a
-this.b=b
-this.c=c},
+US:function US(a,b,c,d){var _=this
+_.a=a
+_.b=b
+_.c=c
+_.d=d},
 uM:function uM(a){this.a=a},
 O4:function O4(a,b,c){var _=this
 _.y=_.x=_.w=null
@@ -57752,45 +57754,47 @@ break}if(o!=null&&o>0)p.H(new A.aLU(p,o))
 case 1:return A.q(q,r)}})
 return A.r($async$Ak,r)},
 Fg(a){return this.ast(a)},
-ast(a1){var s=0,r=A.t(t.H),q,p=2,o=[],n=[],m=this,l,k,j,i,h,g,f,e,d,c,b,a,a0
-var $async$Fg=A.o(function(a2,a3){if(a2===1){o.push(a3)
+ast(a3){var s=0,r=A.t(t.H),q,p=2,o=[],n=[],m=this,l,k,j,i,h,g,f,e,d,c,b,a,a0,a1,a2
+var $async$Fg=A.o(function(a4,a5){if(a4===1){o.push(a5)
 s=p}for(;;)switch(s){case 0:if(m.w==null){m.H(new A.aLB(m))
 s=1
 break}if(m.x==null){m.H(new A.aLC(m))
 s=1
 break}if(m.y==null){m.H(new A.aLD(m))
 s=1
-break}f=m.z.a.a
-l=A.afn(A.c7(f,",","."))
+break}d=m.z.a.a
+l=A.afn(A.c7(d,",","."))
 if(l==null||l<=0){m.H(new A.aLL(m))
 s=1
-break}f=m.as.a.a
-k=A.afn(A.c7(f,",","."))
+break}d=m.as.a.a
+k=A.afn(A.c7(d,",","."))
 if(k==null||k<0){m.H(new A.aLM(m))
 s=1
-break}f=m.Q.a.a
-if(B.d.c1(f).length===0)e=null
-else e=A.afn(A.c7(f,",","."))
-j=e
+break}d=m.Q.a.a
+if(B.d.c1(d).length===0)c=null
+else c=A.afn(A.c7(d,",","."))
+j=c
 m.H(new A.aLN(m))
 p=4
-f=m.w
-f.toString
-d=m.x
+d=m.w
 d.toString
-c=m.y
-c.toString
+b=m.x
+b.toString
+a=m.y
+a.toString
 s=7
-return A.l(A.ag3(j,c,f,k,d,l),$async$Fg)
-case 7:i=a3
-f=m.c
-if(f==null){n=[1]
+return A.l(A.ag3(j,a,d,k,b,l),$async$Fg)
+case 7:i=a5
+d=m.c
+if(d==null){n=[1]
 s=5
-break}switch(i.a){case"registrado":b=i.b
-h=b==null?0:b
+break}switch(i.a){case"registrado":a0=i.b
+h=a0==null?0:a0
 g=i.c
-f=f.a9(t.Q).f
-f.dZ(A.pX(null,null,null,B.ha,null,B.o,null,A.P(g!=null?"Abastecimento interno confirmado! Combust\xedvel: R$ "+J.bf8(h,2)+" \xb7 Arla32: R$ "+B.c.ab(g,2):"Abastecimento interno confirmado! Valor total: R$ "+J.bf8(h,2),null,null,null,null,null,null,null,null),null,B.at,null,null,null,null,null,null,null,null,null,null))
+f=i.d
+e=f!=null?" (ID "+f+")":""
+d=d.a9(t.Q).f
+d.dZ(A.pX(null,null,null,B.ha,null,B.o,null,A.P(g!=null?"Abastecimento interno confirmado"+A.k(e)+"! Combust\xedvel: R$ "+J.bf8(h,2)+" \xb7 Arla32: R$ "+B.c.ab(g,2):"Abastecimento interno confirmado"+A.k(e)+"! Valor total: R$ "+J.bf8(h,2),null,null,null,null,null,null,null,null),null,B.at,null,null,null,null,null,null,null,null,null,null))
 m.H(new A.aLO(m))
 break
 case"nao_vinculado":m.H(new A.aLP(m))
@@ -57813,7 +57817,7 @@ default:m.H(new A.aLI(m))}n.push(6)
 s=5
 break
 case 4:p=3
-a0=o.pop()
+a2=o.pop()
 m.H(new A.aLJ(m))
 n.push(6)
 s=5

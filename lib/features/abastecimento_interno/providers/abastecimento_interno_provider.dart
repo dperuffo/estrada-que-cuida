@@ -120,11 +120,18 @@ class AbastecimentoInternoResultado {
   final String status;
   final num? valorTotal;
   final num? arlaValorTotal;
+  // Fase Abastecimento-Interno — ajuste (21/08/2026, pedido do Daniel: "é
+  // obrigatorio que todo o abastecimento interno tenha um ID") — código de
+  // 10 dígitos gerado no banco (prefixo "3", mesma convenção de
+  // profrotas="1" e externo="2"), devolvido pela RPC pra confirmar ao
+  // motorista que o registro já nasceu identificado.
+  final String? codigoAbastecimento;
 
   const AbastecimentoInternoResultado({
     required this.status,
     this.valorTotal,
     this.arlaValorTotal,
+    this.codigoAbastecimento,
   });
 
   factory AbastecimentoInternoResultado.fromJson(Map<String, dynamic> json) {
@@ -132,6 +139,7 @@ class AbastecimentoInternoResultado {
       status: json['status'] as String,
       valorTotal: json['valorTotal'] as num?,
       arlaValorTotal: json['arlaValorTotal'] as num?,
+      codigoAbastecimento: json['codigoAbastecimento'] as String?,
     );
   }
 }
