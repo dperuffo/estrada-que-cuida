@@ -28,6 +28,7 @@ import '../../features/seguranca/screens/mfa_verificar_screen.dart';
 import '../../features/avisos/screens/avisos_screen.dart';
 import '../../features/inspecao_veicular/screens/inspecao_veicular_screen.dart';
 import '../../features/abastecimento_interno/screens/abastecimento_interno_screen.dart';
+import '../../features/abastecimento_manual/screens/abastecimento_manual_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -196,6 +197,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/abastecimento-interno',
       builder: (context, state) => const AbastecimentoInternoScreen(),
+    ),
+    // Fase OCR-Abastecimento-Externo (27/08/2026) — lançamento manual de
+    // abastecimento feito num posto externo (fora da integração
+    // automática), com foto do cupom fiscal lida por OCR. Entra pendente
+    // até o gestor aprovar na web.
+    GoRoute(
+      path: '/abastecimento-manual',
+      builder: (context, state) => const AbastecimentoManualScreen(),
     ),
   ],
 );

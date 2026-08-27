@@ -185,6 +185,15 @@ class AppDrawer extends ConsumerWidget {
                       label: 'Abastecimento Interno',
                       onTap: () => _ir(context, '/abastecimento-interno'),
                     ),
+                    // Fase OCR-Abastecimento-Externo (27/08/2026) — pedido
+                    // do Daniel: motorista lança abastecimento feito fora da
+                    // frota (posto externo) tirando foto do cupom fiscal,
+                    // sem digitar tudo na mão.
+                    _ItemMenu(
+                      icone: Icons.receipt_long_outlined,
+                      label: 'Lançar Abastecimento',
+                      onTap: () => _ir(context, '/abastecimento-manual'),
+                    ),
                     _ItemMenu(
                       icone: Icons.alt_route_outlined,
                       label: 'Roteirização',
