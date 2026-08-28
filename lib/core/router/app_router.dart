@@ -8,7 +8,6 @@ import '../../features/auth/screens/otp_screen.dart';
 import '../../features/auth/screens/senha_login_screen.dart';
 import '../../features/auth/screens/criar_senha_screen.dart';
 import '../../features/home/screens/portao_entrada_screen.dart';
-import '../../features/abastecimentos/screens/abastecimentos_pendentes_screen.dart';
 import '../../features/extrato/screens/extrato_screen.dart';
 import '../../features/gamificacao/screens/ranking_screen.dart';
 import '../../features/gamificacao/screens/missoes_screen.dart';
@@ -110,10 +109,6 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/',
       builder: (context, state) => const PortaoEntradaScreen(),
-    ),
-    GoRoute(
-      path: '/pendentes',
-      builder: (context, state) => const AbastecimentosPendentesScreen(),
     ),
     GoRoute(
       path: '/extrato',

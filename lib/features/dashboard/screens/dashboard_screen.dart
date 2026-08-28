@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/widgets/sino_avisos.dart';
-import '../../abastecimentos/providers/abastecimentos_provider.dart';
 import '../../gamificacao/providers/missoes_provider.dart';
 import '../../jornada/providers/jornada_provider.dart';
 import '../providers/dashboard_provider.dart';
@@ -19,10 +18,13 @@ final _formatoDiaCurto = DateFormat('dd/MM');
 // Fase Home-interativa — pedido do Daniel (17/07): os botões que
 // duplicavam o menu lateral saíram daqui (já dá pra chegar em todo lugar
 // pelo Drawer). No lugar, a Home virou um resumo do que importa agora:
-// nível/progresso, sugestões do momento (abastecimento parado pra
-// confirmar, missão quase concluída) e as missões em si, com barra de
-// progresso — sem precisar entrar em mais nenhuma tela pra saber "o que
-// falta".
+// nível/progresso e as missões em si, com barra de progresso — sem
+// precisar entrar em mais nenhuma tela pra saber "o que falta".
+//
+// Fase Atribuicao-Automatica-Fidelidade (28/08/2026) — o cartão de
+// "abastecimento parado pra confirmar" saiu daqui: a confirmação manual do
+// motorista não existe mais, os pontos são creditados automaticamente
+// (ver auto_confirmar_abastecimentos_fidelidade no backend).
 class DashboardScreen extends ConsumerWidget {
   final String motoristaId;
   final String? nome;
@@ -34,7 +36,6 @@ class DashboardScreen extends ConsumerWidget {
     final primeiroNome = (nome ?? '').split(' ').first;
     final saldoAsync = ref.watch(saldoPontosProvider);
     final missoesAsync = ref.watch(missoesProvider);
-    final pendentesAsync = ref.watch(abastecimentosPendentesProvider);
     final homeResumoAsync = ref.watch(homeResumoProvider);
 
     return Scaffold(
@@ -64,7 +65,6 @@ class DashboardScreen extends ConsumerWidget {
         onRefresh: () async {
           ref.invalidate(saldoPontosProvider);
           ref.invalidate(missoesProvider);
-          ref.invalidate(abastecimentosPendentesProvider);
           ref.invalidate(homeResumoProvider);
           ref.invalidate(jornadaEventosProvider);
         },
@@ -127,27 +127,6 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             _CartaoVoltePraCasa(
               onTap: () => context.push('/catalogo', extra: 'volte_para_casa'),
-            ),
-
-            // Sugestões — cartões dinâmicos, só aparecem quando fazem
-            // sentido pro motorista agora (nada de espaço vazio "avisando
-            // que não há nada a avisar").
-            ...pendentesAsync.maybeWhen(
-              data: (pendentes) => pendentes.isEmpty
-                  ? []
-                  : [
-                      const SizedBox(height: 20),
-                      _CartaoSugestao(
-                        icone: Icons.local_gas_station,
-                        cor: const Color(0xFF1E6FBF),
-                        titulo: pendentes.length == 1
-                            ? '1 abastecimento esperando confirmação'
-                            : '${pendentes.length} abastecimentos esperando confirmação',
-                        subtitulo: 'Confirme pra não perder os pontos deles.',
-                        onTap: () => context.push('/pendentes'),
-                      ),
-                    ],
-              orElse: () => [],
             ),
 
             const SizedBox(height: 28),

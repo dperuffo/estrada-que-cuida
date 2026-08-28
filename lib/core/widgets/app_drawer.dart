@@ -164,11 +164,6 @@ class AppDrawer extends ConsumerWidget {
                     ),
 
                     _grupo('Minhas Tarefas'),
-                    _ItemMenu(
-                      icone: Icons.local_gas_station_outlined,
-                      label: 'Confirmar abastecimentos',
-                      onTap: () => _ir(context, '/pendentes'),
-                    ),
                     // Fase Inspeção-pelo-Motorista (30/07/2026) — pedido do
                     // Daniel: checklist de segurança do veículo, feito pelo
                     // próprio motorista, rotineiramente.
