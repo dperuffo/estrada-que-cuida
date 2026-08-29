@@ -219,7 +219,17 @@ class AbastecimentoManualService {
         'p_valor_total': valorTotal,
         'p_posto_nome': postoNome,
         'p_hodometro': hodometro,
-        'p_data_abastecimento': (dataAbastecimento ?? DateTime.now()).toIso8601String(),
+        // Fase Fuso-Horario-Abastecimento (29/08/2026, pedido do Daniel:
+        // confusão de horário entre abastecimentos lançados na web e no
+        // PWA) — DateTime.now() aqui é hora LOCAL do aparelho (certa), mas
+        // .toIso8601String() sozinho não inclui o offset, vira uma string
+        // "solta" (ex.: "2026-08-27T20:08:15"); o Postgres, cuja sessão
+        // roda em UTC, interpretava esse texto como se já fosse UTC —
+        // abastecimento gravado 3h adiantado (BRT = UTC-3). .toUtc() antes
+        // de serializar corrige isso, convertendo pro instante certo antes
+        // de virar texto, e funciona mesmo se dataAbastecimento já vier em
+        // UTC (toUtc() é idempotente).
+        'p_data_abastecimento': (dataAbastecimento ?? DateTime.now()).toUtc().toIso8601String(),
         'p_foto_path': fotoPath,
         'p_ocr_texto_bruto': ocrTextoBruto,
       },
