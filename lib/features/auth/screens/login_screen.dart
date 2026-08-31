@@ -22,9 +22,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Aceita "(11) 99999-8888", "11999998888" etc. e devolve E.164
   /// (+55DDDNÚMERO) — formato que o Supabase Auth espera.
+  ///
+  /// Fase HOTFIX-OTP-Fixo (29/08/2026, bug reportado pelo Daniel: Twilio
+  /// recusou um envio de SMS com "Invalid parameter `To`", código 60200) —
+  /// a validação antes aceitava 10 dígitos (DDD + 8 números), formato de
+  /// TELEFONE FIXO. Todo celular brasileiro tem o 9º dígito desde a
+  /// migração de 2016 (DDD + 9 dígitos = 11 no total); um número de 10
+  /// dígitos é sempre fixo (ou celular digitado sem o 9) — nos dois casos
+  /// não recebe SMS, e o Twilio rejeitava só depois de já tentar enviar,
+  /// com um erro técnico que o motorista não entende. Agora barra 10
+  /// dígitos aqui mesmo, com mensagem clara.
   String? _paraE164(String digitado) {
     final digitos = digitado.replaceAll(RegExp(r'\D'), '');
-    if (digitos.length < 10 || digitos.length > 11) return null;
+    if (digitos.length != 11) return null;
     return '+55$digitos';
   }
 
