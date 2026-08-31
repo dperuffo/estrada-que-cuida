@@ -50,12 +50,11 @@ class AppDrawer extends ConsumerWidget {
 
     return Drawer(
       backgroundColor: Colors.transparent,
-      // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: "implementar
-      // estas mudanças nos PWAs cliente e motorista") — todo o Drawer vira
-      // uma única superfície bronze/champanhe contínua, igual ao <aside> da
-      // web (e ao Drawer já atualizado do PWA cliente). Sem blur literal:
-      // o drawer do celular fica sobre um scrim escuro, não sobre
-      // conteúdo real pra desfocar.
+      // Fase Design-System-Swiss-Minimalism (29/08/2026) — Drawer em
+      // superfície sólida off-black, igual ao <aside> da web (.glass-nav:
+      // bg-frota-950). `glassNavGradient` agora é um gradiente "flat"
+      // (2 paradas na mesma cor) só pra não precisar trocar o parâmetro
+      // aqui — ver comentário em app_theme.dart.
       child: Container(
         decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
         child: SafeArea(
@@ -77,7 +76,7 @@ class AppDrawer extends ConsumerWidget {
                       ),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                       child: Image.asset(
                         'assets/images/logo-fni.png',
@@ -340,7 +339,7 @@ class _ItemMenu extends StatelessWidget {
       ),
       onTap: onTap,
       dense: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       hoverColor: Colors.white.withValues(alpha: 0.1),
     );
   }

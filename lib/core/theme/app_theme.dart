@@ -6,18 +6,27 @@ import 'package:flutter/material.dart';
 // (família de cor "frota" + cores semânticas de status). Substitui a
 // paleta verde provisória do MVP inicial.
 class AppTheme {
-  // "frota" — mesma família de cor do painel web, do mais escuro (fundo do
-  // menu lateral) ao mais claro.
-  static const Color frota950 = Color(0xFF0B1220); // fundo do menu/drawer
-  static const Color frota900 = Color(0xFF0F2A4A);
-  static const Color frota800 = Color(0xFF123A63);
-  static const Color frota700 = Color(0xFF155080);
-  static const Color frota600 = Color(0xFF0E7490); // destaque secundário
-  static const Color frota500 = Color(0xFF0EA5E9); // ação principal / CTA
-  static const Color frota100 = Color(0xFFE0F2FE);
-  static const Color frota50 = Color(0xFFF0F9FF);
+  // Fase Design-System-Swiss-Minimalism (29/08/2026, pedido do Daniel:
+  // "aplicar o mesmo design.md dos PWAs Motorista e Cliente, conforme
+  // aplicado na web") — a web trocou de "Corporate Blue" (Dark Navy/Royal
+  // Blue) pra "Minimalism & Swiss Style" em 27/08/2026 (ver
+  // tailwind.config.ts/globals.css do painel web): off-black/branco/
+  // cinza + acento taupe, cantos quase retos, superfícies lisas, SEM
+  // blur/gradiente/glow. Este arquivo espelha os MESMOS valores — mesma
+  // convenção já usada aqui antes ("nomes mantidos, só o valor muda"),
+  // pra não precisar editar campo por campo nas ~29 telas que já
+  // referenciam `AppTheme.frota*`/`AppTheme.glass*`.
+  static const Color frota950 = Color(0xFF111111); // off-black — fundo do menu/drawer/AppBar
+  static const Color frota900 = Color(0xFF1A1A1A);
+  static const Color frota800 = Color(0xFF262626);
+  static const Color frota700 = Color(0xFF404040);
+  static const Color frota600 = Color(0xFF0D0D0D); // hover/darken do botão primário
+  static const Color frota500 = Color(0xFF171717); // ação principal (botões, ícones em destaque)
+  static const Color frota100 = Color(0xFFE5E5E5);
+  static const Color frota50 = Color(0xFFF8FAFC); // fundo de página (slate-50, igual ao web)
 
-  // Cores semânticas — mesmos códigos usados nos badges do painel web.
+  // Cores semânticas — mesmos códigos usados nos badges do painel web
+  // (não mudaram na fase Swiss-Minimalism, só a paleta neutra mudou).
   static const Color statusAtivo = Color(0xFF16A34A);
   static const Color statusAtencao = Color(0xFFF59E0B);
   static const Color statusInativo = Color(0xFFDC2626);
@@ -26,48 +35,33 @@ class AppTheme {
   /// pra não quebrar quem já importa `corPrincipal`.
   static const Color corPrincipal = frota500;
 
-  // Fase Liquid-Glass-PWA (20/08/2026, pedido do Daniel: aplicar nos PWAs
-  // cliente e motorista o mesmo liquid glass já feito na web) — mesma
-  // paleta do menu lateral web e do PWA cliente (ver globals.css:
-  // .glass-nav/.glass-nav-*). O Flutter não tem "backdrop-filter"
-  // aplicável via Theme a qualquer widget — o efeito vidro aqui vem da
-  // combinação gradiente + opacidade + borda clara + sombra suave, sem
-  // desfoque literal, mesma linguagem visual da web.
-  //
-  // Fase Liquid-Glass-Anel (20/08/2026, pedido do Daniel: "o cinza anterior
-  // não ficou bom" — 3ª imagem de referência: fundo quase preto
-  // azul-marinho, com um anel de luz azul-violeta brilhando só do lado
-  // esquerdo, tipo borda de esfera/portal) — troca a paleta cinza da fase
-  // anterior por esta nova, extraída por amostragem de pixel da imagem.
-  // Nomes das constantes mantidos (glassBronze*) por estabilidade — só o
-  // valor de cor mudou. O CSS da web usa várias camadas de
-  // radial-gradient pro anel, mas o Flutter só aceita 1 gradient por
-  // BoxDecoration — por isso aqui é um ÚNICO RadialGradient com centro
-  // fora da tela (Alignment(-1.8, 0)) e paradas (stops) que criam
-  // transparent->brilho->transparent, o mesmo truque de "buraco no meio"
-  // que faz só a BORDA do círculo aparecer.
-  static const Color glassBronzeClaro = Color(0xFF2A2A45);
-  static const Color glassBronzeMedio = Color(0xFF1C1B2F);
-  static const Color glassBronzeEscuro = Color(0xFF10101F);
-  static const Color glassBrilho = Color(0xFF999ED9);
-  static const Color glassBrilhoMedio = Color(0xFF8D94CA);
-  static const Color glassTexto = Color(0xFFF5F5FA);
-  static const Color glassTextoMuted = Color(0xFFA5A6C4);
-  static const Color glassIcone = Color(0xFFE8E9F5);
-  static const Color glassAcento = Color(0xFFFFD9A0);
+  // Único acento decorativo do tema Swiss Minimalism (design.md web:
+  // "Taupe — Extended palette, decorative use") — usado em toques pontuais
+  // (indicador de nível/pontos no drawer, item ativo do menu), nunca na
+  // paleta funcional preto/branco/cinza dos botões/inputs.
+  static const Color accento = Color(0xFFB38B6D);
+  static const Color accentoLight = Color(0xFFC9A788);
 
-  static const Gradient glassNavGradient = RadialGradient(
-    center: Alignment(-1.8, 0.0),
-    radius: 1.3,
-    colors: [
-      glassBronzeMedio,
-      glassBronzeMedio,
-      glassBrilhoMedio,
-      glassBrilho,
-      glassBronzeEscuro,
-      glassBronzeClaro,
-    ],
-    stops: [0.0, 0.55, 0.6, 0.64, 0.7, 1.0],
+  // Fase Design-System-Swiss-Minimalism — os nomes `glass*` datam da fase
+  // "vidro" (20/08/2026) anterior; mantidos por estabilidade (usados em
+  // ~29 telas), mas o VALOR agora segue a nova identidade "flat": texto
+  // quase-branco/cinza sobre o fundo off-black do menu, sem opacidade
+  // vidrada. Espelha .glass-nav-texto/-texto-muted/-icone/-acento do
+  // globals.css web (slate-100/slate-400/slate-300/accento).
+  static const Color glassTexto = Color(0xFFF1F5F9); // slate-100
+  static const Color glassTextoMuted = Color(0xFF94A3B8); // slate-400
+  static const Color glassIcone = Color(0xFFCBD5E1); // slate-300
+  static const Color glassAcento = accento;
+
+  // Antes um RadialGradient "anel de luz" (ver histórico de fases deste
+  // arquivo); a fase Swiss-Minimalism pede fundo LISO, sem blur/glow —
+  // igual ao `.glass-nav` da web (`bg-frota-950`, sólido). Mantido como
+  // `Gradient` (não `Color`) só pra não precisar editar as ~29 telas que
+  // fazem `BoxDecoration(gradient: AppTheme.glassNavGradient)`: um
+  // gradiente com as DUAS paradas na mesma cor renderiza idêntico a uma
+  // cor sólida.
+  static const Gradient glassNavGradient = LinearGradient(
+    colors: [frota950, frota950],
   );
 
   static ThemeData get tema {
@@ -77,30 +71,30 @@ class AppTheme {
         seedColor: frota500,
         brightness: Brightness.light,
       ),
-      scaffoldBackgroundColor: const Color(
-        0xFFF8FAFC,
-      ), // slate-50, igual ao painel web
+      scaffoldBackgroundColor: frota50, // slate-50, igual ao painel web
       appBarTheme: const AppBarTheme(
         backgroundColor: frota950,
         foregroundColor: Colors.white,
         centerTitle: true,
         iconTheme: IconThemeData(color: Colors.white),
+        elevation: 0, // Swiss Minimalism: superfície lisa, sem sombra de elevação
       ),
       drawerTheme: const DrawerThemeData(backgroundColor: frota950),
-      // Fase Liquid-Glass-PWA (20/08/2026) — Card é usado em quase toda
-      // tela sem estilo próprio (só `Card(child: ...)`, no visual padrão
-      // do Material). Por ser um ponto central do Theme (igual ao `.card`
-      // do globals.css na web), dá pra dar o efeito vidro (translúcido +
-      // borda clara + sombra suave) em toda tela de uma vez, sem editar
-      // arquivo por arquivo.
+      // Fase Design-System-Swiss-Minimalism (29/08/2026) — Card é usado em
+      // quase toda tela sem estilo próprio (só `Card(child: ...)`). Espelha
+      // `.card` do globals.css web: superfície branca SÓLIDA (sem
+      // translucidez/opacidade da fase vidro anterior), 1px de borda cinza-
+      // clara, sombra suave, cantos quase retos (a web usa 2px; 4px aqui é
+      // a concessão prática pro toque em tela pequena — mesmo espírito
+      // "sharp edges", sem ficar visualmente um glitch de renderização).
       cardTheme: CardThemeData(
-        elevation: 1,
-        color: Colors.white.withOpacity(0.82),
+        elevation: 0,
+        color: Colors.white,
         surfaceTintColor: Colors.transparent,
-        shadowColor: frota950.withOpacity(0.15),
+        shadowColor: frota950.withOpacity(0.06),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: Colors.white.withOpacity(0.7)),
+          borderRadius: BorderRadius.circular(4),
+          side: const BorderSide(color: Color(0xFFE2E8F0)), // slate-200
         ),
       ),
       // ATENÇÃO: `Size.fromHeight(48)` deixa a LARGURA mínima infinita —
@@ -115,23 +109,31 @@ class AppTheme {
           backgroundColor: frota500,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: frota700,
-          side: const BorderSide(color: frota600),
+          side: const BorderSide(color: Color(0xFFCBD5E1), width: 1.5), // slate-300
           minimumSize: const Size.fromHeight(48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(4),
           ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: Color(0xFFCBD5E1)), // slate-300
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: const BorderSide(color: frota500, width: 2),
+        ),
         filled: true,
         fillColor: Colors.white,
       ),
