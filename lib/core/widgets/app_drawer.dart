@@ -68,20 +68,28 @@ class AppDrawer extends ConsumerWidget {
                   children: [
                     // O logo FNI é escuro sobre fundo branco — "some" se
                     // colocado direto no frota-950, por isso o cartão branco
-                    // (mesma solução usada no painel web).
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Image.asset(
-                        'assets/images/logo-fni.png',
-                        height: 32,
-                        fit: BoxFit.contain,
+                    // (mesma solução usada no painel web). Envolvido num
+                    // Align (04/09/2026, achado do Daniel: "ajustar a Logo
+                    // para o tamanho correto") — sem isso o Container herdava
+                    // a largura total do Column pai (CrossAxisAlignment.
+                    // stretch do Drawer), esticando o cartão branco bem além
+                    // da logo e deixando uma faixa vazia à direita.
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Image.asset(
+                          'assets/images/logo-fni.png',
+                          height: 32,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
