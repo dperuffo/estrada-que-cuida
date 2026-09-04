@@ -47,7 +47,7 @@ class MissoesScreen extends ConsumerWidget {
             child: ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: missoes.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final missao = missoes[i];
                 final progresso = missao.meta == 0

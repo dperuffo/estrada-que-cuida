@@ -146,10 +146,14 @@ class EnderecoFrete {
   bool get preenchido => rua != null || cidade != null;
 
   String get linhaEndereco {
+    final ruaLinha =
+        rua != null ? (numero != null ? '$rua, $numero' : rua) : null;
+    final cidadeLinha =
+        cidade != null ? (uf != null ? '$cidade/$uf' : cidade) : null;
     final partes = <String>[
-      ?(rua != null ? (numero != null ? '$rua, $numero' : rua) : null),
-      ?bairro,
-      ?(cidade != null ? (uf != null ? '$cidade/$uf' : cidade) : null),
+      if (ruaLinha != null) ruaLinha,
+      if (bairro != null) bairro!,
+      if (cidadeLinha != null) cidadeLinha,
     ];
     return partes.join(' — ');
   }

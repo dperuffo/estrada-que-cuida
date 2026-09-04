@@ -79,7 +79,7 @@ class ExtratoScreen extends ConsumerWidget {
             onRefresh: () async => ref.invalidate(extratoPontosProvider),
             child: ListView.separated(
               itemCount: itens.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
+              separatorBuilder: (context, index) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final item = itens[i];
                 final positivo = item.pontos >= 0;

@@ -65,7 +65,7 @@ class CardVoucher extends StatelessWidget {
                     ? Image.network(
                         imagemUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _Placeholder(estilo: estilo),
+                        errorBuilder: (context, error, stackTrace) => _Placeholder(estilo: estilo),
                       )
                     : _Placeholder(estilo: estilo),
               ),

@@ -79,7 +79,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: resultado.itens.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1),
+                  separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, i) {
                     final item = resultado.itens[i];
                     return ListTile(

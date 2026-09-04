@@ -66,7 +66,7 @@ class DependentesScreen extends ConsumerWidget {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: dependentes.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 8),
+            separatorBuilder: (context, index) => const SizedBox(height: 8),
             itemBuilder: (context, i) {
               final d = dependentes[i];
               return Card(
