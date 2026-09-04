@@ -141,7 +141,7 @@ class AppDrawer extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Divider(color: Colors.white24, height: 1),
+              const Divider(color: Color(0xFFE2E8F0), height: 1),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -279,7 +279,7 @@ class AppDrawer extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Divider(color: Colors.white24, height: 1),
+              const Divider(color: Color(0xFFE2E8F0), height: 1),
               _ItemMenu(
                 icone: Icons.logout,
                 label: 'Sair',

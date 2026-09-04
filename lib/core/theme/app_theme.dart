@@ -16,7 +16,12 @@ class AppTheme {
   // convenção já usada aqui antes ("nomes mantidos, só o valor muda"),
   // pra não precisar editar campo por campo nas ~29 telas que já
   // referenciam `AppTheme.frota*`/`AppTheme.glass*`.
-  static const Color frota950 = Color(0xFF111111); // off-black — fundo do menu/drawer/AppBar
+  // Fase Paleta-Clara (04/09/2026, pedido do Daniel: "tons escuros no
+  // menu, botões e cores de gráficos ficaram muito pesados para a visão
+  // do usuário") — `frota950` deixa de ser o fundo do menu/drawer/AppBar
+  // (agora `frota50`, já existente abaixo) e passa a servir só de
+  // "tinta" (sombra de card). Nome mantido por estabilidade.
+  static const Color frota950 = Color(0xFF111111); // off-black — tinta (sombra)
   static const Color frota900 = Color(0xFF1A1A1A);
   static const Color frota800 = Color(0xFF262626);
   static const Color frota700 = Color(0xFF404040);
@@ -42,26 +47,27 @@ class AppTheme {
   static const Color accento = Color(0xFFB38B6D);
   static const Color accentoLight = Color(0xFFC9A788);
 
-  // Fase Design-System-Swiss-Minimalism — os nomes `glass*` datam da fase
-  // "vidro" (20/08/2026) anterior; mantidos por estabilidade (usados em
-  // ~29 telas), mas o VALOR agora segue a nova identidade "flat": texto
-  // quase-branco/cinza sobre o fundo off-black do menu, sem opacidade
-  // vidrada. Espelha .glass-nav-texto/-texto-muted/-icone/-acento do
-  // globals.css web (slate-100/slate-400/slate-300/accento).
-  static const Color glassTexto = Color(0xFFF1F5F9); // slate-100
-  static const Color glassTextoMuted = Color(0xFF94A3B8); // slate-400
-  static const Color glassIcone = Color(0xFFCBD5E1); // slate-300
+  // Fase Paleta-Clara (04/09/2026) — com o menu agora claro (`frota50`),
+  // texto/ícone invertem de claro-sobre-escuro pra escuro-sobre-claro.
+  // Espelha .glass-nav-texto/-texto-muted/-icone/-acento do globals.css
+  // web (agora slate-800/slate-500/slate-500/accento). Nomes `glass*`
+  // datam da fase "vidro" (20/08/2026), mantidos por estabilidade (usados
+  // em ~29 telas).
+  static const Color glassTexto = Color(0xFF1E293B); // slate-800
+  static const Color glassTextoMuted = Color(0xFF64748B); // slate-500
+  static const Color glassIcone = Color(0xFF64748B); // slate-500
   static const Color glassAcento = accento;
 
   // Antes um RadialGradient "anel de luz" (ver histórico de fases deste
-  // arquivo); a fase Swiss-Minimalism pede fundo LISO, sem blur/glow —
-  // igual ao `.glass-nav` da web (`bg-frota-950`, sólido). Mantido como
-  // `Gradient` (não `Color`) só pra não precisar editar as ~29 telas que
-  // fazem `BoxDecoration(gradient: AppTheme.glassNavGradient)`: um
-  // gradiente com as DUAS paradas na mesma cor renderiza idêntico a uma
-  // cor sólida.
+  // arquivo); a fase Swiss-Minimalism pede fundo LISO, sem blur/glow.
+  // Fase Paleta-Clara: o fundo do menu deixa de ser `frota950` (off-black
+  // sólido) e passa a ser `frota50` (claro, igual ao `.glass-nav` web
+  // depois da mesma mudança). Mantido como `Gradient` (não `Color`) só
+  // pra não precisar editar as ~29 telas que fazem
+  // `BoxDecoration(gradient: AppTheme.glassNavGradient)`: um gradiente
+  // com as DUAS paradas na mesma cor renderiza idêntico a uma cor sólida.
   static const Gradient glassNavGradient = LinearGradient(
-    colors: [frota950, frota950],
+    colors: [frota50, frota50],
   );
 
   static ThemeData get tema {
@@ -73,13 +79,13 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: frota50, // slate-50, igual ao painel web
       appBarTheme: const AppBarTheme(
-        backgroundColor: frota950,
-        foregroundColor: Colors.white,
+        backgroundColor: frota50,
+        foregroundColor: frota500,
         centerTitle: true,
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: IconThemeData(color: frota500),
         elevation: 0, // Swiss Minimalism: superfície lisa, sem sombra de elevação
       ),
-      drawerTheme: const DrawerThemeData(backgroundColor: frota950),
+      drawerTheme: const DrawerThemeData(backgroundColor: frota50),
       // Fase Design-System-Swiss-Minimalism (29/08/2026) — Card é usado em
       // quase toda tela sem estilo próprio (só `Card(child: ...)`). Espelha
       // `.card` do globals.css web: superfície branca SÓLIDA (sem
@@ -104,9 +110,12 @@ class AppTheme {
       // Nesses casos, sobrescreva localmente com
       // `style: ElevatedButton.styleFrom(minimumSize: const Size(64, 40))`
       // (ver exemplo em catalogo_screen.dart, botão "Resgatar").
+      // Fase Paleta-Clara (04/09/2026) — sai do off-black `frota500`
+      // (achado "pesado") e passa a usar o acento taupe do tema
+      // (`accento`), espelhando o .btn-primary do globals.css web.
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: frota500,
+          backgroundColor: accento,
           foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
           elevation: 0,
