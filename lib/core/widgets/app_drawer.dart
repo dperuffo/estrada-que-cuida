@@ -83,7 +83,7 @@ class AppDrawer extends ConsumerWidget {
                         ),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(4),
+                          borderRadius: BorderRadius.circular(AppTheme.radius),
                         ),
                         child: Image.asset(
                           'assets/images/logo-fni.png',
@@ -347,7 +347,7 @@ class _ItemMenu extends StatelessWidget {
       ),
       onTap: onTap,
       dense: true,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppTheme.radius)),
       hoverColor: Colors.white.withValues(alpha: 0.1),
     );
   }
