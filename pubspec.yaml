@@ -81,6 +81,10 @@ dependencies:
   # confirmação de entrega do frete. Funciona em Flutter Web (CustomPainter +
   # gestos, sem depender de plugin nativo), mesmo alvo único deste app.
   signature: ^5.5.0
+  # Fase Pente-Fino-Performance (10/09/2026, pedido do Daniel: "melhorar a
+  # performance da aplicacao como um todo") — cache em disco pras imagens
+  # remotas (Image.network baixava de novo a cada rebuild/reentrada na tela).
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

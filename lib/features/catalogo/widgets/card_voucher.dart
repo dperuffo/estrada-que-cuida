@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/fidelidade/categorias_fidelidade.dart';
 
@@ -62,10 +63,10 @@ class CardVoucher extends StatelessWidget {
                 height: 120,
                 width: double.infinity,
                 child: imagemUrl != null
-                    ? Image.network(
-                        imagemUrl!,
+                    ? CachedNetworkImage(
+                        imageUrl: imagemUrl!,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => _Placeholder(estilo: estilo),
+                        errorWidget: (context, url, error) => _Placeholder(estilo: estilo),
                       )
                     : _Placeholder(estilo: estilo),
               ),

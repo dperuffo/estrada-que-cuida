@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -684,8 +685,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       if (!mounted) return;
       await showDialog(
         context: context,
-        builder: (_) =>
-            Dialog(child: InteractiveViewer(child: Image.network(url))),
+        // Cache em disco ajuda se o motorista reabrir a mesma foto dentro da
+        // 1h de validade da signed URL; passado isso, uma nova URL é gerada.
+        builder: (_) => Dialog(
+            child: InteractiveViewer(child: CachedNetworkImage(imageUrl: url))),
       );
     } catch (_) {
       if (mounted) {
