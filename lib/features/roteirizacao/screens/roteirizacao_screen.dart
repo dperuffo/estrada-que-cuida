@@ -64,19 +64,20 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
 
   bool _carregando = false;
   String? _erro;
-  ResultadoRota? _resultado;
-  List<PracaPedagioNaRota> _pracasPedagio = [];
 
-  // Fase Seleção-Manual-de-Postos (28/07/2026) — pedido do Daniel: a mesma
-  // interatividade que o gestor de frota ganhou no painel web ("clicar nos
-  // postos desejados... a partir da seleção eles já vão compondo a rota e o
-  // custo total") também pro motorista aqui no PWA. `_candidatos` guarda
-  // TODOS os postos do corredor (não só os sugeridos); `_selecionados`
-  // começa com a sugestão do algoritmo guloso (otimizarAbastecimento) e o
-  // motorista ajusta tocando no mapa ou na lista — litros/custo recalculam
-  // na hora via calcularAbastecimentoParaSelecao (função pura, sem round-trip).
-  List<CandidatoAbastecimento> _candidatos = [];
-  Set<String> _selecionados = {};
+  // Fase Pente-Fino-Performance (10/09/2026) — achado real do Daniel: essa
+  // tela tinha TODO o estado do mapa/rota (_resultado, _candidatos,
+  // _selecionados, _pracasPedagio) junto com o estado do formulário. Qualquer
+  // setState do formulário (ex.: `onChanged` do campo "combustível no
+  // tanque", que disparava a cada tecla) reconstruía a tela inteira — inclusive
+  // o FlutterMap com todos os marcadores dos postos do corredor. Mesmo
+  // problema ao tocar num posto pra marcar/desmarcar parada. Solução: o
+  // estado de mapa/rota virou responsabilidade só do `_ResultadoRotaSection`
+  // abaixo — um State separado, então um `setState` ali reconstrói só aquele
+  // pedaço da árvore, sem tocar nos campos do formulário nem forçar rebuild
+  // do mapa por causa de uma tecla digitada.
+  final _resultadoKey = GlobalKey<_ResultadoRotaSectionState>();
+  final ValueNotifier<bool> _calculando = ValueNotifier(false);
 
   bool _carregandoVeiculos = true;
   List<VeiculoRoteirizacao> _veiculos = [];
@@ -107,6 +108,7 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
     _origemCtrl.dispose();
     _destinoCtrl.dispose();
     _combustivelInicialCtrl.dispose();
+    _calculando.dispose();
     super.dispose();
   }
 
@@ -189,117 +191,26 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
       );
       return;
     }
-    setState(() {
-      _carregando = true;
-      _erro = null;
-      _resultado = null;
-      _candidatos = [];
-      _selecionados = {};
-      _pracasPedagio = [];
-    });
+    setState(() => _erro = null);
 
-    final origemPonto = PontoRota(lat: _origem!.lat, lon: _origem!.lon);
-    final destinoPonto = PontoRota(lat: _destino!.lat, lon: _destino!.lon);
-    final resultado = await calcularRota(origemPonto, destinoPonto);
-
-    if (!mounted) return;
-    if (resultado == null) {
-      setState(() {
-        _carregando = false;
-        _erro =
-            'Não consegui calcular a rota agora. Tente de novo em instantes.';
-      });
-      return;
-    }
-
-    final candidatos = await buscarCandidatosAbastecimento(
-      coordenadas: resultado.coordenadas,
+    // A partir daqui, quem executa o cálculo e guarda o resultado é o
+    // `_ResultadoRotaSection` (ver State separado abaixo) — este widget só
+    // orquestra a chamada e exibe o erro, se houver, no mesmo lugar de
+    // sempre (antes do botão).
+    final erroCalculo = await _resultadoKey.currentState?.calcular(
+      origem: _origem!,
+      destino: _destino!,
+      veiculo: _veiculoSelecionado!,
       combustivel: _combustivel!,
     );
-    final pracasPedagio = await buscarPracasPedagioNaRota(
-      resultado.coordenadas,
-    );
-
-    final combustivelInicial = double.tryParse(
-      _combustivelInicialCtrl.text.replaceAll(',', '.'),
-    );
-
-    final paradas = otimizarAbastecimento(
-      candidatos: candidatos,
-      capacidadeTanqueL: _veiculoSelecionado!.tanque,
-      autonomiaKmPorL: _veiculoSelecionado!.autonomia,
-      distanciaTotalRotaKm: resultado.distanciaKm,
-      // Perfil "Equilíbrio" do painel web — pondera preço, qualidade do
-      // posto e desvio da rota (sem expor os 4 perfis nesta tela mais
-      // simples do motorista).
-      pesos: const PesosOtimizacao(preco: 0.5, score: 0.3, desvio: 0.2),
-      combustivelInicialL: combustivelInicial,
-    );
-
     if (!mounted) return;
-    setState(() {
-      _carregando = false;
-      _resultado = resultado;
-      _candidatos = candidatos;
-      // A sugestão do algoritmo vira o ponto de partida da seleção — o
-      // motorista ajusta a partir daí (toca pra marcar/desmarcar postos).
-      _selecionados = paradas.map((p) => p.posto.cnpj).toSet();
-      _pracasPedagio = pracasPedagio;
-    });
-
-    // Alimenta a missão "rotas_calculadas" (gamificação) — não bloqueia a
-    // tela nem mostra erro se falhar.
-    unawaited(registrarRotaCalculada());
-  }
-
-  // Recalcula litros/custo/viabilidade a cada toque — 100% no client (função
-  // pura), sem round-trip ao servidor. Também recalcula se o motorista mudar
-  // o combustível já no tanque depois de já ter um resultado.
-  ResultadoSelecaoManual get _selecao {
-    if (_resultado == null || _veiculoSelecionado == null) {
-      return const ResultadoSelecaoManual(paradas: [], alertas: []);
+    if (erroCalculo != null) {
+      setState(() => _erro = erroCalculo);
     }
-    final combustivelInicial = double.tryParse(
-      _combustivelInicialCtrl.text.replaceAll(',', '.'),
-    );
-    return calcularAbastecimentoParaSelecao(
-      candidatosSelecionados: _candidatos
-          .where((c) => _selecionados.contains(c.cnpj))
-          .toList(),
-      capacidadeTanqueL: _veiculoSelecionado!.tanque,
-      autonomiaKmPorL: _veiculoSelecionado!.autonomia,
-      distanciaTotalRotaKm: _resultado!.distanciaKm,
-      combustivelInicialL: combustivelInicial,
-    );
-  }
-
-  void _alternarPosto(String cnpj) {
-    setState(() {
-      if (_selecionados.contains(cnpj)) {
-        _selecionados.remove(cnpj);
-      } else {
-        _selecionados.add(cnpj);
-      }
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final selecao = _selecao;
-    final paradasAtuais = selecao.paradas;
-    final litrosTotal = paradasAtuais.fold<int>(
-      0,
-      (s, p) => s + p.litrosSugeridos,
-    );
-    final custoTotal = paradasAtuais.fold<double>(
-      0,
-      (s, p) => s + p.custoAbastecimento,
-    );
-    final custoPedagio = custoPedagioTotal(
-      _pracasPedagio,
-      categoriaPedagioDoVeiculo(_veiculoSelecionado),
-    );
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -368,9 +279,13 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  // Recalcula litros/custo ao vivo se o motorista ajustar o
-                  // combustível já no tanque depois de já ter um resultado.
-                  onChanged: (_) => setState(() {}),
+                  // Fase Pente-Fino-Performance (10/09/2026) — antes, cada
+                  // tecla aqui disparava um `setState` desta tela inteira só
+                  // pra recalcular litros/custo. Agora quem escuta essa
+                  // controller diretamente é o `_ResultadoRotaSection` (o
+                  // TextEditingController já é um ValueListenable), então o
+                  // recálculo ao vivo acontece isolado ali — sem reconstruir
+                  // o formulário nem o mapa a cada tecla.
                   decoration: const InputDecoration(
                     labelText: 'Combustível no tanque (L)',
                     helperText: 'padrão: tanque cheio',
@@ -385,127 +300,314 @@ class _RoteirizacaoScreenState extends State<RoteirizacaoScreen> {
             Text(_erro!, style: const TextStyle(color: Colors.red)),
             const SizedBox(height: 12),
           ],
-          ElevatedButton.icon(
-            onPressed: _carregando ? null : _calcular,
-            icon: const Icon(Icons.alt_route),
-            label: Text(_carregando ? 'Calculando...' : 'Calcular rota'),
+          ValueListenableBuilder<bool>(
+            valueListenable: _calculando,
+            builder: (context, calculando, _) {
+              final desabilitado = _carregando || calculando;
+              return ElevatedButton.icon(
+                onPressed: desabilitado ? null : _calcular,
+                icon: const Icon(Icons.alt_route),
+                label: Text(calculando ? 'Calculando...' : 'Calcular rota'),
+              );
+            },
           ),
-          if (_resultado != null) ...[
-            const SizedBox(height: 24),
-            _CartaoResultado(
-              resultado: _resultado!,
-              candidatos: _candidatos,
-              selecionados: _selecionados,
-              paradasAtuais: paradasAtuais,
-              pracasPedagio: _pracasPedagio,
-              onTogglePosto: _alternarPosto,
-            ),
-          ],
-          if (_resultado != null) ...[
-            const SizedBox(height: 16),
-            _CartaoCustoTotal(
-              litrosTotal: litrosTotal,
-              custoTotal: custoTotal,
-              numParadas: paradasAtuais.length,
-              custoPedagio: custoPedagio,
-            ),
-          ],
-          // Fase Seleção-Manual-de-Postos — avisos não bloqueantes quando o
-          // tanque não cobre a distância até a próxima parada escolhida (ou
-          // até o destino), pra alertar sem travar a tela.
-          if (selecao.alertas.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '⚠️ Verifique as paradas escolhidas:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                      color: Colors.red,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  for (final alerta in selecao.alertas)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '• $alerta',
-                        style: const TextStyle(fontSize: 12, color: Colors.red),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
-          if (_pracasPedagio.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            Text(
-              'Pedágios na rota (${_pracasPedagio.length})',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 8),
-            for (final praca in _pracasPedagio) _CartaoPedagio(praca: praca),
-          ],
-          if (_resultado != null && _candidatos.isEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                'Nenhum posto com preço registrado pra "$_combustivel" dentro do corredor da rota.',
-                style: const TextStyle(fontSize: 12.5),
-              ),
-            ),
-          ],
-          if (_candidatos.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const Text(
-              'Postos no corredor da rota',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Toque num posto (aqui ou no mapa) pra marcar ou desmarcar como parada de abastecimento. '
-              'A sugestão inicial já vem marcada — ajuste do seu jeito.',
-              style: TextStyle(fontSize: 11.5, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            _ListaCandidatos(
-              candidatos: _candidatos,
-              selecionados: _selecionados,
-              paradasAtuais: paradasAtuais,
-              onToggle: _alternarPosto,
-            ),
-          ],
-          if (paradasAtuais.isNotEmpty) ...[
-            const SizedBox(height: 20),
-            const Text(
-              'Suas paradas, na ordem da viagem',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Toque num cartão pra ver o posto no Google Maps.',
-              style: TextStyle(fontSize: 11.5, color: Colors.black54),
-            ),
-            const SizedBox(height: 8),
-            for (var i = 0; i < paradasAtuais.length; i++)
-              _CartaoParada(numero: i + 1, parada: paradasAtuais[i]),
-          ],
+          _ResultadoRotaSection(
+            key: _resultadoKey,
+            combustivelInicialCtrl: _combustivelInicialCtrl,
+            calculando: _calculando,
+            combustivelSelecionado: _combustivel,
+          ),
         ],
       ),
+    );
+  }
+}
+
+// Fase Pente-Fino-Performance (10/09/2026) — extraído de dentro de
+// `_RoteirizacaoScreenState` pra isolar o estado de mapa/rota (resultado,
+// candidatos, seleção de postos, pedágios) do estado do formulário. Um
+// `setState` aqui dentro (ex.: tocar num posto, ou o combustível inicial
+// mudando) reconstrói só este pedaço da árvore — o resto da tela (campos de
+// origem/destino, dropdown de combustível, seletor de veículo) fica parado.
+class _ResultadoRotaSection extends StatefulWidget {
+  final TextEditingController combustivelInicialCtrl;
+  final ValueNotifier<bool> calculando;
+  final String? combustivelSelecionado;
+
+  const _ResultadoRotaSection({
+    super.key,
+    required this.combustivelInicialCtrl,
+    required this.calculando,
+    required this.combustivelSelecionado,
+  });
+
+  @override
+  State<_ResultadoRotaSection> createState() => _ResultadoRotaSectionState();
+}
+
+class _ResultadoRotaSectionState extends State<_ResultadoRotaSection> {
+  ResultadoRota? _resultado;
+  List<PracaPedagioNaRota> _pracasPedagio = [];
+  List<CandidatoAbastecimento> _candidatos = [];
+  Set<String> _selecionados = {};
+  VeiculoRoteirizacao? _veiculo;
+
+  @override
+  void initState() {
+    super.initState();
+    // O TextEditingController já é um ValueListenable — escutando ele
+    // direto aqui, o recálculo ao vivo de litros/custo fica isolado deste
+    // State, sem depender de nenhum setState lá na tela pai.
+    widget.combustivelInicialCtrl.addListener(_onCombustivelInicialChange);
+  }
+
+  @override
+  void dispose() {
+    widget.combustivelInicialCtrl.removeListener(_onCombustivelInicialChange);
+    super.dispose();
+  }
+
+  void _onCombustivelInicialChange() {
+    // Só vale a pena reconstruir se já existe um resultado calculado —
+    // antes do primeiro cálculo essa tecla não muda nada visível aqui.
+    if (_resultado != null) setState(() {});
+  }
+
+  // Chamado pela tela pai (via GlobalKey) depois que ela já validou
+  // origem/destino/veículo/combustível. Retorna uma mensagem de erro (pra
+  // pai exibir no lugar de sempre) ou `null` se deu tudo certo.
+  Future<String?> calcular({
+    required SugestaoLocal origem,
+    required SugestaoLocal destino,
+    required VeiculoRoteirizacao veiculo,
+    required String combustivel,
+  }) async {
+    widget.calculando.value = true;
+    setState(() {
+      _resultado = null;
+      _candidatos = [];
+      _selecionados = {};
+      _pracasPedagio = [];
+      _veiculo = veiculo;
+    });
+
+    final origemPonto = PontoRota(lat: origem.lat, lon: origem.lon);
+    final destinoPonto = PontoRota(lat: destino.lat, lon: destino.lon);
+    final resultado = await calcularRota(origemPonto, destinoPonto);
+
+    if (!mounted) return null;
+    if (resultado == null) {
+      widget.calculando.value = false;
+      return 'Não consegui calcular a rota agora. Tente de novo em instantes.';
+    }
+
+    final candidatos = await buscarCandidatosAbastecimento(
+      coordenadas: resultado.coordenadas,
+      combustivel: combustivel,
+    );
+    final pracasPedagio = await buscarPracasPedagioNaRota(
+      resultado.coordenadas,
+    );
+
+    final combustivelInicial = double.tryParse(
+      widget.combustivelInicialCtrl.text.replaceAll(',', '.'),
+    );
+
+    final paradas = otimizarAbastecimento(
+      candidatos: candidatos,
+      capacidadeTanqueL: veiculo.tanque,
+      autonomiaKmPorL: veiculo.autonomia,
+      distanciaTotalRotaKm: resultado.distanciaKm,
+      // Perfil "Equilíbrio" do painel web — pondera preço, qualidade do
+      // posto e desvio da rota (sem expor os 4 perfis nesta tela mais
+      // simples do motorista).
+      pesos: const PesosOtimizacao(preco: 0.5, score: 0.3, desvio: 0.2),
+      combustivelInicialL: combustivelInicial,
+    );
+
+    if (!mounted) return null;
+    widget.calculando.value = false;
+    setState(() {
+      _resultado = resultado;
+      _candidatos = candidatos;
+      // A sugestão do algoritmo vira o ponto de partida da seleção — o
+      // motorista ajusta a partir daí (toca pra marcar/desmarcar postos).
+      _selecionados = paradas.map((p) => p.posto.cnpj).toSet();
+      _pracasPedagio = pracasPedagio;
+    });
+
+    // Alimenta a missão "rotas_calculadas" (gamificação) — não bloqueia a
+    // tela nem mostra erro se falhar.
+    unawaited(registrarRotaCalculada());
+    return null;
+  }
+
+  // Recalcula litros/custo/viabilidade a cada toque — 100% no client (função
+  // pura), sem round-trip ao servidor. Também recalcula se o motorista mudar
+  // o combustível já no tanque depois de já ter um resultado.
+  ResultadoSelecaoManual get _selecao {
+    if (_resultado == null || _veiculo == null) {
+      return const ResultadoSelecaoManual(paradas: [], alertas: []);
+    }
+    final combustivelInicial = double.tryParse(
+      widget.combustivelInicialCtrl.text.replaceAll(',', '.'),
+    );
+    return calcularAbastecimentoParaSelecao(
+      candidatosSelecionados: _candidatos
+          .where((c) => _selecionados.contains(c.cnpj))
+          .toList(),
+      capacidadeTanqueL: _veiculo!.tanque,
+      autonomiaKmPorL: _veiculo!.autonomia,
+      distanciaTotalRotaKm: _resultado!.distanciaKm,
+      combustivelInicialL: combustivelInicial,
+    );
+  }
+
+  void _alternarPosto(String cnpj) {
+    setState(() {
+      if (_selecionados.contains(cnpj)) {
+        _selecionados.remove(cnpj);
+      } else {
+        _selecionados.add(cnpj);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selecao = _selecao;
+    final paradasAtuais = selecao.paradas;
+    final litrosTotal = paradasAtuais.fold<int>(
+      0,
+      (s, p) => s + p.litrosSugeridos,
+    );
+    final custoTotal = paradasAtuais.fold<double>(
+      0,
+      (s, p) => s + p.custoAbastecimento,
+    );
+    final custoPedagio = custoPedagioTotal(
+      _pracasPedagio,
+      categoriaPedagioDoVeiculo(_veiculo),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_resultado != null) ...[
+          const SizedBox(height: 24),
+          _CartaoResultado(
+            resultado: _resultado!,
+            candidatos: _candidatos,
+            selecionados: _selecionados,
+            paradasAtuais: paradasAtuais,
+            pracasPedagio: _pracasPedagio,
+            onTogglePosto: _alternarPosto,
+          ),
+        ],
+        if (_resultado != null) ...[
+          const SizedBox(height: 16),
+          _CartaoCustoTotal(
+            litrosTotal: litrosTotal,
+            custoTotal: custoTotal,
+            numParadas: paradasAtuais.length,
+            custoPedagio: custoPedagio,
+          ),
+        ],
+        // Fase Seleção-Manual-de-Postos — avisos não bloqueantes quando o
+        // tanque não cobre a distância até a próxima parada escolhida (ou
+        // até o destino), pra alertar sem travar a tela.
+        if (selecao.alertas.isNotEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.25)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  '⚠️ Verifique as paradas escolhidas:',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                    color: Colors.red,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                for (final alerta in selecao.alertas)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      '• $alerta',
+                      style: const TextStyle(fontSize: 12, color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (_pracasPedagio.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          Text(
+            'Pedágios na rota (${_pracasPedagio.length})',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          for (final praca in _pracasPedagio) _CartaoPedagio(praca: praca),
+        ],
+        if (_resultado != null && _candidatos.isEmpty) ...[
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.amber.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Nenhum posto com preço registrado pra "${widget.combustivelSelecionado}" dentro do corredor da rota.',
+              style: const TextStyle(fontSize: 12.5),
+            ),
+          ),
+        ],
+        if (_candidatos.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Postos no corredor da rota',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Toque num posto (aqui ou no mapa) pra marcar ou desmarcar como parada de abastecimento. '
+            'A sugestão inicial já vem marcada — ajuste do seu jeito.',
+            style: TextStyle(fontSize: 11.5, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          _ListaCandidatos(
+            candidatos: _candidatos,
+            selecionados: _selecionados,
+            paradasAtuais: paradasAtuais,
+            onToggle: _alternarPosto,
+          ),
+        ],
+        if (paradasAtuais.isNotEmpty) ...[
+          const SizedBox(height: 20),
+          const Text(
+            'Suas paradas, na ordem da viagem',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Toque num cartão pra ver o posto no Google Maps.',
+            style: TextStyle(fontSize: 11.5, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          for (var i = 0; i < paradasAtuais.length; i++)
+            _CartaoParada(numero: i + 1, parada: paradasAtuais[i]),
+        ],
+      ],
     );
   }
 }
