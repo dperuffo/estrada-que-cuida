@@ -75,15 +75,35 @@ class ConsumoHoje {
   );
 }
 
-class MediasConsumo {
+// Fase Media-Por-Veiculo (14/09/2026, achado do Daniel: motorista pode
+// abastecer N veículos, e o card de "Sua Média KM/L" mostrava só o
+// veículo do vínculo ativo mais recente — ignorando abastecimentos em
+// outros veículos no mesmo período). Agora a RPC retorna uma lista por
+// placa em vez de um número único.
+class MediaVeiculo {
+  final String placa;
   final double? kmL;
-  final double? valorPorLitro;
+  final double? rsL;
+  final double kmTotal;
+  final double litrosTotal;
+  final int abastecimentos;
 
-  const MediasConsumo({this.kmL, this.valorPorLitro});
+  const MediaVeiculo({
+    required this.placa,
+    this.kmL,
+    this.rsL,
+    required this.kmTotal,
+    required this.litrosTotal,
+    required this.abastecimentos,
+  });
 
-  factory MediasConsumo.fromJson(Map<String, dynamic> json) => MediasConsumo(
+  factory MediaVeiculo.fromJson(Map<String, dynamic> json) => MediaVeiculo(
+    placa: json['placa'] as String,
     kmL: (json['km_l'] as num?)?.toDouble(),
-    valorPorLitro: (json['valor_por_litro'] as num?)?.toDouble(),
+    rsL: (json['rs_l'] as num?)?.toDouble(),
+    kmTotal: (json['km_total'] as num? ?? 0).toDouble(),
+    litrosTotal: (json['litros_total'] as num? ?? 0).toDouble(),
+    abastecimentos: (json['abastecimentos'] as num? ?? 0).toInt(),
   );
 }
 
@@ -113,7 +133,7 @@ class HomeResumo {
   final SaldoCota? cota;
   final SaldoFrete? frete;
   final ConsumoHoje hoje;
-  final MediasConsumo medias;
+  final List<MediaVeiculo> mediasPorVeiculo;
   final List<PontoSerieDia> serie7Dias;
 
   const HomeResumo({
@@ -124,7 +144,7 @@ class HomeResumo {
     this.cota,
     this.frete,
     required this.hoje,
-    required this.medias,
+    required this.mediasPorVeiculo,
     required this.serie7Dias,
   });
 
@@ -142,9 +162,9 @@ class HomeResumo {
     hoje: json['hoje'] != null
         ? ConsumoHoje.fromJson(json['hoje'] as Map<String, dynamic>)
         : const ConsumoHoje(litros: 0, valor: 0),
-    medias: json['medias'] != null
-        ? MediasConsumo.fromJson(json['medias'] as Map<String, dynamic>)
-        : const MediasConsumo(),
+    mediasPorVeiculo: (json['medias_por_veiculo'] as List? ?? [])
+        .map((e) => MediaVeiculo.fromJson(e as Map<String, dynamic>))
+        .toList(),
     serie7Dias: (json['serie_7dias'] as List? ?? [])
         .map((e) => PontoSerieDia.fromJson(e as Map<String, dynamic>))
         .toList(),

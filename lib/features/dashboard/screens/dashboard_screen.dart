@@ -595,42 +595,81 @@ class _CartaoCliente extends StatelessWidget {
   }
 }
 
-class _IndicadorConsumo extends StatelessWidget {
-  final String rotulo;
-  final String valor;
-  final IconData icone;
+// Fase Media-Por-Veiculo (14/09/2026, achado do Daniel: motorista pode
+// abastecer N veículos, então "Sua Média KM/L" era enganoso — só olhava
+// o veículo do vínculo ativo, ignorando os outros). Virou uma lista por
+// placa, ordenada do veículo mais usado (mais km rodado) pro menos
+// usado, já vindo assim da RPC. Com 1 veículo só, simplifica pra 1
+// linha (mas ainda mostra a placa — não esconde de qual carro é).
+class _CartaoConsumoPorVeiculo extends StatelessWidget {
+  final List<MediaVeiculo> veiculos;
 
-  const _IndicadorConsumo({
-    required this.rotulo,
-    required this.valor,
-    required this.icone,
-  });
+  const _CartaoConsumoPorVeiculo({required this.veiculos});
+
+  String _formataKmL(double? kmL) =>
+      kmL == null ? '—' : '${kmL.toStringAsFixed(2)} km/L';
+
+  String _formataRsL(double? rsL) =>
+      rsL == null ? '—' : _formatoMoeda.format(rsL);
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF3F3EF),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icone, color: const Color(0xFF1E6FBF), size: 22),
-            const SizedBox(height: 6),
-            Text(
-              valor,
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF3F3EF),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.speed_outlined,
+                color: Color(0xFF1E6FBF),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                veiculos.length == 1
+                    ? 'Consumo do veículo (30 dias)'
+                    : 'Consumo por veículo (30 dias)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.5,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...veiculos.map(
+            (v) => Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      v.placa,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${_formataKmL(v.kmL)} · ${_formataRsL(v.rsL)}',
+                    style: const TextStyle(
+                      color: Colors.black54,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              rotulo,
-              style: const TextStyle(color: Colors.black54, fontSize: 11.5),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -643,7 +682,7 @@ class _SecaoConsumo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final medias = resumo.medias;
+    final mediasPorVeiculo = resumo.mediasPorVeiculo;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,25 +697,8 @@ class _SecaoConsumo extends StatelessWidget {
           style: const TextStyle(color: Colors.black54),
         ),
         const SizedBox(height: 14),
-        Row(
-          children: [
-            _IndicadorConsumo(
-              rotulo: 'Média KM/L (30 dias)',
-              valor: medias.kmL == null
-                  ? '—'
-                  : '${medias.kmL!.toStringAsFixed(2)} km/L',
-              icone: Icons.speed_outlined,
-            ),
-            const SizedBox(width: 12),
-            _IndicadorConsumo(
-              rotulo: 'Média R\$/L (30 dias)',
-              valor: medias.valorPorLitro == null
-                  ? '—'
-                  : _formatoMoeda.format(medias.valorPorLitro),
-              icone: Icons.local_gas_station_outlined,
-            ),
-          ],
-        ),
+        if (mediasPorVeiculo.isNotEmpty)
+          _CartaoConsumoPorVeiculo(veiculos: mediasPorVeiculo),
         if (resumo.serie7Dias.isNotEmpty) ...[
           const SizedBox(height: 20),
           const Text(
