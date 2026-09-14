@@ -615,11 +615,22 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
 
   const _CartaoConsumoPorVeiculo({required this.veiculos});
 
-  String _formataKmL(double? kmL) =>
-      kmL == null ? '—' : '${kmL.toStringAsFixed(2)} km/L';
+  // Fase Media-Por-Veiculo-Clareza (14/09/2026, achado do Daniel: um
+  // "—" mudo não diferenciava "sem abastecimento nenhum" de "tenho
+  // abastecimentos mas o par de hodômetro foi descartado por segurança"
+  // (delta implausível, > 20 km/L — ver teto de sanidade na RPC
+  // motorista_home_resumo). Com 2+ abastecimentos e km_l nulo, mostra um
+  // texto explicativo em vez do traço sozinho.
+  String _formataKmL(double? kmL, int abastecimentos) {
+    if (kmL != null) return '${kmL.toStringAsFixed(2)} km/L';
+    return abastecimentos >= 2 ? 'km/L indisponível*' : '—';
+  }
 
   String _formataRsL(double? rsL) =>
       rsL == null ? '—' : _formatoMoeda.format(rsL);
+
+  bool get _temNotaKmLIndisponivel =>
+      veiculos.any((v) => v.kmL == null && v.abastecimentos >= 2);
 
   @override
   Widget build(BuildContext context) {
@@ -668,7 +679,7 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${_formataKmL(v.kmL)} · ${_formataRsL(v.rsL)}',
+                    '${_formataKmL(v.kmL, v.abastecimentos)} · ${_formataRsL(v.rsL)}',
                     style: const TextStyle(
                       color: Colors.black54,
                       fontSize: 12.5,
@@ -678,6 +689,18 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
               ),
             ),
           ),
+          if (_temNotaKmLIndisponivel) ...[
+            const SizedBox(height: 6),
+            const Text(
+              '* sem par de hodômetro confiável no período (variação '
+              'implausível entre dois abastecimentos)',
+              style: TextStyle(
+                color: Colors.black45,
+                fontSize: 11,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
       ),
     );
