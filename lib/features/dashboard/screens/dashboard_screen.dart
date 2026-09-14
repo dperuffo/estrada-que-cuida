@@ -163,18 +163,27 @@ class DashboardScreen extends ConsumerWidget {
 
             // Seção de consumo — pedido do Daniel (19/07): volume e valor
             // abastecidos hoje, médias de consumo do veículo (KM/L e
-            // R$/L) e gráfico dos últimos 7 dias. Some se ainda não há
-            // veículo vinculado (nada pra mostrar).
+            // R$/L) e gráfico dos últimos 7 dias. Calculado por
+            // IDENTIDADE do motorista (CPF/nome) nos últimos dias — não
+            // depende mais de vínculo ativo (`placa`). Some só quando
+            // não há dado nenhum pra mostrar (achado do Daniel,
+            // 14/09/2026: motorista sem vínculo mas com abastecimentos
+            // reais registrados ficava sem ver nada dessa seção).
             homeResumoAsync.maybeWhen(
-              data: (resumo) =>
-                  resumo == null ||
-                      resumo.status != 'ok' ||
-                      resumo.placa == null
-                  ? const SizedBox.shrink()
-                  : Padding(
-                      padding: const EdgeInsets.only(top: 28),
-                      child: _SecaoConsumo(resumo: resumo),
-                    ),
+              data: (resumo) {
+                if (resumo == null || resumo.status != 'ok') {
+                  return const SizedBox.shrink();
+                }
+                final temDado =
+                    resumo.hoje.litros > 0 ||
+                    resumo.mediasPorVeiculo.isNotEmpty ||
+                    resumo.serie7Dias.isNotEmpty;
+                if (!temDado) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 28),
+                  child: _SecaoConsumo(resumo: resumo),
+                );
+              },
               orElse: () => const SizedBox.shrink(),
             ),
           ],
