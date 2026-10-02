@@ -28,6 +28,9 @@ import '../../features/avisos/screens/avisos_screen.dart';
 import '../../features/inspecao_veicular/screens/inspecao_veicular_screen.dart';
 import '../../features/abastecimento_interno/screens/abastecimento_interno_screen.dart';
 import '../../features/abastecimento_manual/screens/abastecimento_manual_screen.dart';
+import '../../features/abastecimento_pdv/screens/abastecimento_pdv_iniciar_screen.dart';
+import '../../features/abastecimento_pdv/screens/abastecimento_pdv_otp_screen.dart';
+import '../../features/abastecimento_pdv/screens/abastecimento_pdv_acompanhar_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -200,6 +203,32 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/abastecimento-manual',
       builder: (context, state) => const AbastecimentoManualScreen(),
+    ),
+    // Fase 2 PDV (02/10/2026) — fluxo de abastecimento num posto com PDV
+    // ativo (revenda): escolher o posto com geolocalização bloqueante →
+    // mostrar código+OTP → acompanhar a confirmação em tempo real.
+    GoRoute(
+      path: '/abastecimento-pdv',
+      builder: (context, state) => const AbastecimentoPdvIniciarScreen(),
+    ),
+    GoRoute(
+      path: '/abastecimento-pdv/otp',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return AbastecimentoPdvOtpScreen(
+          abastecimentoPdvId: extra['id'] as int,
+          codigoInicial: extra['codigoAbastecimento'] as String?,
+          otpInicial: extra['otpAtual'] as String?,
+          otpValidoAteTransacao: extra['otpValidoAteTransacao'] as DateTime?,
+          nomeRevenda: extra['nomeRevenda'] as String?,
+        );
+      },
+    ),
+    GoRoute(
+      path: '/abastecimento-pdv/acompanhar/:id',
+      builder: (context, state) => AbastecimentoPdvAcompanharScreen(
+        abastecimentoPdvId: int.parse(state.pathParameters['id']!),
+      ),
     ),
   ],
 );

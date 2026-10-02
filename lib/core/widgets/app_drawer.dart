@@ -196,6 +196,13 @@ class AppDrawer extends ConsumerWidget {
                       label: 'Lançar Abastecimento',
                       onTap: () => _ir(context, '/abastecimento-manual'),
                     ),
+                    // Fase 2 PDV (02/10/2026) — pedido do Daniel: PDV como
+                    // 5º canal de abastecimento, opcional por revenda.
+                    _ItemMenu(
+                      icone: Icons.point_of_sale_outlined,
+                      label: 'Abastecer no PDV',
+                      onTap: () => _ir(context, '/abastecimento-pdv'),
+                    ),
                     _ItemMenu(
                       icone: Icons.alt_route_outlined,
                       label: 'Roteirização',
