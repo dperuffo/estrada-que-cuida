@@ -6,7 +6,13 @@ import '../../../core/widgets/app_drawer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/abastecimento_pdv_provider.dart';
 
-final _formatoHora = DateFormat.Hm('pt_BR');
+// Sem locale explícito ("pt_BR") de propósito — o app nunca chama
+// initializeDateFormatting() (nenhuma outra tela usa DateFormat com
+// locale), então um DateFormat com locale explícito lança
+// LocaleDataException em tempo de execução (achado real: tela ficava em
+// branco, sem erro visível, no teste do Daniel). Mesmo padrão das demais
+// telas (DateFormat('dd/MM/yyyy HH:mm') etc.) — só o padrão muda.
+final _formatoHora = DateFormat('HH:mm');
 
 // Fase 2 PDV (02/10/2026) — Tela 2 do fluxo: código + OTP. Mostra o
 // código de 10 dígitos (fixo pra essa transação) e um OTP de 6 dígitos
