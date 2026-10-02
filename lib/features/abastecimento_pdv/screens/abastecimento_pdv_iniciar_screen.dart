@@ -7,10 +7,11 @@ import '../providers/abastecimento_pdv_provider.dart';
 
 // Fase 2 PDV (02/10/2026) — Tela 1 do fluxo: "Abastecer neste posto".
 // Pega a localização do motorista (bloqueante — sem ela não dá nem pra
-// listar revendas por proximidade), lista as revendas com PDV ativo por
-// perto e, ao confirmar, chama iniciar_abastecimento_pdv — que faz o
-// double-check de geofencing (raio de 500m, configurável por cliente) no
-// servidor. Se aprovado, segue pra Tela 2 (código + OTP).
+// listar revendas por proximidade) e lista as revendas com PDV ativo por
+// perto. Fase 5 PDV (02/10/2026, captura de hodômetro): quem de fato
+// chama iniciar_abastecimento_pdv agora é a Tela 1.5 (hodômetro), porque
+// o hodômetro passou a ser obrigatório nessa chamada — esta tela só
+// escolhe o posto e repassa revenda/geolocalização pra lá.
 class AbastecimentoPdvIniciarScreen extends ConsumerStatefulWidget {
   const AbastecimentoPdvIniciarScreen({super.key});
 
@@ -24,7 +25,6 @@ class _AbastecimentoPdvIniciarScreenState
   LocalizacaoPdv? _localizacao;
   bool _obtendoLocalizacao = true;
   String? _revendaSelecionadaId;
-  bool _confirmando = false;
   String? _erro;
 
   @override
@@ -46,7 +46,7 @@ class _AbastecimentoPdvIniciarScreenState
     });
   }
 
-  Future<void> _confirmar() async {
+  void _confirmar() {
     final loc = _localizacao;
     if (loc == null || loc.lat == null || loc.lon == null) return;
     if (_revendaSelecionadaId == null) {
@@ -54,59 +54,14 @@ class _AbastecimentoPdvIniciarScreenState
       return;
     }
 
-    setState(() {
-      _confirmando = true;
-      _erro = null;
-    });
-    try {
-      final resultado = await AbastecimentoPdvService.iniciar(
-        revendaEmpresaId: _revendaSelecionadaId!,
-        lat: loc.lat!,
-        lon: loc.lon!,
-      );
-      if (!mounted) return;
-
-      switch (resultado.status) {
-        case 'aguardando_pdv':
-          context.push(
-            '/abastecimento-pdv/otp',
-            extra: {
-              'id': resultado.id,
-              'codigoAbastecimento': resultado.codigoAbastecimento,
-              'otpAtual': resultado.otpAtual,
-              'otpValidoAteTransacao': resultado.otpValidoAteTransacao,
-              'nomeRevenda': resultado.nomeRevenda,
-            },
-          );
-          break;
-        case 'geolocalizacao_reprovada':
-          setState(
-            () => _erro =
-                'Você está a ${resultado.distanciaMetros?.toStringAsFixed(0) ?? '?'} m do posto — '
-                'o limite permitido é ${resultado.raioPermitidoMetros?.toStringAsFixed(0) ?? '500'} m. '
-                'Chegue mais perto da bomba e tente de novo.',
-          );
-          break;
-        case 'nao_vinculado':
-          setState(() => _erro = 'Seu usuário não está vinculado a um cadastro de motorista.');
-          break;
-        case 'veiculo_nao_identificado':
-        case 'veiculo_nao_autorizado':
-          setState(() => _erro = 'Não encontrei um veículo autorizado vinculado a você.');
-          break;
-        case 'revenda_invalida':
-        case 'posto_sem_coordenadas':
-        case 'revenda_sem_pdv_ativo':
-          setState(() => _erro = 'Esse posto não está com o PDV disponível no momento. Tente outro ou abasteça por outro canal.');
-          break;
-        default:
-          setState(() => _erro = 'Não consegui iniciar o abastecimento agora. Tente de novo em instantes.');
-      }
-    } catch (e) {
-      setState(() => _erro = 'Não consegui iniciar o abastecimento agora. Tente de novo em instantes.');
-    } finally {
-      if (mounted) setState(() => _confirmando = false);
-    }
+    context.push(
+      '/abastecimento-pdv/hodometro',
+      extra: {
+        'revendaEmpresaId': _revendaSelecionadaId!,
+        'lat': loc.lat!,
+        'lon': loc.lon!,
+      },
+    );
   }
 
   @override
@@ -240,14 +195,8 @@ class _AbastecimentoPdvIniciarScreenState
               ],
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _confirmando ? null : _confirmar,
-                child: _confirmando
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Text('Confirmar abastecimento neste posto'),
+                onPressed: _confirmar,
+                child: const Text('Confirmar abastecimento neste posto'),
               ),
             ],
           );

@@ -1,5 +1,8 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/services/supabase_service.dart';
 
 // Fase 2 PDV (02/10/2026, "Vamos para a fase 2") — fluxo do motorista pra
@@ -118,6 +121,9 @@ class ResultadoIniciarPdv {
   final num? distanciaMetros;
   final num? raioPermitidoMetros;
   final String? nomeRevenda;
+  // Fase 5 PDV — só vem preenchido quando status == 'hodometro_invalido',
+  // pra tela mostrar "tem que ser maior que X km".
+  final num? ultimoHodometro;
 
   const ResultadoIniciarPdv({
     required this.status,
@@ -128,6 +134,7 @@ class ResultadoIniciarPdv {
     this.distanciaMetros,
     this.raioPermitidoMetros,
     this.nomeRevenda,
+    this.ultimoHodometro,
   });
 
   factory ResultadoIniciarPdv.fromJson(Map<String, dynamic> json) {
@@ -142,7 +149,73 @@ class ResultadoIniciarPdv {
       distanciaMetros: json['distanciaMetros'] as num?,
       raioPermitidoMetros: json['raioPermitidoMetros'] as num?,
       nomeRevenda: json['nomeRevenda'] as String?,
+      ultimoHodometro: json['ultimoHodometro'] as num?,
     );
+  }
+}
+
+// --- Fase 5 PDV: contexto de hodômetro (placa + último registrado) -----
+// Consultado pela nova tela de captura de hodômetro ANTES de fotografar,
+// só pra mostrar "último hodômetro: X km" como referência — a validação
+// de verdade acontece no servidor, dentro de iniciar_abastecimento_pdv
+// (ver ResultadoIniciarPdv.ultimoHodometro acima, status hodometro_invalido).
+class ContextoHodometroPdv {
+  final String status;
+  final String? placa;
+  final num? ultimoHodometro;
+
+  const ContextoHodometroPdv({required this.status, this.placa, this.ultimoHodometro});
+
+  factory ContextoHodometroPdv.fromJson(Map<String, dynamic> json) {
+    return ContextoHodometroPdv(
+      status: json['status'] as String,
+      placa: json['placa'] as String?,
+      ultimoHodometro: json['ultimoHodometro'] as num?,
+    );
+  }
+}
+
+// --- OCR do painel do veículo (hodômetro) -------------------------------
+// Mesmo padrão de OcrCupomAbastecimentoService (abastecimento_manual_provider.dart):
+// tesseract.js só roda em Node, então a leitura acontece numa rota do site
+// (repo Gestão de Frotas), autenticada com o access_token da sessão
+// Supabase. Best-effort: o valor lido só pré-preenche o campo — o
+// motorista sempre pode corrigir antes de confirmar.
+const _baseUrlSitePdv = 'https://fxgestaodefrotasonline.com';
+
+class ResultadoOcrHodometro {
+  final String? texto;
+  final num? hodometro;
+  final String? erro;
+
+  const ResultadoOcrHodometro.ok({this.texto, this.hodometro}) : erro = null;
+  const ResultadoOcrHodometro.erro(this.erro) : texto = null, hodometro = null;
+}
+
+class OcrHodometroService {
+  Future<ResultadoOcrHodometro> lerHodometro(Uint8List bytes) async {
+    final token = SupabaseService.client.auth.currentSession?.accessToken;
+    if (token == null) {
+      return const ResultadoOcrHodometro.erro('Sessão expirada, faça login novamente.');
+    }
+
+    try {
+      final request =
+          http.MultipartRequest('POST', Uri.parse('$_baseUrlSitePdv/api/ocr/hodometro'))
+            ..headers['Authorization'] = 'Bearer $token'
+            ..files.add(http.MultipartFile.fromBytes('arquivo', bytes, filename: 'hodometro.jpg'));
+
+      final resposta = await request.send().timeout(const Duration(seconds: 30));
+      final corpoTexto = await resposta.stream.bytesToString();
+      final corpo = jsonDecode(corpoTexto) as Map<String, dynamic>;
+
+      if (resposta.statusCode != 200) {
+        return ResultadoOcrHodometro.erro(corpo['erro'] as String? ?? 'Não consegui ler a foto agora.');
+      }
+      return ResultadoOcrHodometro.ok(texto: corpo['texto'] as String?, hodometro: corpo['hodometro'] as num?);
+    } catch (_) {
+      return const ResultadoOcrHodometro.erro('Não consegui ler a foto agora. Preencha manualmente.');
+    }
   }
 }
 
@@ -231,6 +304,7 @@ class AbastecimentoPdvService {
     required String revendaEmpresaId,
     required double lat,
     required double lon,
+    required num hodometro,
   }) async {
     final resp = await SupabaseService.client.rpc(
       'iniciar_abastecimento_pdv',
@@ -238,9 +312,17 @@ class AbastecimentoPdvService {
         'p_revenda_empresa_id': revendaEmpresaId,
         'p_lat': lat,
         'p_lon': lon,
+        'p_hodometro': hodometro,
       },
     );
     return ResultadoIniciarPdv.fromJson(resp as Map<String, dynamic>);
+  }
+
+  // Fase 5 PDV — chamada pela tela de captura de hodômetro antes de
+  // fotografar, só pra mostrar a placa/último hodômetro como referência.
+  static Future<ContextoHodometroPdv> contextoHodometro() async {
+    final resp = await SupabaseService.client.rpc('contexto_hodometro_pdv');
+    return ContextoHodometroPdv.fromJson(resp as Map<String, dynamic>);
   }
 
   static Future<OtpAtualPdv> obterOtpAtual(int abastecimentoPdvId) async {

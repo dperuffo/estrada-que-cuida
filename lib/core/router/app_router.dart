@@ -29,6 +29,7 @@ import '../../features/inspecao_veicular/screens/inspecao_veicular_screen.dart';
 import '../../features/abastecimento_interno/screens/abastecimento_interno_screen.dart';
 import '../../features/abastecimento_manual/screens/abastecimento_manual_screen.dart';
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_iniciar_screen.dart';
+import '../../features/abastecimento_pdv/screens/abastecimento_pdv_hodometro_screen.dart';
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_otp_screen.dart';
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_acompanhar_screen.dart';
 
@@ -210,6 +211,20 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/abastecimento-pdv',
       builder: (context, state) => const AbastecimentoPdvIniciarScreen(),
+    ),
+    // Fase 5 PDV (02/10/2026) — Tela 1.5: captura do hodômetro por foto
+    // com OCR antes de gerar o código/OTP (iniciar_abastecimento_pdv
+    // passou a exigir p_hodometro).
+    GoRoute(
+      path: '/abastecimento-pdv/hodometro',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>;
+        return AbastecimentoPdvHodometroScreen(
+          revendaEmpresaId: extra['revendaEmpresaId'] as String,
+          lat: extra['lat'] as double,
+          lon: extra['lon'] as double,
+        );
+      },
     ),
     GoRoute(
       path: '/abastecimento-pdv/otp',
