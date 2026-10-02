@@ -45,6 +45,7 @@ class _AbastecimentoPdvHodometroScreenState
   String? _placa;
   num? _ultimoHodometro;
   String? _erro;
+  bool _confiancaBaixa = false;
 
   @override
   void initState() {
@@ -69,13 +70,17 @@ class _AbastecimentoPdvHodometroScreenState
   }
 
   // Mesmo padrão de câmera + confirmação já usado em
-  // abastecimento_manual_screen.dart (_capturarFoto/_tirarFoto).
+  // abastecimento_manual_screen.dart (_capturarFoto/_tirarFoto). Qualidade e
+  // resolução mais altas que o padrão usado nos outros OCRs desta tela
+  // (02/10/2026, acurácia ruim reportada pelo Daniel): dígito de hodômetro é
+  // pequeno no quadro da foto — comprimir demais destrói exatamente o
+  // detalhe que o OCR precisa pra distinguir, por exemplo, "3" de "8".
   Future<Uint8List?> _capturarFoto() async {
     try {
       final foto = await ImagePicker().pickImage(
         source: ImageSource.camera,
-        imageQuality: 70,
-        maxWidth: 1600,
+        imageQuality: 90,
+        maxWidth: 2400,
       );
       if (foto == null) return null;
       return await foto.readAsBytes();
@@ -129,6 +134,7 @@ class _AbastecimentoPdvHodometroScreenState
       _fotoBytes = bytes;
       _lendoOcr = true;
       _erro = null;
+      _confiancaBaixa = false;
     });
 
     final resultado = await OcrHodometroService().lerHodometro(bytes);
@@ -139,6 +145,10 @@ class _AbastecimentoPdvHodometroScreenState
       if (resultado.hodometro != null) {
         _hodometroCtrl.text = resultado.hodometro!.toStringAsFixed(0);
       }
+      // A leitura preenche o campo mesmo com confiança baixa (ajuda mais do
+      // que não preencher nada), mas sinaliza bem visível que o motorista
+      // precisa conferir dígito a dígito antes de confirmar.
+      _confiancaBaixa = resultado.hodometro == null || resultado.confiancaBaixa;
     });
 
     if (resultado.erro != null && mounted) {
@@ -254,6 +264,11 @@ class _AbastecimentoPdvHodometroScreenState
                       : 'Fotografe o painel do veículo pra registrar o hodômetro deste abastecimento.',
                   style: const TextStyle(color: Colors.black54),
                 ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Dica: aproxime bem só dos números do hodômetro, evite reflexo no vidro do painel e garanta boa luz.',
+                  style: TextStyle(color: Colors.black45, fontSize: 12),
+                ),
                 if (_ultimoHodometro != null) ...[
                   const SizedBox(height: 4),
                   Text(
@@ -295,6 +310,21 @@ class _AbastecimentoPdvHodometroScreenState
                     border: OutlineInputBorder(),
                   ),
                 ),
+                if (_confiancaBaixa && _fotoBytes != null && !_lendoOcr) ...[
+                  const SizedBox(height: 8),
+                  const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 18, color: AppTheme.statusAtencao),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'A leitura automática não ficou confiável — confira o valor com atenção antes de confirmar.',
+                          style: TextStyle(color: AppTheme.statusAtencao, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (_erro != null) ...[
                   const SizedBox(height: 12),
                   Text(_erro!, style: const TextStyle(color: AppTheme.statusInativo)),

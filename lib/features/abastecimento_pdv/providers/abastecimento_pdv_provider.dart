@@ -186,10 +186,21 @@ const _baseUrlSitePdv = 'https://fxgestaodefrotasonline.com';
 class ResultadoOcrHodometro {
   final String? texto;
   final num? hodometro;
+  final num? confianca;
   final String? erro;
 
-  const ResultadoOcrHodometro.ok({this.texto, this.hodometro}) : erro = null;
-  const ResultadoOcrHodometro.erro(this.erro) : texto = null, hodometro = null;
+  const ResultadoOcrHodometro.ok({this.texto, this.hodometro, this.confianca}) : erro = null;
+  const ResultadoOcrHodometro.erro(this.erro)
+    : texto = null,
+      hodometro = null,
+      confianca = null;
+
+  // Retrabalho (02/10/2026, acurácia ruim reportada pelo Daniel): o backend
+  // passou a mandar junto a confiança (0-100) que o próprio tesseract
+  // atribuiu à leitura — abaixo desse limite a gente ainda pré-preenche
+  // (é melhor que nada), mas avisa bem visível que o motorista PRECISA
+  // confirmar o valor com o olho antes de seguir.
+  bool get confiancaBaixa => confianca == null || confianca! < 60;
 }
 
 class OcrHodometroService {
@@ -212,7 +223,11 @@ class OcrHodometroService {
       if (resposta.statusCode != 200) {
         return ResultadoOcrHodometro.erro(corpo['erro'] as String? ?? 'Não consegui ler a foto agora.');
       }
-      return ResultadoOcrHodometro.ok(texto: corpo['texto'] as String?, hodometro: corpo['hodometro'] as num?);
+      return ResultadoOcrHodometro.ok(
+        texto: corpo['texto'] as String?,
+        hodometro: corpo['hodometro'] as num?,
+        confianca: corpo['confianca'] as num?,
+      );
     } catch (_) {
       return const ResultadoOcrHodometro.erro('Não consegui ler a foto agora. Preencha manualmente.');
     }
