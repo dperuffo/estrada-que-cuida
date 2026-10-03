@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -67,7 +68,7 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Icon(Icons.check_circle, size: 56, color: AppTheme.statusAtivo),
+          const SizedBox(height: 8),
           const SizedBox(height: 8),
           const Text(
             'Abastecimento confirmado!',
@@ -130,13 +131,15 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 for (var i = 1; i <= 5; i++)
-                  IconButton(
-                    onPressed: () => aoMudar(i),
-                    iconSize: 36,
-                    tooltip: '$i estrela${i > 1 ? 's' : ''}',
-                    icon: Icon(
-                      i <= nota ? Icons.star : Icons.star_border,
-                      color: i <= nota ? const Color(0xFFF59E0B) : Colors.black26,
+                  GestureDetector(
+                    onTap: () => aoMudar(i),
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: CustomPaint(
+                        size: const Size(40, 40),
+                        painter: _EstrelaPainter(preenchida: i <= nota),
+                      ),
                     ),
                   ),
               ],
@@ -146,4 +149,43 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
       ),
     );
   }
+}
+
+// Estrela desenhada à mão (Path) — não depende da fonte de ícones, que não
+// estava carregando no PWA publicado.
+class _EstrelaPainter extends CustomPainter {
+  final bool preenchida;
+  const _EstrelaPainter({required this.preenchida});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final centro = Offset(size.width / 2, size.height / 2 + 1);
+    final raioExterno = size.width / 2;
+    final raioInterno = raioExterno * 0.42;
+    final path = Path();
+    for (var i = 0; i < 10; i++) {
+      final raio = i.isEven ? raioExterno : raioInterno;
+      final angulo = -math.pi / 2 + i * math.pi / 5;
+      final ponto = Offset(centro.dx + raio * math.cos(angulo), centro.dy + raio * math.sin(angulo));
+      if (i == 0) {
+        path.moveTo(ponto.dx, ponto.dy);
+      } else {
+        path.lineTo(ponto.dx, ponto.dy);
+      }
+    }
+    path.close();
+    const cor = Color(0xFFF59E0B);
+    if (preenchida) canvas.drawPath(path, Paint()..color = cor);
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = preenchida ? cor : const Color(0xFF94A3B8)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..strokeJoin = StrokeJoin.round,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EstrelaPainter old) => old.preenchida != preenchida;
 }
