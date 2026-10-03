@@ -67,7 +67,7 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Icon(Icons.check_circle_outline, size: 56, color: AppTheme.statusAtivo),
+          const Icon(Icons.check_circle, size: 56, color: AppTheme.statusAtivo),
           const SizedBox(height: 8),
           const Text(
             'Abastecimento confirmado!',
@@ -135,7 +135,7 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
                     iconSize: 36,
                     tooltip: '$i estrela${i > 1 ? 's' : ''}',
                     icon: Icon(
-                      i <= nota ? Icons.star_rounded : Icons.star_outline_rounded,
+                      i <= nota ? Icons.star : Icons.star_border,
                       color: i <= nota ? const Color(0xFFF59E0B) : Colors.black26,
                     ),
                   ),
