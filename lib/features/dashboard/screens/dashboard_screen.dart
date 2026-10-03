@@ -9,6 +9,8 @@ import '../../gamificacao/providers/missoes_provider.dart';
 import '../../jornada/providers/jornada_provider.dart';
 import '../providers/dashboard_provider.dart';
 import '../providers/home_resumo_provider.dart';
+import '../providers/pre_pedido_provider.dart';
+import '../widgets/cartao_pre_pedido.dart';
 
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -49,14 +51,14 @@ class DashboardScreen extends ConsumerWidget {
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
-        titleTextStyle: const TextStyle(
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
+        titleTextStyle: TextStyle(
           color: AppTheme.glassTexto,
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         actions: const [SinoAvisos()],
       ),
@@ -66,6 +68,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(saldoPontosProvider);
           ref.invalidate(missoesProvider);
           ref.invalidate(homeResumoProvider);
+          ref.invalidate(prePedidosMotoristaProvider);
           ref.invalidate(jornadaEventosProvider);
         },
         child: ListView(
@@ -90,6 +93,7 @@ class DashboardScreen extends ConsumerWidget {
             // saldos de combustível (cota do veículo e, se houver, frete
             // ativo) logo no topo. Some da tela se ainda não tem vínculo de
             // veículo nem nada configurado — não força cartão vazio.
+            const CartaoPrePedido(),
             homeResumoAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -135,9 +139,9 @@ class DashboardScreen extends ConsumerWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
             const SizedBox(height: 4),
-            const Text(
+            Text(
               'Complete missões pra ganhar pontos bônus, além dos pontos normais de cada abastecimento.',
-              style: TextStyle(color: Colors.black54),
+              style: TextStyle(color: AppTheme.glassTextoMuted),
             ),
             const SizedBox(height: 12),
             missoesAsync.when(
@@ -308,7 +312,7 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
             ? const Color(0xFFB8860B)
             : descansando
             ? const Color(0xFF1E6FBF)
-            : Colors.black45;
+            : AppTheme.glassTextoMuted;
 
         final icone = dirigindo
             ? Icons.local_shipping_outlined
@@ -409,9 +413,9 @@ class _CartaoJornadaState extends ConsumerState<_CartaoJornada> {
                 ),
                 if (excedeuLimite) ...[
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     '⚠️ Você já passou de 5h30 de direção contínua. Pare com segurança e descanse ao menos 30 minutos.',
-                    style: TextStyle(fontSize: 12, color: Colors.black87),
+                    style: TextStyle(fontSize: 12, color: AppTheme.glassTexto),
                   ),
                 ],
                 const SizedBox(height: 12),
@@ -518,14 +522,14 @@ class _BarraSaldo extends StatelessWidget {
           child: LinearProgressIndicator(
             value: estourou ? 1.0 : progresso,
             minHeight: 8,
-            backgroundColor: const Color(0xFFE5E5E0),
+            backgroundColor: AppTheme.bordaSuave,
             valueColor: AlwaysStoppedAnimation(cor),
           ),
         ),
         const SizedBox(height: 2),
         Text(
           'de ${_formata(limite)}',
-          style: const TextStyle(color: Colors.black45, fontSize: 11.5),
+          style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
         ),
       ],
     );
@@ -550,9 +554,9 @@ class _CartaoCliente extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.apartment_outlined,
-                  color: Colors.black54,
+                  color: AppTheme.glassTextoMuted,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
@@ -582,9 +586,9 @@ class _CartaoCliente extends StatelessWidget {
                   textoEstourou: 'de orçamento estourado',
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'É só acompanhamento — o desconto é automático conforme você abastece pela rede, sem carteira pra usar no app.',
-                  style: TextStyle(color: Colors.black45, fontSize: 11.5),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
                 ),
                 if (cota != null) const SizedBox(height: 16),
               ],
@@ -638,7 +642,7 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F3EF),
+        color: AppTheme.superficieAlt,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -680,8 +684,8 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
                   ),
                   Text(
                     '${_formataKmL(v.kmL, v.abastecimentos)} · ${_formataRsL(v.rsL)}',
-                    style: const TextStyle(
-                      color: Colors.black54,
+                    style: TextStyle(
+                      color: AppTheme.glassTextoMuted,
                       fontSize: 12.5,
                     ),
                   ),
@@ -691,11 +695,11 @@ class _CartaoConsumoPorVeiculo extends StatelessWidget {
           ),
           if (_temNotaKmLIndisponivel) ...[
             const SizedBox(height: 6),
-            const Text(
+            Text(
               '* sem par de hodômetro confiável no período (variação '
               'implausível entre dois abastecimentos)',
               style: TextStyle(
-                color: Colors.black45,
+                color: AppTheme.glassTextoMuted,
                 fontSize: 11,
                 fontStyle: FontStyle.italic,
               ),
@@ -726,16 +730,16 @@ class _SecaoConsumo extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           'Hoje: ${_formatoNumero.format(resumo.hoje.litros)} L · ${_formatoMoeda.format(resumo.hoje.valor)}',
-          style: const TextStyle(color: Colors.black54),
+          style: TextStyle(color: AppTheme.glassTextoMuted),
         ),
         const SizedBox(height: 14),
         if (mediasPorVeiculo.isNotEmpty)
           _CartaoConsumoPorVeiculo(veiculos: mediasPorVeiculo),
         if (resumo.serie7Dias.isNotEmpty) ...[
           const SizedBox(height: 20),
-          const Text(
+          Text(
             'Litros abastecidos — últimos 7 dias',
-            style: TextStyle(color: Colors.black54, fontSize: 12.5),
+            style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12.5),
           ),
           const SizedBox(height: 8),
           SizedBox(
@@ -773,7 +777,7 @@ class _GraficoBarrasDiario extends StatelessWidget {
             if (p.litros > 0)
               Text(
                 _formatoNumero.format(p.litros),
-                style: const TextStyle(fontSize: 10, color: Colors.black54),
+                style: TextStyle(fontSize: 10, color: AppTheme.glassTextoMuted),
               ),
             const SizedBox(height: 4),
             Container(
@@ -789,7 +793,7 @@ class _GraficoBarrasDiario extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               _formatoDiaCurto.format(p.dia),
-              style: const TextStyle(fontSize: 10.5, color: Colors.black54),
+              style: TextStyle(fontSize: 10.5, color: AppTheme.glassTextoMuted),
             ),
           ],
         );
@@ -809,7 +813,7 @@ class _CartaoVoltePraCasa extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      color: const Color(0xFFEAF5EE),
+      color: AppTheme.tintOk,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -823,7 +827,7 @@ class _CartaoVoltePraCasa extends StatelessWidget {
                 size: 28,
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -833,12 +837,12 @@ class _CartaoVoltePraCasa extends StatelessWidget {
                     ),
                     Text(
                       'Veja os benefícios de Volte para Casa.',
-                      style: TextStyle(color: Colors.black54),
+                      style: TextStyle(color: AppTheme.glassTextoMuted),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black38),
+              Icon(Icons.chevron_right, color: AppTheme.glassTextoMuted),
             ],
           ),
         ),
@@ -882,7 +886,7 @@ class _CartaoNivel extends StatelessWidget {
                     ),
                     Text(
                       '${_formatoPontos.format(saldo)} pontos',
-                      style: const TextStyle(color: Colors.black54),
+                      style: TextStyle(color: AppTheme.glassTextoMuted),
                     ),
                   ],
                 ),
@@ -894,7 +898,7 @@ class _CartaoNivel extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: progresso.clamp(0.0, 1.0),
                 minHeight: 10,
-                backgroundColor: const Color(0xFFE5E5E0),
+                backgroundColor: AppTheme.bordaSuave,
                 valueColor: AlwaysStoppedAnimation(nivel.cor),
               ),
             ),
@@ -903,7 +907,7 @@ class _CartaoNivel extends StatelessWidget {
               proximo == null
                   ? 'Você alcançou o nível máximo — parabéns!'
                   : 'Faltam ${_formatoPontos.format(proximo.min - saldo)} pontos para ${proximo.nome}',
-              style: const TextStyle(color: Colors.black54),
+              style: TextStyle(color: AppTheme.glassTextoMuted),
             ),
           ],
         ),
@@ -954,15 +958,15 @@ class _CartaoSugestao extends StatelessWidget {
                     ),
                     Text(
                       subtitulo,
-                      style: const TextStyle(
-                        color: Colors.black54,
+                      style: TextStyle(
+                        color: AppTheme.glassTextoMuted,
                         fontSize: 13,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Colors.black38),
+              Icon(Icons.chevron_right, color: AppTheme.glassTextoMuted),
             ],
           ),
         ),
@@ -982,9 +986,9 @@ class _BlocoMissoes extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (missoes.isEmpty) {
-      return const Text(
+      return Text(
         'Nenhuma missão disponível no momento.',
-        style: TextStyle(color: Colors.black45),
+        style: TextStyle(color: AppTheme.glassTextoMuted),
       );
     }
 
@@ -1035,7 +1039,7 @@ class _CartaoMissao extends StatelessWidget {
           children: [
             Icon(
               missao.iconeData,
-              color: missao.concluida ? cor : Colors.black38,
+              color: missao.concluida ? cor : AppTheme.glassTextoMuted,
               size: 30,
             ),
             const SizedBox(width: 14),
@@ -1054,15 +1058,15 @@ class _CartaoMissao extends StatelessWidget {
                       child: LinearProgressIndicator(
                         value: progresso.clamp(0.0, 1.0),
                         minHeight: 8,
-                        backgroundColor: const Color(0xFFE5E5E0),
+                        backgroundColor: AppTheme.bordaSuave,
                         valueColor: AlwaysStoppedAnimation(cor),
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Faltam ${(missao.meta - missao.progresso).clamp(0, missao.meta)} — +${missao.bonus} pontos ao concluir',
-                      style: const TextStyle(
-                        color: Colors.black54,
+                      style: TextStyle(
+                        color: AppTheme.glassTextoMuted,
                         fontSize: 12.5,
                       ),
                     ),

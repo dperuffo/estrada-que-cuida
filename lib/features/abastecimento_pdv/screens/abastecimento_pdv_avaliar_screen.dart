@@ -59,9 +59,9 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        flexibleSpace: Container(decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient)),
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: AppTheme.glassNavGradient)),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         automaticallyImplyLeading: false,
         title: const Text('Avalie seu abastecimento'),
       ),
@@ -83,10 +83,10 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.accento),
             ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Como foi sua experiência? Toque nas estrelas.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black54),
+            style: TextStyle(color: AppTheme.glassTextoMuted),
           ),
           const SizedBox(height: 20),
           _bloco('Posto', posto ?? 'Estrutura, limpeza e conveniência', _posto, (n) => setState(() => _posto = n)),
@@ -125,7 +125,7 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
         child: Column(
           children: [
             Text(titulo, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            Text(subtitulo, style: const TextStyle(color: Colors.black54, fontSize: 12)),
+            Text(subtitulo, style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12)),
             const SizedBox(height: 6),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

@@ -23,10 +23,10 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Ranking'),
       ),
       drawer: const AppDrawer(),
@@ -83,14 +83,14 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                   itemBuilder: (context, i) {
                     final item = resultado.itens[i];
                     return ListTile(
-                      tileColor: item.voce ? const Color(0xFFEAF5EE) : null,
+                      tileColor: item.voce ? AppTheme.tintOk : null,
                       leading: CircleAvatar(
                         backgroundColor: item.posicao <= 3
                             ? const Color(0xFFC9A227)
-                            : const Color(0xFFE5E5E0),
+                            : AppTheme.bordaSuave,
                         foregroundColor: item.posicao <= 3
                             ? Colors.white
-                            : Colors.black87,
+                            : AppTheme.glassTexto,
                         child: Text('${item.posicao}'),
                       ),
                       title: Text(

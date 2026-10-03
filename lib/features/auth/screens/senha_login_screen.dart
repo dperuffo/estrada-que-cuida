@@ -77,10 +77,10 @@ class _SenhaLoginScreenState extends State<SenhaLoginScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Digite sua senha'),
       ),
       body: SafeArea(
@@ -93,7 +93,7 @@ class _SenhaLoginScreenState extends State<SenhaLoginScreen> {
                 'Celular: ${widget.telefoneE164}',
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ).textTheme.bodyMedium?.copyWith(color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 24),
               TextField(

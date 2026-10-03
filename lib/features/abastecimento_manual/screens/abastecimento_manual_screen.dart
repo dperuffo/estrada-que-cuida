@@ -293,10 +293,10 @@ class _AbastecimentoManualScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Lançar Abastecimento'),
       ),
       drawer: const AppDrawer(),
@@ -324,9 +324,9 @@ class _AbastecimentoManualScreenState
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(
+              Text(
                 'Abasteceu num posto fora da frota (fora da integração automática)? Tire uma foto do cupom fiscal — o app tenta preencher os campos sozinho, você só confere e envia. Fica pendente até seu gestor aprovar.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 16),
               if (opcoes.motoristaNome != null)
@@ -356,9 +356,9 @@ class _AbastecimentoManualScreenState
               ),
               const SizedBox(height: 12),
               if (opcoes.placas.isEmpty)
-                const Text(
+                Text(
                   'Nenhum veículo vinculado a você no momento.',
-                  style: TextStyle(color: Colors.black54),
+                  style: TextStyle(color: AppTheme.glassTextoMuted),
                 )
               else ...[
                 DropdownButtonFormField<String>(

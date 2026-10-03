@@ -52,10 +52,10 @@ class _AvisosScreenState extends ConsumerState<AvisosScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Central de Avisos'),
       ),
       body: async.when(
@@ -75,12 +75,12 @@ class _AvisosScreenState extends ConsumerState<AvisosScreen> {
             onRefresh: () async => ref.invalidate(avisosProvider),
             child: avisos.isEmpty
                 ? ListView(
-                    children: const [
+                    children: [
                       Padding(
                         padding: EdgeInsets.all(24),
                         child: Text(
                           'Nenhum aviso no momento.',
-                          style: TextStyle(color: Colors.grey),
+                          style: TextStyle(color: AppTheme.grey500),
                         ),
                       ),
                     ],
@@ -90,7 +90,7 @@ class _AvisosScreenState extends ConsumerState<AvisosScreen> {
                     itemCount: avisos.length,
                     itemBuilder: (context, i) {
                       final a = avisos[i];
-                      final cor = _urgenciaCor[a.urgencia] ?? Colors.grey;
+                      final cor = _urgenciaCor[a.urgencia] ?? AppTheme.grey500;
                       return Card(
                         margin: const EdgeInsets.only(bottom: 8),
                         shape: RoundedRectangleBorder(
@@ -113,7 +113,7 @@ class _AvisosScreenState extends ConsumerState<AvisosScreen> {
                             '${_fmtData(a.dataPublicacao)}${a.fixado ? ' · 📌 Fixado' : ''}',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Colors.grey.shade600,
+                              color: AppTheme.grey600,
                             ),
                           ),
                           children: [
@@ -126,7 +126,7 @@ class _AvisosScreenState extends ConsumerState<AvisosScreen> {
                                     a.resumo,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      color: Colors.grey.shade700,
+                                      color: AppTheme.grey700,
                                     ),
                                   ),
                                   const SizedBox(height: 8),

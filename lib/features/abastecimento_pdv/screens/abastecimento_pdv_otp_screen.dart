@@ -109,10 +109,10 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Código do abastecimento'),
       ),
       drawer: const AppDrawer(),
@@ -128,10 +128,10 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
               ),
             ),
-          const Text(
+          Text(
             'Mostre este código e este OTP ao frentista para confirmar o abastecimento no PDV.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.black54),
+            style: TextStyle(color: AppTheme.glassTextoMuted),
           ),
           const SizedBox(height: 24),
           _buildCard(
@@ -145,7 +145,7 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
             Text(
               'Válido até ${_formatoHora.format(widget.otpValidoAteTransacao!.toLocal())}',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.black45, fontSize: 12),
+              style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
             ),
           ],
           if (_statusTransacao != null && _statusTransacao != 'aguardando_pdv') ...[
@@ -194,11 +194,11 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           children: [
-            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+            Text(label, style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 13)),
             const SizedBox(height: 8),
             Text(
               valor,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 2,
@@ -218,7 +218,7 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         child: Column(
           children: [
-            const Text('OTP (muda a cada 30s)', style: TextStyle(color: Colors.black54, fontSize: 13)),
+            Text('OTP (muda a cada 30s)', style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 13)),
             const SizedBox(height: 8),
             Stack(
               alignment: Alignment.center,
@@ -229,7 +229,7 @@ class _AbastecimentoPdvOtpScreenState extends State<AbastecimentoPdvOtpScreen> {
                   child: CircularProgressIndicator(
                     value: progresso.clamp(0, 1),
                     strokeWidth: 4,
-                    backgroundColor: const Color(0xFFE2E8F0),
+                    backgroundColor: AppTheme.bordaSuave,
                     valueColor: const AlwaysStoppedAnimation(AppTheme.accento),
                   ),
                 ),

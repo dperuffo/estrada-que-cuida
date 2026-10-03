@@ -23,10 +23,10 @@ const _nomesStatusFrete = {
   'concluido': 'Concluído',
 };
 
-const _corStatusFrete = {
+Map<String, Color> get _corStatusFrete => {
   'aceito': AppTheme.frota600,
   'em_andamento': AppTheme.statusAtivo,
-  'concluido': Colors.black45,
+  'concluido': AppTheme.glassTextoMuted,
 };
 
 class FinanceiroScreen extends ConsumerWidget {
@@ -40,10 +40,10 @@ class FinanceiroScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Financeiro'),
       ),
       drawer: const AppDrawer(),
@@ -75,18 +75,18 @@ class FinanceiroScreen extends ConsumerWidget {
             if (resumo == null || resumo.status != 'ok') {
               return ListView(
                 padding: const EdgeInsets.all(20),
-                children: const [
+                children: [
                   SizedBox(height: 60),
                   Icon(
                     Icons.account_balance_wallet_outlined,
                     size: 48,
-                    color: Colors.black26,
+                    color: AppTheme.bordaForte,
                   ),
                   SizedBox(height: 12),
                   Text(
                     'Ainda não há informações financeiras de frete pra mostrar.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppTheme.glassTextoMuted),
                   ),
                 ],
               );
@@ -98,18 +98,18 @@ class FinanceiroScreen extends ConsumerWidget {
             if (semCombustivel && semPagamentos) {
               return ListView(
                 padding: const EdgeInsets.all(20),
-                children: const [
+                children: [
                   SizedBox(height: 60),
                   Icon(
                     Icons.account_balance_wallet_outlined,
                     size: 48,
-                    color: Colors.black26,
+                    color: AppTheme.bordaForte,
                   ),
                   SizedBox(height: 12),
                   Text(
                     'Você ainda não tem frete com saldo de combustível ou pagamento registrado.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppTheme.glassTextoMuted),
                   ),
                 ],
               );
@@ -124,9 +124,9 @@ class FinanceiroScreen extends ConsumerWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'O que o cliente já pagou e o que ainda falta pagar de cada frete.',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppTheme.glassTextoMuted),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -168,12 +168,12 @@ class FinanceiroScreen extends ConsumerWidget {
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Quanto o cliente reservou de orçamento para combustível em cada frete e quanto já foi descontado '
                     'automaticamente nos seus abastecimentos feitos pela rede. Isso não é um saldo em carteira digital — '
                     'é só o acompanhamento de quanto ainda resta do orçamento que o cliente definiu; o desconto acontece '
                     'sozinho, conforme você abastece normalmente.',
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppTheme.glassTextoMuted),
                   ),
                   const SizedBox(height: 12),
                   if (resumo.totaisValor.depositado > 0)
@@ -278,7 +278,7 @@ class _CartaoPagamento extends StatelessWidget {
               pagamento.isAdiantamento
                   ? Icons.arrow_downward
                   : Icons.flag_outlined,
-              color: Colors.black45,
+              color: AppTheme.glassTextoMuted,
               size: 22,
             ),
             const SizedBox(width: 12),
@@ -297,8 +297,8 @@ class _CartaoPagamento extends StatelessWidget {
                   Text(
                     '${pagamento.isAdiantamento ? 'Adiantamento' : 'Saldo final'} · ${pagamento.percentual.toStringAsFixed(0)}%'
                     '${pagamento.pago && pagamento.pagoEm != null ? ' · pago em ${_formatoData.format(pagamento.pagoEm!)}' : ''}',
-                    style: const TextStyle(
-                      color: Colors.black45,
+                    style: TextStyle(
+                      color: AppTheme.glassTextoMuted,
                       fontSize: 11.5,
                     ),
                   ),
@@ -358,7 +358,7 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF3F3EF),
+        color: AppTheme.superficieAlt,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -369,7 +369,7 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
               children: [
                 Text(
                   'Orçamento${emVolume ? ' (litros)' : ''}',
-                  style: const TextStyle(color: Colors.black54, fontSize: 11.5),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
                 ),
                 Text(
                   _formata(totais.depositado),
@@ -385,9 +385,9 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Descontado',
-                  style: TextStyle(color: Colors.black54, fontSize: 11.5),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
                 ),
                 Text(
                   _formata(totais.consumido),
@@ -403,9 +403,9 @@ class _CartaoTotaisCombustivel extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Restante',
-                  style: TextStyle(color: Colors.black54, fontSize: 11.5),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
                 ),
                 Text(
                   _formata(totais.saldo),
@@ -446,7 +446,7 @@ class _CartaoFreteCombustivel extends StatelessWidget {
         : progresso < 0.2
         ? const Color(0xFFC97A00)
         : const Color(0xFF1B7A43);
-    final corStatus = _corStatusFrete[frete.status] ?? Colors.black45;
+    final corStatus = _corStatusFrete[frete.status] ?? AppTheme.glassTextoMuted;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
@@ -505,14 +505,14 @@ class _CartaoFreteCombustivel extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: estourou ? 1.0 : progresso,
                 minHeight: 8,
-                backgroundColor: const Color(0xFFE5E5E0),
+                backgroundColor: AppTheme.bordaSuave,
                 valueColor: AlwaysStoppedAnimation(cor),
               ),
             ),
             const SizedBox(height: 4),
             Text(
               'Orçamento ${_formata(frete.depositado)} · descontado ${_formata(frete.consumido)}',
-              style: const TextStyle(color: Colors.black45, fontSize: 11.5),
+              style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 11.5),
             ),
           ],
         ),

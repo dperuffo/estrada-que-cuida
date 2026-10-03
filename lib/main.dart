@@ -4,6 +4,7 @@ import 'core/router/app_router.dart';
 import 'core/services/inactivity_guard.dart';
 import 'core/services/supabase_service.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/tema_host.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,14 +17,18 @@ class EstradaQueCuidaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Estrada que Cuida',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.tema,
-      routerConfig: appRouter,
-      // Fase Timeout-Inatividade (21/08/2026) — ver inactivity_guard.dart.
-      builder: (context, child) =>
-          InactivityGuard(child: child ?? const SizedBox.shrink()),
+    return TemaHost(
+      builder: (context, modo) => MaterialApp.router(
+        title: 'Estrada que Cuida',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.temaClaro,
+        darkTheme: AppTheme.temaEscuro,
+        themeMode: modo,
+        routerConfig: appRouter,
+        // Fase Timeout-Inatividade (21/08/2026) — ver inactivity_guard.dart.
+        builder: (context, child) =>
+            InactivityGuard(child: child ?? const SizedBox.shrink()),
+      ),
     );
   }
 }

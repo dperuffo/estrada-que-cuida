@@ -35,12 +35,12 @@ const _labelStatus = {
 // Fase Fretes-Home-3-Abas (19/07) — pedido do Daniel: cor por status, com
 // destaque forte (badge preenchida) pro que está "em_andamento" — é o que
 // mais importa saber de relance na lista.
-const _corStatus = {
+Map<String, Color> get _corStatus => {
   'disponivel': AppTheme.frota500,
   'aguardando_confirmacao': AppTheme.statusAtencao,
   'aceito': AppTheme.frota600,
   'em_andamento': AppTheme.statusAtivo,
-  'concluido': Colors.black45,
+  'concluido': AppTheme.glassTextoMuted,
   'cancelado': AppTheme.statusInativo,
   'recusado': AppTheme.statusInativo,
 };
@@ -209,12 +209,12 @@ class _FretesScreenState extends State<FretesScreen> {
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           flexibleSpace: Container(
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: AppTheme.glassNavGradient,
             ),
           ),
           foregroundColor: AppTheme.glassTexto,
-          iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+          iconTheme: IconThemeData(color: AppTheme.glassIcone),
           title: const Text('Fretes'),
           bottom: _carregando || _erro != null
               ? null
@@ -338,7 +338,7 @@ class _FretesScreenState extends State<FretesScreen> {
                     : _mercadoCompativel.isEmpty
                     ? 'Nenhum frete disponível aceita o tipo do seu veículo cadastrado.'
                     : 'Nenhum frete combina com o filtro selecionado.',
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
             ),
           ..._mercadoFiltrado.map(
@@ -363,12 +363,12 @@ class _FretesScreenState extends State<FretesScreen> {
       return RefreshIndicator(
         onRefresh: _carregar,
         child: ListView(
-          children: const [
+          children: [
             SizedBox(height: 80),
             Center(
               child: Text(
                 'Nenhum frete aceito ou em andamento agora.',
-                style: TextStyle(color: Colors.black45),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
             ),
           ],
@@ -413,12 +413,12 @@ class _FretesScreenState extends State<FretesScreen> {
       return RefreshIndicator(
         onRefresh: _carregar,
         child: ListView(
-          children: const [
+          children: [
             SizedBox(height: 80),
             Center(
               child: Text(
                 'Nenhum frete concluído ainda.',
-                style: TextStyle(color: Colors.black45),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
             ),
           ],
@@ -490,7 +490,7 @@ class _ChipStatusFrete extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cor = _corStatus[status] ?? Colors.black45;
+    final cor = _corStatus[status] ?? AppTheme.glassTextoMuted;
     final destaque = status == 'em_andamento';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -570,7 +570,7 @@ class _CardFrete extends StatelessWidget {
                   ),
                   Text(
                     _formatoMoeda.format(frete.valorOferecido),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppTheme.frota700,
                       fontSize: 14,
@@ -581,13 +581,13 @@ class _CardFrete extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 '${frete.origemLabel} → ${frete.destinoLabel}',
-                style: const TextStyle(fontSize: 12.5, color: Colors.black87),
+                style: TextStyle(fontSize: 12.5, color: AppTheme.glassTexto),
               ),
               if (distanciaAteColeta != null) ...[
                 const SizedBox(height: 4),
                 Text(
                   '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até a coleta',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11.5,
                     color: AppTheme.frota700,
                     fontWeight: FontWeight.w600,
@@ -598,7 +598,7 @@ class _CardFrete extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   '🗓️ Coleta: ${frete.coleta.data}${frete.coleta.hora != null ? ' às ${frete.coleta.hora!.substring(0, 5)}' : ''}',
-                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.glassTextoMuted),
                 ),
               ],
               if (frete.veiculosAceitos.isNotEmpty ||
@@ -612,7 +612,7 @@ class _CardFrete extends StatelessWidget {
                       (v) => _tagFrete(v, Colors.blue),
                     ),
                     ...frete.carroceriasAceitas.map(
-                      (c) => _tagFrete(c, Colors.black54),
+                      (c) => _tagFrete(c, AppTheme.glassTextoMuted),
                     ),
                   ],
                 ),
@@ -633,9 +633,9 @@ class _CardFrete extends StatelessWidget {
                   if (subtitulo != null)
                     Text(
                       subtitulo!,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
-                        color: Colors.black54,
+                        color: AppTheme.glassTextoMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -708,9 +708,9 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
                   ),
                 ],
               ),
-              const Text(
+              Text(
                 'Mostra fretes que aceitam o seu tipo de veículo/carroceria, além dos que não restringiram nada.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 12),
               ...gruposVeiculoFrete.entries.map(
@@ -721,9 +721,9 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
                     children: [
                       Text(
                         e.key,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: AppTheme.glassTextoMuted,
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -752,9 +752,9 @@ class _PainelFiltrosState extends State<_PainelFiltros> {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
+              Text(
                 'Carroceria',
-                style: TextStyle(fontSize: 11, color: Colors.black45),
+                style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 4),
               Wrap(

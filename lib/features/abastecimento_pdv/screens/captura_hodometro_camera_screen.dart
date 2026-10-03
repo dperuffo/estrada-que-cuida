@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import '../providers/abastecimento_pdv_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 // Backlog #103 (03/10/2026, pedido do Daniel: "o quadro de foco para leitura
 // do hodômetro já seja apresentado na câmera no momento da foto") — câmera
@@ -138,7 +139,7 @@ class _CapturaHodometroCameraScreenState extends State<CapturaHodometroCameraScr
                               width: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.camera_alt, color: Colors.black87),
+                          : Icon(Icons.camera_alt, color: AppTheme.glassTexto),
                     ),
                   ),
                 ),

@@ -20,10 +20,10 @@ class ChamadosScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Meus chamados'),
       ),
       drawer: const AppDrawer(),
@@ -126,8 +126,8 @@ class _ChipStatus extends StatelessWidget {
       'aberto' => Colors.blue,
       'em_analise' => Colors.orange,
       'resolvido' => Colors.green,
-      'fechado' => Colors.grey,
-      _ => Colors.grey,
+      'fechado' => AppTheme.grey500,
+      _ => AppTheme.grey500,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

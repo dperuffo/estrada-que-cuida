@@ -70,10 +70,10 @@ class _AbastecimentoPdvIniciarScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Abastecer neste posto'),
       ),
       drawer: const AppDrawer(),
@@ -83,7 +83,7 @@ class _AbastecimentoPdvIniciarScreenState
 
   Widget _buildBody() {
     if (_obtendoLocalizacao) {
-      return const Center(
+      return Center(
         child: Padding(
           padding: EdgeInsets.all(24),
           child: Column(
@@ -94,7 +94,7 @@ class _AbastecimentoPdvIniciarScreenState
               Text(
                 'Obtendo sua localização...',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
             ],
           ),
@@ -152,13 +152,13 @@ class _AbastecimentoPdvIniciarScreenState
         data: (revendas) {
           if (revendas.isEmpty) {
             return ListView(
-              children: const [
+              children: [
                 Padding(
                   padding: EdgeInsets.all(24),
                   child: Text(
                     'Nenhum posto com PDV ativo encontrado perto de você no momento.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.black54),
+                    style: TextStyle(color: AppTheme.glassTextoMuted),
                   ),
                 ),
               ],
@@ -168,9 +168,9 @@ class _AbastecimentoPdvIniciarScreenState
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(
+              Text(
                 'Selecione o posto onde você está. Sua localização será conferida ao confirmar — fique perto da bomba.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 12),
               ...revendas.map(

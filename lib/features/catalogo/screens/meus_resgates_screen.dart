@@ -34,10 +34,10 @@ class MeusResgatesScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Meus resgates'),
       ),
       drawer: const AppDrawer(),
@@ -92,15 +92,15 @@ class MeusResgatesScreen extends ConsumerWidget {
                     children: [
                       Text(
                         _formatoData.format(r.solicitadoEm),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: AppTheme.glassTextoMuted,
                         ),
                       ),
                       Text(
                         _labelStatus[r.status] ?? r.status,
                         style: TextStyle(
-                          color: _corStatus[r.status] ?? Colors.black54,
+                          color: _corStatus[r.status] ?? AppTheme.glassTextoMuted,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),

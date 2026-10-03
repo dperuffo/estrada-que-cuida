@@ -171,10 +171,10 @@ class _AbastecimentoInternoScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Abastecimento Interno'),
       ),
       drawer: const AppDrawer(),
@@ -215,9 +215,9 @@ class _AbastecimentoInternoScreenState
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text(
+              Text(
                 'Confirme aqui o abastecimento feito na garagem/tanque próprio da empresa, antes de sair pra rota. O preço é sempre o cadastrado pelo gestor — você não digita preço.',
-                style: TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 16),
               if (opcoes.motoristaNome != null)
@@ -250,9 +250,9 @@ class _AbastecimentoInternoScreenState
               ),
               const SizedBox(height: 12),
               if (opcoes.placas.isEmpty)
-                const Text(
+                Text(
                   'Nenhum veículo vinculado a você no momento.',
-                  style: TextStyle(color: Colors.black54),
+                  style: TextStyle(color: AppTheme.glassTextoMuted),
                 )
               else ...[
                 DropdownButtonFormField<String>(

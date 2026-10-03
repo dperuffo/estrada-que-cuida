@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../providers/motorista_provider.dart';
 import '../theme/app_theme.dart';
+import 'tema_toggle_tile.dart';
 import '../../features/dashboard/providers/dashboard_provider.dart';
 
 final _formatoPontosDrawer = NumberFormat.decimalPattern('pt_BR');
@@ -56,7 +57,7 @@ class AppDrawer extends ConsumerWidget {
       // (2 paradas na mesma cor) só pra não precisar trocar o parâmetro
       // aqui — ver comentário em app_theme.dart.
       child: Container(
-        decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+        decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -82,7 +83,7 @@ class AppDrawer extends ConsumerWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white, // logo sempre em cartão claro (como na web)
                           borderRadius: BorderRadius.circular(AppTheme.radius),
                         ),
                         child: Image.asset(
@@ -96,20 +97,20 @@ class AppDrawer extends ConsumerWidget {
                     perfilAsync.when(
                       data: (perfil) => Text(
                         perfil?.nomeCompleto ?? 'Motorista',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: AppTheme.glassTexto,
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
                         ),
                       ),
-                      loading: () => const Text(
+                      loading: () => Text(
                         'Carregando...',
                         style: TextStyle(
                           color: AppTheme.glassTextoMuted,
                           fontSize: 14,
                         ),
                       ),
-                      error: (e, _) => const Text(
+                      error: (e, _) => Text(
                         'Motorista',
                         style: TextStyle(
                           color: AppTheme.glassTexto,
@@ -123,7 +124,7 @@ class AppDrawer extends ConsumerWidget {
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
                                 _formatarTelefone(perfil!.telefone!),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: AppTheme.glassTextoMuted,
                                   fontSize: 12,
                                 ),
@@ -149,7 +150,7 @@ class AppDrawer extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Divider(color: Color(0xFFE2E8F0), height: 1),
+              Divider(color: AppTheme.bordaSuave, height: 1),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -294,7 +295,8 @@ class AppDrawer extends ConsumerWidget {
                   ],
                 ),
               ),
-              const Divider(color: Color(0xFFE2E8F0), height: 1),
+              const TemaToggleTile(),
+              Divider(color: AppTheme.bordaSuave, height: 1),
               _ItemMenu(
                 icone: Icons.logout,
                 label: 'Sair',
@@ -324,7 +326,7 @@ Widget _grupo(String label) => Padding(
   padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
   child: Text(
     label.toUpperCase(),
-    style: const TextStyle(
+    style: TextStyle(
       color: AppTheme.glassTextoMuted,
       fontSize: 11,
       fontWeight: FontWeight.bold,
@@ -350,7 +352,7 @@ class _ItemMenu extends StatelessWidget {
       leading: Icon(icone, color: AppTheme.glassIcone, size: 22),
       title: Text(
         label,
-        style: const TextStyle(color: AppTheme.glassTexto, fontSize: 14),
+        style: TextStyle(color: AppTheme.glassTexto, fontSize: 14),
       ),
       onTap: onTap,
       dense: true,

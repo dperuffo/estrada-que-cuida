@@ -16,10 +16,10 @@ class MissoesScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Missões'),
       ),
       drawer: const AppDrawer(),
@@ -62,7 +62,7 @@ class MissoesScreen extends ConsumerWidget {
                           missao.iconeData,
                           color: missao.concluida
                               ? const Color(0xFF1B7A43)
-                              : Colors.black38,
+                              : AppTheme.glassTextoMuted,
                           size: 32,
                         ),
                         const SizedBox(width: 16),
@@ -78,7 +78,7 @@ class MissoesScreen extends ConsumerWidget {
                               ),
                               Text(
                                 missao.descricao,
-                                style: const TextStyle(color: Colors.black54),
+                                style: TextStyle(color: AppTheme.glassTextoMuted),
                               ),
                               const SizedBox(height: 8),
                               ClipRRect(
@@ -86,11 +86,11 @@ class MissoesScreen extends ConsumerWidget {
                                 child: LinearProgressIndicator(
                                   value: progresso.clamp(0.0, 1.0),
                                   minHeight: 8,
-                                  backgroundColor: const Color(0xFFE5E5E0),
+                                  backgroundColor: AppTheme.bordaSuave,
                                   valueColor: AlwaysStoppedAnimation(
                                     missao.concluida
                                         ? const Color(0xFF1B7A43)
-                                        : Colors.black38,
+                                        : AppTheme.glassTextoMuted,
                                   ),
                                 ),
                               ),
@@ -102,7 +102,7 @@ class MissoesScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   color: missao.concluida
                                       ? const Color(0xFF1B7A43)
-                                      : Colors.black54,
+                                      : AppTheme.glassTextoMuted,
                                   fontWeight: missao.concluida
                                       ? FontWeight.bold
                                       : FontWeight.normal,

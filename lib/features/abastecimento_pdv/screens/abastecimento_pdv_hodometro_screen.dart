@@ -267,10 +267,10 @@ class _AbastecimentoPdvHodometroScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Hodômetro do veículo'),
       ),
       drawer: const AppDrawer(),
@@ -283,18 +283,18 @@ class _AbastecimentoPdvHodometroScreenState
                   _placa != null
                       ? 'Fotografe o painel do veículo $_placa pra registrar o hodômetro deste abastecimento.'
                       : 'Fotografe o painel do veículo pra registrar o hodômetro deste abastecimento.',
-                  style: const TextStyle(color: Colors.black54),
+                  style: TextStyle(color: AppTheme.glassTextoMuted),
                 ),
                 const SizedBox(height: 4),
-                const Text(
+                Text(
                   'Dica: na câmera, encaixe só os números do hodômetro dentro do quadro, evite reflexo no vidro do painel e garanta boa luz.',
-                  style: TextStyle(color: Colors.black45, fontSize: 12),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                 ),
                 if (_ultimoHodometro != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Último registrado: ${_ultimoHodometro!.toStringAsFixed(0)} km',
-                    style: const TextStyle(color: Colors.black45, fontSize: 12),
+                    style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                   ),
                 ],
                 const SizedBox(height: 16),

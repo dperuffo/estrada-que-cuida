@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/providers/auth_provider.dart';
+import '../../../core/theme/app_theme.dart';
 
 // Tela 1 do app — motorista digita o celular (com DDD). Sem cadastro aqui:
 // o cadastro (nome, CPF, CNH) já existe em `motoristas`, feito pela empresa
@@ -101,7 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 textAlign: TextAlign.center,
                 style: Theme.of(
                   context,
-                ).textTheme.bodyMedium?.copyWith(color: Colors.black54),
+                ).textTheme.bodyMedium?.copyWith(color: AppTheme.glassTextoMuted),
               ),
               const SizedBox(height: 32),
               TextField(

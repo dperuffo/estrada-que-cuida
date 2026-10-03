@@ -128,10 +128,10 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Detalhes do frete'),
         actions: [
           IconButton(
@@ -204,9 +204,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                       cor: Colors.red,
                     ),
                   if (_frete!.status == 'recusado')
-                    const _Aviso(
+                    _Aviso(
                       'Você recusou esse frete.',
-                      cor: Colors.black54,
+                      cor: AppTheme.glassTextoMuted,
                     ),
                 ],
               ),
@@ -218,9 +218,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text(
+        Text(
           'Esse frete foi atribuído direto a você pelo cliente, no valor combinado acima.',
-          style: TextStyle(color: Colors.black54, fontSize: 13),
+          style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 13),
         ),
         const SizedBox(height: 12),
         ElevatedButton(
@@ -261,14 +261,14 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
               Expanded(child: Divider()),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
                 child: Text(
                   'ou',
-                  style: TextStyle(color: Colors.black45, fontSize: 12),
+                  style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                 ),
               ),
               Expanded(child: Divider()),
@@ -298,7 +298,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         'perdida' => 'Esse frete foi pra outro motorista.',
         _ => negociacao.status,
       };
-      return _Aviso(texto, cor: Colors.black54);
+      return _Aviso(texto, cor: AppTheme.glassTextoMuted);
     }
 
     final ultima = negociacao.ultimaRodada;
@@ -323,7 +323,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         ),
         const SizedBox(height: 8),
         if (aguardandoCliente)
-          const _Aviso('Aguardando resposta do cliente.', cor: Colors.black54)
+          _Aviso('Aguardando resposta do cliente.', cor: AppTheme.glassTextoMuted)
         else ...[
           ElevatedButton(
             onPressed: _processando
@@ -569,7 +569,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
               ),
               ..._postos.map(
                 (p) => ListTile(
-                  leading: const Icon(
+                  leading: Icon(
                     Icons.local_gas_station,
                     color: AppTheme.frota600,
                   ),
@@ -712,7 +712,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
             margin: const EdgeInsets.only(bottom: 6),
             child: ListTile(
               dense: true,
-              leading: const Icon(
+              leading: Icon(
                 Icons.local_gas_station_outlined,
                 color: AppTheme.frota600,
               ),
@@ -757,9 +757,9 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
         style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
       ),
       const SizedBox(height: 8),
-      const Text(
+      Text(
         '📷 Foto obrigatória em: abasteceu, chegou no destino, concluir e ocorrência.',
-        style: TextStyle(fontSize: 11, color: Colors.black54),
+        style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
       ),
       const SizedBox(height: 8),
       Wrap(
@@ -868,7 +868,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           height: 220,
           child: Signature(
             controller: controller,
-            backgroundColor: Colors.white,
+            backgroundColor: AppTheme.superficie,
           ),
         ),
         actions: [
@@ -1039,7 +1039,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 if (e.fotoPath != null)
                   IconButton(
                     onPressed: () => _verFoto(e.fotoPath!),
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.photo_camera,
                       size: 16,
                       color: AppTheme.frota600,
@@ -1051,7 +1051,7 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
                 const SizedBox(width: 8),
                 Text(
                   '${e.criadoEm.hour.toString().padLeft(2, '0')}:${e.criadoEm.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(fontSize: 11, color: Colors.black45),
+                  style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
                 ),
               ],
             ),
@@ -1141,7 +1141,7 @@ class _CartaoInfo extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 '📍 ${distanciaAteColeta.toStringAsFixed(0)} km até o ponto de coleta',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.frota700,
@@ -1151,7 +1151,7 @@ class _CartaoInfo extends StatelessWidget {
             const SizedBox(height: 10),
             Text(
               _formatoMoeda.format(frete.valorOferecido),
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 20,
                 color: AppTheme.frota700,
@@ -1190,7 +1190,7 @@ class _CartaoInfo extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 '📐 ${frete.cargaComprimentoM ?? '—'}m × ${frete.cargaLarguraM ?? '—'}m × ${frete.cargaAlturaM ?? '—'}m (C×L×A)',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: AppTheme.glassTextoMuted),
               ),
             ],
             if (frete.veiculosAceitos.isNotEmpty ||
@@ -1204,7 +1204,7 @@ class _CartaoInfo extends StatelessWidget {
                     (v) => _tagDetalhe(v, AppTheme.frota700),
                   ),
                   ...frete.carroceriasAceitas.map(
-                    (c) => _tagDetalhe(c, Colors.black54),
+                    (c) => _tagDetalhe(c, AppTheme.glassTextoMuted),
                   ),
                 ],
               ),
@@ -1213,7 +1213,7 @@ class _CartaoInfo extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 frete.descricao!,
-                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                style: TextStyle(fontSize: 13, color: AppTheme.glassTexto),
               ),
             ],
           ],
@@ -1340,9 +1340,9 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
             ),
             const SizedBox(height: 2),
-            const Text(
+            Text(
               'Antes de decidir, veja quanto esse frete deve custar de combustível e o quanto sobra pra você.',
-              style: TextStyle(fontSize: 11, color: Colors.black54),
+              style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
             ),
             const SizedBox(height: 10),
             if (_carregandoVeiculos)
@@ -1353,9 +1353,9 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                 ),
               )
             else if (_veiculos.isEmpty)
-              const Text(
+              Text(
                 'Cadastre um veículo com tanque e autonomia (mesmo cadastro da Roteirização) pra usar a calculadora.',
-                style: TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: AppTheme.glassTextoMuted),
               )
             else ...[
               DropdownButtonFormField<VeiculoRoteirizacao>(
@@ -1485,9 +1485,9 @@ class _CalculadoraLucroState extends State<_CalculadoraLucro> {
                     alignment: Alignment.centerRight,
                     child: Text(
                       '${margemPct.toStringAsFixed(0)}% de margem sobre o valor do frete',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: Colors.black54,
+                        color: AppTheme.glassTextoMuted,
                       ),
                     ),
                   ),
@@ -1584,17 +1584,17 @@ class _ChatFreteState extends State<_ChatFrete> {
                 return Container(
                   height: 220,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
+                    color: AppTheme.grey100,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   padding: const EdgeInsets.all(8),
                   child: mensagens.isEmpty
-                      ? const Center(
+                      ? Center(
                           child: Text(
                             'Nenhuma mensagem ainda.',
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.black45,
+                              color: AppTheme.glassTextoMuted,
                             ),
                           ),
                         )
@@ -1624,7 +1624,7 @@ class _ChatFreteState extends State<_ChatFrete> {
                                       : Colors.white,
                                   border: souEu
                                       ? null
-                                      : Border.all(color: Colors.black12),
+                                      : Border.all(color: AppTheme.bordaSuave),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Column(
@@ -1637,7 +1637,7 @@ class _ChatFreteState extends State<_ChatFrete> {
                                         fontSize: 13,
                                         color: souEu
                                             ? Colors.white
-                                            : Colors.black87,
+                                            : AppTheme.glassTexto,
                                       ),
                                     ),
                                     Text(
@@ -1646,7 +1646,7 @@ class _ChatFreteState extends State<_ChatFrete> {
                                         fontSize: 10,
                                         color: souEu
                                             ? Colors.white70
-                                            : Colors.black45,
+                                            : AppTheme.glassTextoMuted,
                                       ),
                                     ),
                                   ],
@@ -1681,7 +1681,7 @@ class _ChatFreteState extends State<_ChatFrete> {
                           height: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Icon(Icons.send, color: AppTheme.frota600),
+                      : Icon(Icons.send, color: AppTheme.frota600),
                 ),
               ],
             ),
@@ -1724,19 +1724,19 @@ class _BlocoEndereco extends StatelessWidget {
             if (endereco.cep != null)
               Text(
                 'CEP ${endereco.cep}',
-                style: const TextStyle(fontSize: 11, color: Colors.black54),
+                style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
               ),
             if (endereco.referencia != null)
               Text(
                 'Referência: ${endereco.referencia}',
-                style: const TextStyle(fontSize: 11, color: Colors.black54),
+                style: TextStyle(fontSize: 11, color: AppTheme.glassTextoMuted),
               ),
             if (endereco.data != null || endereco.hora != null)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '🗓️ ${endereco.data ?? 'Data não informada'}${endereco.hora != null ? ' às ${endereco.hora!.substring(0, 5)}' : ''}',
-                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.glassTextoMuted),
                 ),
               ),
             if (endereco.contatoNome != null ||
@@ -1745,7 +1745,7 @@ class _BlocoEndereco extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   '👤 ${endereco.contatoNome ?? 'Contato'}${endereco.contatoTelefone != null ? ' — ${endereco.contatoTelefone}' : ''}',
-                  style: const TextStyle(fontSize: 11.5, color: Colors.black54),
+                  style: TextStyle(fontSize: 11.5, color: AppTheme.glassTextoMuted),
                 ),
               ),
           ],

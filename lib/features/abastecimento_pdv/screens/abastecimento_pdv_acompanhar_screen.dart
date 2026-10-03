@@ -31,10 +31,10 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Acompanhar abastecimento'),
       ),
       drawer: const AppDrawer(),
@@ -75,7 +75,7 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
               Text(
                 info.descricao,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.black54),
+                style: TextStyle(color: AppTheme.glassTextoMuted),
               ),
             ],
           ),
@@ -90,9 +90,9 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
                 children: [
                   _linha('Código', status.codigoAbastecimento!),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Mostre o código e o OTP ao frentista (botão voltar). Quando ele confirmar no PDV, o resultado aparece aqui.',
-                    style: TextStyle(color: Colors.black54, fontSize: 12),
+                    style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                   ),
                 ],
               ),
@@ -142,7 +142,7 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.black54)),
+          Text(label, style: TextStyle(color: AppTheme.glassTextoMuted)),
           Text(
             valor,
             style: TextStyle(

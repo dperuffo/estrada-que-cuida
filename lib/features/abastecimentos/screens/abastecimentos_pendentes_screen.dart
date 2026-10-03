@@ -84,10 +84,10 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Abastecimentos pendentes'),
       ),
       drawer: const AppDrawer(),
@@ -154,7 +154,7 @@ class AbastecimentosPendentesScreen extends ConsumerWidget {
                         if (item.municipio != null)
                           Text(
                             '${item.municipio}${item.uf != null ? '/${item.uf}' : ''}',
-                            style: const TextStyle(color: Colors.black54),
+                            style: TextStyle(color: AppTheme.glassTextoMuted),
                           ),
                         const SizedBox(height: 8),
                         Row(

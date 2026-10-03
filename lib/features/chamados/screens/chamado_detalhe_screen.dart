@@ -62,10 +62,10 @@ class _ChamadoDetalheScreenState extends ConsumerState<ChamadoDetalheScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Chamado'),
       ),
       body: detalheAsync.when(
@@ -153,7 +153,7 @@ class _ChamadoDetalheScreenState extends ConsumerState<ChamadoDetalheScreen> {
                           ),
                           decoration: BoxDecoration(
                             color: c.autorTipo == 'admin'
-                                ? Colors.grey.shade200
+                                ? AppTheme.grey200
                                 : Colors.blue.shade50,
                             borderRadius: BorderRadius.circular(10),
                           ),
@@ -174,9 +174,9 @@ class _ChamadoDetalheScreenState extends ConsumerState<ChamadoDetalheScreen> {
                                 _formatoData.format(
                                   DateTime.parse(c.criadoEm).toLocal(),
                                 ),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
-                                  color: Colors.black54,
+                                  color: AppTheme.glassTextoMuted,
                                 ),
                               ),
                             ],

@@ -73,10 +73,10 @@ class _AvaliarScreenState extends ConsumerState<AvaliarScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Avaliar o app'),
       ),
       drawer: const AppDrawer(),
@@ -186,9 +186,9 @@ class _AvaliarScreenState extends ConsumerState<AvaliarScreen> {
                                       _formatoData.format(
                                         DateTime.parse(a.criadoEm!).toLocal(),
                                       ),
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.black54,
+                                        color: AppTheme.glassTextoMuted,
                                       ),
                                     ),
                                 ],

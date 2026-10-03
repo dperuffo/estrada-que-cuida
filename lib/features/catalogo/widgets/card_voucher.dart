@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../../../core/fidelidade/categorias_fidelidade.dart';
+import '../../../core/theme/app_theme.dart';
 
 final _formatoPontosCard = NumberFormat.decimalPattern('pt_BR');
 final _formatoDataCard = DateFormat('dd/MM/yyyy');
@@ -119,21 +120,21 @@ class CardVoucher extends StatelessWidget {
                 if (parceiroNome != null)
                   Text(
                     parceiroNome!,
-                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                   ),
                 if (descricao != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     descricao!,
-                    style: const TextStyle(color: Colors.black54, fontSize: 12),
+                    style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                   ),
                 ],
                 if (numeroVoucher != null || validoAte != null) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.only(top: 8),
-                    decoration: const BoxDecoration(
-                      border: Border(top: BorderSide(color: Colors.black12)),
+                    decoration: BoxDecoration(
+                      border: Border(top: BorderSide(color: AppTheme.bordaSuave)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,18 +142,18 @@ class CardVoucher extends StatelessWidget {
                         if (numeroVoucher != null)
                           Text(
                             'Voucher: $numeroVoucher',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
                               fontFamily: 'monospace',
-                              color: Colors.black54,
+                              color: AppTheme.glassTextoMuted,
                             ),
                           ),
                         if (validoAte != null)
                           Text(
                             'Válido até ${_formatoDataCard.format(validoAte!)}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: Colors.black54,
+                              color: AppTheme.glassTextoMuted,
                             ),
                           ),
                       ],

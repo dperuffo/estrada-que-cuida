@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../theme/app_theme.dart';
 
 // Fase Central-Avisos (28/07/2026) — port do parser "markdown simples" da
 // web (src/lib/markdownSimples.tsx): **negrito**, [texto](url), "- " lista,
@@ -11,7 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 List<Widget> renderMarkdownSimples(String texto, {TextStyle? baseStyle}) {
   final estiloBase =
       baseStyle ??
-      const TextStyle(fontSize: 13, color: Colors.black87, height: 1.4);
+      TextStyle(fontSize: 13, color: AppTheme.glassTexto, height: 1.4);
   final linhas = texto.split('\n');
   final blocos = <Widget>[];
   var paragrafoAtual = <String>[];
@@ -135,8 +136,8 @@ List<InlineSpan> _inline(String linha, TextStyle base) {
       spans.add(
         TextSpan(
           text: match.group(2),
-          style: const TextStyle(
-            color: Color(0xFF1D4ED8),
+          style: TextStyle(
+            color: AppTheme.fgInfo,
             decoration: TextDecoration.underline,
           ),
           recognizer: TapGestureRecognizer()

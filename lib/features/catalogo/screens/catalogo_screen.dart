@@ -54,7 +54,7 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                 item.validadeDias != null
                     ? 'O voucher vale por ${item.validadeDias} dias a partir do resgate.'
                     : 'Esse voucher não tem prazo de validade.',
-                style: const TextStyle(fontSize: 12, color: Colors.black54),
+                style: TextStyle(fontSize: 12, color: AppTheme.glassTextoMuted),
               ),
               if (dependentes.isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -160,10 +160,10 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Catálogo'),
         actions: [
           IconButton(
@@ -251,9 +251,9 @@ class _CatalogoScreenState extends ConsumerState<CatalogoScreen> {
                         item.validadeDias != null
                             ? 'Válido por ${item.validadeDias} dias após o resgate'
                             : 'Sem prazo de validade',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Colors.black45,
+                          color: AppTheme.glassTextoMuted,
                           fontStyle: FontStyle.italic,
                         ),
                       ),

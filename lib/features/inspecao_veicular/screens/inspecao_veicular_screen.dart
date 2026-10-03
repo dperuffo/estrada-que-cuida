@@ -151,19 +151,19 @@ class _InspecaoVeicularScreenState
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         flexibleSpace: Container(
-          decoration: const BoxDecoration(gradient: AppTheme.glassNavGradient),
+          decoration: BoxDecoration(gradient: AppTheme.glassNavGradient),
         ),
         foregroundColor: AppTheme.glassTexto,
-        iconTheme: const IconThemeData(color: AppTheme.glassIcone),
+        iconTheme: IconThemeData(color: AppTheme.glassIcone),
         title: const Text('Checklist de inspeção'),
       ),
       drawer: const AppDrawer(),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          Text(
             'Faça a inspeção de segurança do seu veículo e ganhe pontos de fidelidade a cada checklist concluído.',
-            style: TextStyle(color: Colors.black54),
+            style: TextStyle(color: AppTheme.glassTextoMuted),
           ),
           const SizedBox(height: 16),
           veiculosAsync.when(
@@ -233,9 +233,9 @@ class _InspecaoVeicularScreenState
             style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
           const SizedBox(height: 4),
-          const Text(
+          Text(
             'Desmarque o que não estiver em ordem. Itens críticos (pneus e freios) são destacados.',
-            style: TextStyle(color: Colors.black54, fontSize: 12),
+            style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
           ),
           const SizedBox(height: 8),
           ...itensInspecao.map((item) {
@@ -311,9 +311,9 @@ class _InspecaoVeicularScreenState
             error: (e, _) => const Text('Não consegui carregar seu histórico.'),
             data: (historico) {
               if (historico.isEmpty) {
-                return const Text(
+                return Text(
                   'Você ainda não registrou nenhuma inspeção.',
-                  style: TextStyle(color: Colors.black54),
+                  style: TextStyle(color: AppTheme.glassTextoMuted),
                 );
               }
               return Column(
