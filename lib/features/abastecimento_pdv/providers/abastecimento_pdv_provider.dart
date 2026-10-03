@@ -293,6 +293,8 @@ class StatusTransacaoPdv {
   final num? valorTotalItensExtra;
   final num? valorTotalTransacao;
   final String? formaPagamento;
+  final String? postoNome;
+  final bool jaAvaliado;
 
   const StatusTransacaoPdv({
     required this.status,
@@ -305,6 +307,8 @@ class StatusTransacaoPdv {
     this.valorTotalItensExtra,
     this.valorTotalTransacao,
     this.formaPagamento,
+    this.postoNome,
+    this.jaAvaliado = false,
   });
 
   factory StatusTransacaoPdv.fromRow(Map<String, dynamic> row) {
@@ -319,6 +323,8 @@ class StatusTransacaoPdv {
       valorTotalItensExtra: row['valor_total_itens_extra'] as num?,
       valorTotalTransacao: row['valor_total_transacao'] as num?,
       formaPagamento: row['forma_pagamento'] as String?,
+      postoNome: row['posto_nome'] as String?,
+      jaAvaliado: row['ja_avaliado'] == true,
     );
   }
 }
@@ -354,6 +360,34 @@ class AbastecimentoPdvService {
   static Future<ContextoHodometroPdv> contextoHodometro() async {
     final resp = await SupabaseService.client.rpc('contexto_hodometro_pdv');
     return ContextoHodometroPdv.fromJson(resp as Map<String, dynamic>);
+  }
+
+  // Avaliação pós-abastecimento (posto, abastecimento, frentista/caixa).
+  // Devolve null em sucesso ou a mensagem de erro.
+  static Future<String?> avaliar({
+    required int abastecimentoPdvId,
+    required int notaPosto,
+    required int notaAbastecimento,
+    required int notaAtendimento,
+    String? observacao,
+  }) async {
+    try {
+      final resp = await SupabaseService.client.rpc(
+        'avaliar_abastecimento_pdv',
+        params: {
+          'p_abastecimento_pdv_id': abastecimentoPdvId,
+          'p_nota_posto': notaPosto,
+          'p_nota_abastecimento': notaAbastecimento,
+          'p_nota_atendimento': notaAtendimento,
+          'p_observacao': observacao,
+        },
+      );
+      final status = (resp as Map<String, dynamic>)['status'] as String? ?? '';
+      if (status == 'ok' || status == 'ja_avaliado') return null;
+      return 'Não consegui registrar sua avaliação.';
+    } catch (_) {
+      return 'Não consegui registrar sua avaliação agora. Tente de novo.';
+    }
   }
 
   static Future<OtpAtualPdv> obterOtpAtual(int abastecimentoPdvId) async {

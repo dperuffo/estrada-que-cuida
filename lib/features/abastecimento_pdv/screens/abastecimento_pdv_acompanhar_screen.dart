@@ -19,6 +19,14 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(statusTransacaoPdvProvider(abastecimentoPdvId));
 
+    // Confirmado e ainda não avaliado → leva o motorista à tela de avaliação.
+    ref.listen<AsyncValue<StatusTransacaoPdv>>(statusTransacaoPdvProvider(abastecimentoPdvId), (_, next) {
+      final status = next.valueOrNull;
+      if (status != null && status.status == 'confirmado' && !status.jaAvaliado) {
+        context.pushReplacement('/abastecimento-pdv/avaliar/$abastecimentoPdvId');
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,

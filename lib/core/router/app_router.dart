@@ -32,6 +32,7 @@ import '../../features/abastecimento_pdv/screens/abastecimento_pdv_iniciar_scree
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_hodometro_screen.dart';
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_otp_screen.dart';
 import '../../features/abastecimento_pdv/screens/abastecimento_pdv_acompanhar_screen.dart';
+import '../../features/abastecimento_pdv/screens/abastecimento_pdv_avaliar_screen.dart';
 
 // Faz o GoRouter reavaliar o `redirect` sempre que a sessão do Supabase
 // muda (login/logout) — sem isso, o router só re-checa em navegações
@@ -242,6 +243,13 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/abastecimento-pdv/acompanhar/:id',
       builder: (context, state) => AbastecimentoPdvAcompanharScreen(
+        abastecimentoPdvId: int.parse(state.pathParameters['id']!),
+      ),
+    ),
+    // Avaliação do posto/abastecimento/atendimento após a confirmação.
+    GoRoute(
+      path: '/abastecimento-pdv/avaliar/:id',
+      builder: (context, state) => AbastecimentoPdvAvaliarScreen(
         abastecimentoPdvId: int.parse(state.pathParameters['id']!),
       ),
     ),
