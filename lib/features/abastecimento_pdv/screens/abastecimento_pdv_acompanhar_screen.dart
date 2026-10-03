@@ -72,6 +72,25 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
             ],
           ),
         ),
+        if (status.status == 'aguardando_pdv' && status.codigoAbastecimento != null) ...[
+          const SizedBox(height: 24),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _linha('Código', status.codigoAbastecimento!),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Mostre o código e o OTP ao frentista (botão voltar). Quando ele confirmar no PDV, o resultado aparece aqui.',
+                    style: TextStyle(color: Colors.black54, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
         if (status.status == 'confirmado') ...[
           const SizedBox(height: 24),
           Card(

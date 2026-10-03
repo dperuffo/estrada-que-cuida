@@ -367,16 +367,23 @@ class AbastecimentoPdvService {
   // Mesmo padrão de streamMensagensFrete (fretes_provider.dart): usa
   // `.stream()` do supabase_flutter (Realtime por baixo, já com RLS
   // aplicada) em vez de gerenciar um RealtimeChannel manualmente.
-  static Stream<StatusTransacaoPdv> streamStatus(int abastecimentoPdvId) {
-    return SupabaseService.client
-        .from('abastecimentos_pdv')
-        .stream(primaryKey: ['id'])
-        .eq('id', abastecimentoPdvId)
-        .map((linhas) {
-          if (linhas.isEmpty) {
-            return const StatusTransacaoPdv(status: 'nao_encontrado');
-          }
-          return StatusTransacaoPdv.fromRow(linhas.first);
-        });
+  // O motorista não tem permissão de leitura direta na tabela (RLS é por
+  // empresa/posto), então o .stream() falhava com erro. Agora consulta a RPC
+  // status_abastecimento_pdv (SECURITY DEFINER, só devolve o que é dele) a
+  // cada 3s até o status deixar de ser 'aguardando_pdv'.
+  static Stream<StatusTransacaoPdv> streamStatus(int abastecimentoPdvId) async* {
+    while (true) {
+      final resp = await SupabaseService.client.rpc(
+        'status_abastecimento_pdv',
+        params: {'p_abastecimento_pdv_id': abastecimentoPdvId},
+      );
+      final status = StatusTransacaoPdv.fromRow(resp as Map<String, dynamic>);
+      yield status;
+      if (status.status != 'aguardando_pdv') {
+        // Negado por regras pode ser liberado depois (volta a aguardando_pdv).
+        if (status.motivoNegacao != 'regras_cliente' || status.status != 'negado') return;
+      }
+      await Future.delayed(const Duration(seconds: 3));
+    }
   }
 }
