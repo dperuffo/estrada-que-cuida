@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../core/widgets/app_drawer.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/abastecimento_pdv_provider.dart';
+import 'captura_hodometro_camera_screen.dart';
 
 // Fase 5 PDV (02/10/2026, pedido do Daniel: "tela de captura de hodômetro
 // através de foto com OCR, com preenchimento automático e ajuste manual;
@@ -94,10 +95,29 @@ class _AbastecimentoPdvHodometroScreenState
     }
   }
 
-  Future<Uint8List?> _tirarFoto() async {
+  // Backlog #103: tenta primeiro a câmera ao vivo com quadro de
+  // enquadramento (devolve a foto + o retângulo do quadro, pro servidor
+  // recortar). Se a câmera ao vivo não abrir (permissão negada, navegador
+  // sem suporte), cai no image_picker de antes — sem recorte, OCR lê a foto
+  // inteira.
+  Future<(Uint8List, RecorteQuadro?)?> _tirarFoto() async {
     while (true) {
-      final bytes = await _capturarFoto();
+      Uint8List? bytes;
+      RecorteQuadro? recorte;
+
+      final captura = await Navigator.of(context).push<CapturaHodometroResultado>(
+        MaterialPageRoute(builder: (_) => const CapturaHodometroCameraScreen()),
+      );
+      if (!mounted) return null;
+      if (captura == null) return null; // voltou sem fotografar
+      if (captura.cameraIndisponivel) {
+        bytes = await _capturarFoto();
+      } else {
+        bytes = captura.bytes;
+        recorte = captura.recorte;
+      }
       if (bytes == null || !mounted) return null;
+      final fotoBytes = bytes;
 
       final confirmou = await showDialog<bool>(
         context: context,
@@ -106,7 +126,7 @@ class _AbastecimentoPdvHodometroScreenState
           title: const Text('Usar esta foto do hodômetro?'),
           content: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.memory(bytes, fit: BoxFit.contain),
+            child: Image.memory(fotoBytes, fit: BoxFit.contain),
           ),
           actions: [
             TextButton(
@@ -120,15 +140,16 @@ class _AbastecimentoPdvHodometroScreenState
           ],
         ),
       );
-      if (confirmou == true) return bytes;
+      if (confirmou == true) return (fotoBytes, recorte);
       if (confirmou == null) return null;
       if (!mounted) return null;
     }
   }
 
   Future<void> _fotografarELer() async {
-    final bytes = await _tirarFoto();
-    if (bytes == null || !mounted) return;
+    final foto = await _tirarFoto();
+    if (foto == null || !mounted) return;
+    final (bytes, recorte) = foto;
 
     setState(() {
       _fotoBytes = bytes;
@@ -137,7 +158,7 @@ class _AbastecimentoPdvHodometroScreenState
       _confiancaBaixa = false;
     });
 
-    final resultado = await OcrHodometroService().lerHodometro(bytes);
+    final resultado = await OcrHodometroService().lerHodometro(bytes, recorte: recorte);
     if (!mounted) return;
 
     setState(() {
@@ -266,7 +287,7 @@ class _AbastecimentoPdvHodometroScreenState
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Dica: aproxime bem só dos números do hodômetro, evite reflexo no vidro do painel e garanta boa luz.',
+                  'Dica: na câmera, encaixe só os números do hodômetro dentro do quadro, evite reflexo no vidro do painel e garanta boa luz.',
                   style: TextStyle(color: Colors.black45, fontSize: 12),
                 ),
                 if (_ultimoHodometro != null) ...[

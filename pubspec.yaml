@@ -65,6 +65,11 @@ dependencies:
   # cliente, que é pra upload de arquivo já existente por quem trabalha
   # de escritório).
   image_picker: ^1.1.2
+  # Backlog #103 (03/10/2026) — câmera ao vivo com quadro de enquadramento
+  # na captura do hodômetro. image_picker abre a câmera nativa do
+  # sistema/navegador, que não deixa desenhar nada por cima; o `camera`
+  # (com suporte web) dá o preview como widget, aí dá pra sobrepor o quadro.
+  camera: ^0.11.0
   # Fase Fretes-Dados-Completos — pedido do Daniel: motorista precisa saber
   # se o ponto de coleta está longe dele antes de aceitar o frete. No build
   # web (único alvo deste app) usa a API de geolocalização do próprio

@@ -203,8 +203,18 @@ class ResultadoOcrHodometro {
   bool get confiancaBaixa => confianca == null || confianca! < 60;
 }
 
+// Retângulo do quadro de enquadramento da câmera, em frações (0 a 1) da
+// foto — o servidor recorta nessa região antes de rodar o OCR.
+class RecorteQuadro {
+  final double x;
+  final double y;
+  final double w;
+  final double h;
+  const RecorteQuadro({required this.x, required this.y, required this.w, required this.h});
+}
+
 class OcrHodometroService {
-  Future<ResultadoOcrHodometro> lerHodometro(Uint8List bytes) async {
+  Future<ResultadoOcrHodometro> lerHodometro(Uint8List bytes, {RecorteQuadro? recorte}) async {
     final token = SupabaseService.client.auth.currentSession?.accessToken;
     if (token == null) {
       return const ResultadoOcrHodometro.erro('Sessão expirada, faça login novamente.');
@@ -215,6 +225,12 @@ class OcrHodometroService {
           http.MultipartRequest('POST', Uri.parse('$_baseUrlSitePdv/api/ocr/hodometro'))
             ..headers['Authorization'] = 'Bearer $token'
             ..files.add(http.MultipartFile.fromBytes('arquivo', bytes, filename: 'hodometro.jpg'));
+      if (recorte != null) {
+        request.fields['recorte_x'] = recorte.x.toString();
+        request.fields['recorte_y'] = recorte.y.toString();
+        request.fields['recorte_w'] = recorte.w.toString();
+        request.fields['recorte_h'] = recorte.h.toString();
+      }
 
       final resposta = await request.send().timeout(const Duration(seconds: 30));
       final corpoTexto = await resposta.stream.bytesToString();
