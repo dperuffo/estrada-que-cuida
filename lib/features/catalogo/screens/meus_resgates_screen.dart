@@ -17,7 +17,6 @@ const Map<String, String> _labelStatus = {
 };
 
 const Map<String, Color> _corStatus = {
-  'solicitado': Colors.black54,
   'em_andamento': Color(0xFF9E7A00),
   'concluido': Color(0xFF1B7A43),
   'cancelado': Colors.redAccent,

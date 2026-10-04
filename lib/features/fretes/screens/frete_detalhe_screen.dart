@@ -868,7 +868,8 @@ class _FreteDetalheScreenState extends State<FreteDetalheScreen> {
           height: 220,
           child: Signature(
             controller: controller,
-            backgroundColor: AppTheme.superficie,
+            // Assinatura: fundo sempre branco (caneta preta e export branco).
+            backgroundColor: Colors.white,
           ),
         ),
         actions: [
@@ -1621,7 +1622,7 @@ class _ChatFreteState extends State<_ChatFrete> {
                                 decoration: BoxDecoration(
                                   color: souEu
                                       ? AppTheme.frota600
-                                      : Colors.white,
+                                      : AppTheme.superficie,
                                   border: souEu
                                       ? null
                                       : Border.all(color: AppTheme.bordaSuave),
