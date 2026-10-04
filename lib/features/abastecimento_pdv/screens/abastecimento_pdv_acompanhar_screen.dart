@@ -175,6 +175,7 @@ class AbastecimentoPdvAcompanharScreen extends ConsumerWidget {
     const rotulos = {
       'forma_pagamento_nao_permitida': 'A forma de pagamento usada não está habilitada para esse veículo.',
       'valor_acima_do_limite_sem_supervisor': 'O valor do abastecimento está acima do limite permitido sem aprovação de um supervisor.',
+      'pre_pedido_limite': 'O abastecimento passou do volume ou valor autorizado no seu Pré-Pedido. Ele não foi aceito; abasteça dentro do limite do Pré-Pedido.',
       'regras_cliente':
           'O abastecimento foi negado por regras da sua empresa. O gestor já foi avisado e pode liberar enquanto o pedido estiver válido — esta tela atualiza sozinha.',
     };
