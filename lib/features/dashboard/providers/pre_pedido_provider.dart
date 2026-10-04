@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/supabase_service.dart';
 
 // Pré-Pedido (03/10/2026, pedido do Daniel): quando o cliente habilita o
-// parâmetro de uso "Pré-Pedido", o motorista precisa informar o NÚMERO no
-// posto (o caixa digita no PDV FNI). A RPC `meus_pre_pedidos_motorista`
+// parâmetro de uso "Pré-Pedido", o motorista informa SÓ o OTP rotativo (muda
+// a cada 30 s) no caixa do posto, que o digita no PDV FNI. A RPC `meus_pre_pedidos_motorista`
 // devolve só os Pré-Pedidos ATIVOS do motorista logado (direto pelo
 // motorista, ou pela placa do veículo vinculado a ele) em empresas que
 // exigem Pré-Pedido — então a lista vem vazia (e o cartão some) quando o
@@ -33,13 +33,15 @@ class ParadaPrePedido {
 }
 
 class PrePedidoMotorista {
-  final int numero;
+  final String otp;
+  final int segundosRestantes;
   final String? placa;
   final String? empresaNome;
   final List<ParadaPrePedido> paradas;
 
   const PrePedidoMotorista({
-    required this.numero,
+    required this.otp,
+    required this.segundosRestantes,
     required this.placa,
     required this.empresaNome,
     required this.paradas,
@@ -47,7 +49,8 @@ class PrePedidoMotorista {
 
   factory PrePedidoMotorista.fromJson(Map<String, dynamic> j) =>
       PrePedidoMotorista(
-        numero: (j['numero'] as num).toInt(),
+        otp: j['otp'] as String,
+        segundosRestantes: (j['segundosRestantes'] as num).toInt(),
         placa: j['placa'] as String?,
         empresaNome: j['empresaNome'] as String?,
         paradas: ((j['paradas'] as List?) ?? const [])
