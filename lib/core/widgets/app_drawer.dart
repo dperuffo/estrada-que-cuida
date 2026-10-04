@@ -192,11 +192,15 @@ class AppDrawer extends ConsumerWidget {
                     // do Daniel: motorista lança abastecimento feito fora da
                     // frota (posto externo) tirando foto do cupom fiscal,
                     // sem digitar tudo na mão.
-                    _ItemMenu(
-                      icone: Icons.receipt_long_outlined,
-                      label: 'Lançar Abastecimento',
-                      onTap: () => _ir(context, '/abastecimento-manual'),
-                    ),
+                    // 04/10/2026 (pedido do Daniel): "Lançar Abastecimento" saiu
+                    // do menu — com o PDV não deve mais ser necessário. A tela e
+                    // a rota /abastecimento-manual continuam no código; para
+                    // voltar, basta descomentar o item abaixo.
+                    // _ItemMenu(
+                    //   icone: Icons.receipt_long_outlined,
+                    //   label: 'Lançar Abastecimento',
+                    //   onTap: () => _ir(context, '/abastecimento-manual'),
+                    // ),
                     // Fase 2 PDV (02/10/2026) — pedido do Daniel: PDV como
                     // 5º canal de abastecimento, opcional por revenda.
                     _ItemMenu(
