@@ -82,6 +82,11 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
+            // 04/10/2026 (pedido do Daniel): botão de destaque para iniciar a
+            // jornada de abastecimento (PDV) direto da Home.
+            const _BotaoAbastecer(),
+            const SizedBox(height: 16),
+
             // Fase Grupo-1-item-4 (02/08/2026, benchmark FNI vs KMM) —
             // controle de jornada simplificado, logo no topo por ser
             // informação de segurança (quanto tempo dirigindo sem parar).
@@ -1083,6 +1088,57 @@ class _CartaoMissao extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+
+// Botão grande de destaque da Home: inicia a jornada de abastecimento no PDV
+// (escolher posto → hodômetro → código/OTP → acompanhar).
+class _BotaoAbastecer extends StatelessWidget {
+  const _BotaoAbastecer();
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.accento,
+      borderRadius: BorderRadius.circular(16),
+      elevation: 3,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => context.push('/abastecimento-pdv'),
+        child: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Row(
+            children: [
+              Icon(Icons.local_gas_station, color: Colors.white, size: 36),
+              SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ABASTECER',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Iniciar abastecimento no posto',
+                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+            ],
+          ),
         ),
       ),
     );
