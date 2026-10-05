@@ -44,7 +44,6 @@ class _AbastecimentoPdvHodometroScreenState
   bool _confirmando = false;
   bool _carregandoContexto = true;
   String? _placa;
-  num? _ultimoHodometro;
   String? _erro;
   bool _confiancaBaixa = false;
 
@@ -65,7 +64,6 @@ class _AbastecimentoPdvHodometroScreenState
     if (!mounted) return;
     setState(() {
       _placa = contexto.placa;
-      _ultimoHodometro = contexto.ultimoHodometro;
       _carregandoContexto = false;
     });
   }
@@ -185,14 +183,8 @@ class _AbastecimentoPdvHodometroScreenState
       setState(() => _erro = 'Informe o hodômetro atual (só números).');
       return;
     }
-    final ultimo = _ultimoHodometro;
-    if (ultimo != null && hodometro <= ultimo) {
-      setState(
-        () => _erro =
-            'O hodômetro tem que ser maior que o último registrado (${ultimo.toStringAsFixed(0)} km).',
-      );
-      return;
-    }
+    // 05/10/2026 (antifraude): o motorista NÃO vê o último hodômetro registrado;
+    // a validação (maior que o anterior) acontece só no servidor.
 
     setState(() {
       _confirmando = true;
@@ -224,11 +216,8 @@ class _AbastecimentoPdvHodometroScreenState
           setState(() => _erro = 'Informe o hodômetro atual (só números).');
           break;
         case 'hodometro_invalido':
-          final ultimoServidor = resultado.ultimoHodometro;
           setState(
-            () => _erro = ultimoServidor != null
-                ? 'O hodômetro tem que ser maior que o último registrado (${ultimoServidor.toStringAsFixed(0)} km).'
-                : 'Hodômetro inválido.',
+            () => _erro = 'Hodômetro não aceito. Confira a leitura do painel e informe o valor atual do veículo.',
           );
           break;
         case 'geolocalizacao_reprovada':
@@ -290,13 +279,6 @@ class _AbastecimentoPdvHodometroScreenState
                   'Dica: na câmera, encaixe só os números do hodômetro dentro do quadro, evite reflexo no vidro do painel e garanta boa luz.',
                   style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
                 ),
-                if (_ultimoHodometro != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    'Último registrado: ${_ultimoHodometro!.toStringAsFixed(0)} km',
-                    style: TextStyle(color: AppTheme.glassTextoMuted, fontSize: 12),
-                  ),
-                ],
                 const SizedBox(height: 16),
                 if (_fotoBytes != null)
                   ClipRRect(

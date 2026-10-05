@@ -109,11 +109,9 @@ final opcoesAbastecimentoInternoProvider =
 // abastecimentos_unificado — ou última inspeção).
 final ultimoHodometroAbastecimentoInternoProvider = FutureProvider.autoDispose
     .family<num?, String>((ref, placa) async {
-      final resp = await SupabaseService.client.rpc(
-        'ultimo_hodometro_veiculo',
-        params: {'p_placa': placa},
-      );
-      return resp as num?;
+      // 05/10/2026 (antifraude): o último hodômetro registrado é sensível e
+      // NÃO é mais exibido nem pré-preenchido para o motorista.
+      return null;
     });
 
 class AbastecimentoInternoResultado {
