@@ -66,3 +66,41 @@ final prePedidosMotoristaProvider =
           .map((e) => PrePedidoMotorista.fromJson(e as Map<String, dynamic>))
           .toList();
     });
+
+// 06/10/2026 (pedido do Daniel) — no Pré-Pedido quem inicia e conclui o
+// abastecimento é o caixa, no PDV; o motorista só informa o OTP. Por isso o app
+// não passa pelas telas de acompanhamento/avaliação da jornada "Abastecer".
+// Esta consulta (RPC `meu_abastecimento_pre_pedido_a_avaliar`) descobre o
+// abastecimento confirmado via Pré-Pedido, nas últimas 24 h, que o motorista
+// ainda não avaliou — a Home então o leva à MESMA tela de avaliação da jornada
+// normal (posto, abastecimento, frentista/caixa).
+class AbastecimentoAAvaliar {
+  final int id;
+  final String? postoNome;
+  final String? placa;
+
+  const AbastecimentoAAvaliar({required this.id, required this.postoNome, required this.placa});
+
+  factory AbastecimentoAAvaliar.fromJson(Map<String, dynamic> j) => AbastecimentoAAvaliar(
+        id: (j['id'] as num).toInt(),
+        postoNome: j['postoNome'] as String?,
+        placa: j['placa'] as String?,
+      );
+}
+
+// Consulta a cada 10 s enquanto a Home está aberta (o caixa conclui sem aviso ao
+// app). Falha de rede só tenta de novo no próximo ciclo.
+final avaliacaoPrePedidoPendenteProvider = StreamProvider.autoDispose<AbastecimentoAAvaliar?>((ref) async* {
+  while (true) {
+    try {
+      final resp = await SupabaseService.client.rpc('meu_abastecimento_pre_pedido_a_avaliar');
+      yield resp == null ? null : AbastecimentoAAvaliar.fromJson(resp as Map<String, dynamic>);
+    } catch (_) {
+      // best-effort
+    }
+    await Future.delayed(const Duration(seconds: 10));
+  }
+});
+
+// Abastecimentos que o usuário dispensou nesta sessão (botão "Agora não").
+final avaliacoesDispensadasProvider = StateProvider<Set<int>>((ref) => <int>{});

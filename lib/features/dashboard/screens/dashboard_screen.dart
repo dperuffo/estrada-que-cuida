@@ -11,6 +11,7 @@ import '../providers/dashboard_provider.dart';
 import '../providers/home_resumo_provider.dart';
 import '../providers/pre_pedido_provider.dart';
 import '../widgets/cartao_pre_pedido.dart';
+import '../widgets/cartao_avaliar_pre_pedido.dart';
 
 final _formatoPontos = NumberFormat.decimalPattern('pt_BR');
 final _formatoMoeda = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -69,6 +70,7 @@ class DashboardScreen extends ConsumerWidget {
           ref.invalidate(missoesProvider);
           ref.invalidate(homeResumoProvider);
           ref.invalidate(prePedidosMotoristaProvider);
+          ref.invalidate(avaliacaoPrePedidoPendenteProvider);
           ref.invalidate(jornadaEventosProvider);
         },
         child: ListView(
@@ -98,6 +100,8 @@ class DashboardScreen extends ConsumerWidget {
             // saldos de combustível (cota do veículo e, se houver, frete
             // ativo) logo no topo. Some da tela se ainda não tem vínculo de
             // veículo nem nada configurado — não força cartão vazio.
+            // 06/10/2026 — avaliação do abastecimento feito via Pré-Pedido.
+            const CartaoAvaliarPrePedido(),
             const CartaoPrePedido(),
             homeResumoAsync.when(
               loading: () => const Padding(
