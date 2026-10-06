@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../dashboard/providers/pre_pedido_provider.dart';
 import '../providers/abastecimento_pdv_provider.dart';
 
 // Tela final do fluxo PDV (03/10/2026, pedido do Daniel): depois do posto
@@ -47,6 +48,10 @@ class _AbastecimentoPdvAvaliarScreenState extends ConsumerState<AbastecimentoPdv
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(erro)));
       return;
     }
+    // Some o cartão "Abastecimento concluído" da Home na hora (sem esperar o
+    // próximo ciclo de 10 s da consulta).
+    ref.read(avaliacoesDispensadasProvider.notifier).update((s) => {...s, widget.abastecimentoPdvId});
+    ref.invalidate(avaliacaoPrePedidoPendenteProvider);
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Obrigado pela sua avaliação!')));
     context.go('/');
   }
